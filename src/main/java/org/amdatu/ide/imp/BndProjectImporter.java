@@ -37,15 +37,9 @@ import java.util.zip.ZipFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
-import org.jetbrains.osgi.jps.model.ManifestGenerationMode;
-import org.jetbrains.osgi.jps.model.OutputPathType;
-import org.osmorc.facet.OsmorcFacet;
-import org.osmorc.facet.OsmorcFacetConfiguration;
-import org.osmorc.facet.OsmorcFacetType;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
-import com.intellij.facet.impl.FacetUtil;
 import com.intellij.ide.highlighter.ModuleFileType;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
@@ -348,29 +342,6 @@ public class BndProjectImporter {
 
     String targetLevel = project.getProperty(JAVAC_TARGET);
     CompilerConfiguration.getInstance(myProject).setBytecodeTargetLevel(module, targetLevel);
-
-    OsmorcFacet facet = OsmorcFacet.getInstance(module);
-
-    if (project.isNoBundles() && facet != null) {
-      FacetUtil.deleteFacet(facet);
-      facet = null;
-    }
-    else if (!project.isNoBundles() && facet == null) {
-      facet = FacetUtil.addFacet(module, OsmorcFacetType.getInstance());
-    }
-
-    if (facet != null) {
-      OsmorcFacetConfiguration facetConfig = facet.getConfiguration();
-
-      facetConfig.setManifestGenerationMode(ManifestGenerationMode.Bnd);
-      facetConfig.setBndFileLocation(FileUtil.getRelativePath(path(project.getBase()), path(project.getPropertiesFile()), '/'));
-
-      Map.Entry<String, Attrs> bsn = project.getBundleSymbolicName();
-      File bundle = project.getOutputFile(bsn != null ? bsn.getKey() : name, project.getBundleVersion());
-      facetConfig.setJarFileLocation(path(bundle), OutputPathType.SpecificOutputPath);
-
-      facetConfig.setDoNotSynchronizeWithMaven(true);
-    }
 
     return rootModel;
   }
