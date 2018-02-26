@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -670,30 +671,6 @@ public class BndProjectImporter {
     return ContainerUtil.filter(workspace.getAllProjects(), Condition.NOT_NULL);
   }
 
-  /**
-   * Caches a workspace for methods below.
-   */
-  @Nullable
-  public static Workspace findWorkspace(@NotNull com.intellij.openapi.project.Project project) {
-    String basePath = project.getBasePath();
-    if (basePath != null && new File(basePath, CNF_DIR).exists()) {
-      try {
-        Workspace ws = Workspace.getWorkspace(new File(basePath), CNF_DIR);
-        BND_WORKSPACE_KEY.set(project, ws);
-        return ws;
-      }
-      catch (Exception e) {
-        LOG.error(e);
-      }
-    }
-
-    return null;
-  }
-
-  @Nullable
-  public static Workspace getWorkspace(@Nullable com.intellij.openapi.project.Project project) {
-    return project == null || project.isDefault() ? null : BND_WORKSPACE_KEY.get(project);
-  }
 
   public static void reimportWorkspace(@NotNull com.intellij.openapi.project.Project project) {
     if (!isUnitTestMode()) {
@@ -710,7 +687,7 @@ public class BndProjectImporter {
   }
 
   private static void doReimportWorkspace(com.intellij.openapi.project.Project project, ProgressIndicator indicator) {
-    Workspace workspace = getWorkspace(project);
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
     assert workspace != null : project;
 
     Collection<Project> projects;
@@ -762,7 +739,7 @@ public class BndProjectImporter {
   private static void doReimportProjects(com.intellij.openapi.project.Project project,
                                          Collection<String> projectDirs,
                                          ProgressIndicator indicator) {
-    Workspace workspace = getWorkspace(project);
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
     assert workspace != null : project;
 
     Collection<Project> projects;

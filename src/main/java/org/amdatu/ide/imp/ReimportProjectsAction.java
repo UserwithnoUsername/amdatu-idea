@@ -18,6 +18,7 @@ package org.amdatu.ide.imp;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +34,8 @@ import aQute.bnd.build.Workspace;
 public class ReimportProjectsAction extends AnAction {
   @Override
   public void update(@NotNull AnActionEvent e) {
-    Workspace workspace = BndProjectImporter.getWorkspace(e.getProject());
+    Project project = e.getProject();
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
     boolean available = workspace != null && !getProjectDirs(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).isEmpty();
     e.getPresentation().setEnabledAndVisible(available);
   }

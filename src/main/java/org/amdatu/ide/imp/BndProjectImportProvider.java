@@ -34,8 +34,7 @@ public class BndProjectImportProvider extends ProjectImportProvider {
 
   @Override
   public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
-    return BndProjectImporter.getWorkspace(project) == null &&
-           fileOrDir.isDirectory() && fileOrDir.findChild(BndProjectImporter.CNF_DIR) != null;
+    return fileOrDir.isDirectory() && fileOrDir.findChild(BndProjectImporter.CNF_DIR) != null;
   }
 
   @Override

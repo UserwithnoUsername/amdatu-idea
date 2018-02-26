@@ -19,6 +19,7 @@ import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 import java.io.File;
 
+import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,7 +37,7 @@ public class BndModuleImportProvider extends ProjectImportProvider {
 
   @Override
   public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
-    Workspace ws = BndProjectImporter.getWorkspace(project);
+    Workspace ws = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
     if (ws == null) return false;
 
     File projectDir = fileOrDir.isDirectory() ? new File(fileOrDir.getPath()) : new File(fileOrDir.getPath()).getParentFile();
