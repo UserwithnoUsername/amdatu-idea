@@ -22,6 +22,9 @@
 
 
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Initialize workspace and re-import projects on startup -->
+        <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"></postStartupActivity>
+
         <!-- Project import -->
         <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"/>
     </extensions>

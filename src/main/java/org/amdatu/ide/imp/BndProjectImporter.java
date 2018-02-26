@@ -86,7 +86,6 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.util.ObjectUtils;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 
@@ -97,8 +96,6 @@ import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Attrs;
 import aQute.bnd.osgi.Instruction;
 import aQute.bnd.osgi.Instructions;
-import aQute.bnd.service.Refreshable;
-import aQute.bnd.service.RepositoryPlugin;
 import aQute.lib.collections.MultiMap;
 
 public class BndProjectImporter {
@@ -687,16 +684,11 @@ public class BndProjectImporter {
   }
 
   private static void doReimportWorkspace(com.intellij.openapi.project.Project project, ProgressIndicator indicator) {
-    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
     assert workspace != null : project;
 
     Collection<Project> projects;
     try {
-      workspace.clear();
-      workspace.forceRefresh();
-
-      refreshRepositories(workspace, indicator);
-
       projects = getWorkspaceProjects(workspace);
       for (Project p : projects) {
         if (indicator != null) indicator.checkCanceled();
@@ -739,13 +731,11 @@ public class BndProjectImporter {
   private static void doReimportProjects(com.intellij.openapi.project.Project project,
                                          Collection<String> projectDirs,
                                          ProgressIndicator indicator) {
-    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
     assert workspace != null : project;
 
     Collection<Project> projects;
     try {
-      refreshRepositories(workspace, indicator);
-
       projects = ContainerUtil.newArrayListWithCapacity(projectDirs.size());
       for (String dir : projectDirs) {
         if (indicator != null) indicator.checkCanceled();
@@ -771,19 +761,4 @@ public class BndProjectImporter {
     }
   }
 
-  private static void refreshRepositories(Workspace workspace, ProgressIndicator indicator) {
-    List<RepositoryPlugin> plugins = workspace.getPlugins(RepositoryPlugin.class);
-    for (RepositoryPlugin plugin : plugins) {
-      if (indicator != null) indicator.checkCanceled();
-      if (plugin instanceof Refreshable) {
-        try {
-          ((Refreshable)plugin).refresh();
-        }
-        catch (Exception e) {
-          LOG.warn(ObjectUtils.notNull(e.getMessage(), "NPE") + ", plugin=" + plugin);
-          LOG.debug(e);
-        }
-      }
-    }
-  }
 }

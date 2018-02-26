@@ -35,7 +35,7 @@ public class ReimportProjectsAction extends AnAction {
   @Override
   public void update(@NotNull AnActionEvent e) {
     Project project = e.getProject();
-    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
+    Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
     boolean available = workspace != null && !getProjectDirs(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).isEmpty();
     e.getPresentation().setEnabledAndVisible(available);
   }

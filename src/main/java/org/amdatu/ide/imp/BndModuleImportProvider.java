@@ -37,7 +37,7 @@ public class BndModuleImportProvider extends ProjectImportProvider {
 
   @Override
   public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
-    Workspace ws = project.getComponent(AmdatuIdePlugin.class).getWorkspace(project);
+    Workspace ws = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
     if (ws == null) return false;
 
     File projectDir = fileOrDir.isDirectory() ? new File(fileOrDir.getPath()) : new File(fileOrDir.getPath()).getParentFile();
