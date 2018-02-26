@@ -1,0 +1,30 @@
+
+<idea-plugin>
+  <id>org.amdatu.ide</id>
+  <name>Amdatu IDE</name>
+  <version>1.0.0</version>
+  <description></description>
+  <category></category>
+  <vendor>Amdatu</vendor>
+  <idea-version since-build="163.0"/>
+
+  <change-notes>
+
+  </change-notes>
+
+  <depends>com.intellij.modules.java</depends>
+
+  <project-components>
+
+  </project-components>
+
+
+  <extensions defaultExtensionNs="com.intellij">
+
+  </extensions>
+
+
+  <actions>
+
+  </actions>
+</idea-plugin>

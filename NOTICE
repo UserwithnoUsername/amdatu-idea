@@ -1,0 +1,23 @@
+Amdatu IDE
+Copyright (c) 2018- The Amdatu Foundation.
+
+This product includes software developed at
+The Amdatu Foundation (http://www.amdatu.org/).
+Licensed under the Apache License 2.0.
+
+ADDITIONAL LICENSE INFORMATION:
+
+Amdatu IDE includes some third-party open source components
+in its distribution. The list below identifies the community or
+organization and links to their appropriate license terms.
+
+----------------------------------------------------------
+Components under the Apache License 2.0:
+----------------------------------------------------------
+
+The following components are included with modification:
+
+- IntelliJ Osmorc plugin -
+Information: https://plugins.jetbrains.com/plugin/1816-osmorc
+Sources: https://github.com/JetBrains/intellij-plugins/tree/master/osmorc
+License: http://www.apache.org/licenses/LICENSE-2.0
