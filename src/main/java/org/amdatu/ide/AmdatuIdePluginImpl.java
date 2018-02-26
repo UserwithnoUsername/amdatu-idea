@@ -15,12 +15,22 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiDirectory;
+import com.intellij.psi.PsiPackage;
 import com.intellij.util.messages.MessageBusConnection;
 
+import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
+import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Jar;
 import aQute.bnd.repository.maven.provider.MavenBndRepository;
 import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
@@ -28,6 +38,7 @@ import aQute.service.reporter.Report;
 
 public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
+    public static final String IDEA_TMP_GENERATED = ".idea-tmp-generated";
     private static final Logger LOG = Logger.getInstance(AmdatuIdePlugin.class);
 
     private final Object workspaceLock = new Object();
@@ -125,7 +136,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
         if (workspace.getErrors() != null && !workspace.getErrors().isEmpty()) {
             for (String error : workspace.getErrors()) {
-                Notifications.Bus.notify(new Notification("amdatu-ide", "Error",  formatMessage(error), NotificationType.ERROR));
+                Notifications.Bus.notify(new Notification("amdatu-ide", "Error", formatMessage(error), NotificationType.ERROR));
             }
         }
     }
@@ -134,8 +145,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         Report.Location location = workspace.getLocation(message);
         if (location == null) {
             return message;
-        }
-        else {
+        } else {
             int line = location.line + 1; // lines seem to start at 0 for bnd
             return "[file: '" + location.file + "', line: " + line + "]: " + message;
         }
@@ -193,8 +203,89 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 updateWorkspaceFileNames();
             }
             if (refreshWorkspace || importProjects) {
+                generateExportedContentsJars();
                 reImportProjects();
             }
         }
     }
+
+    public void generateExportedContentsJars() {
+        try {
+            workspace.getAllProjects().forEach(p -> {
+                try {
+                    p.getIncluded();
+                    ProjectBuilder builder = p.getBuilder(null);
+                    for (Builder subBuilder : builder.getSubBuilders()) {
+                        if (isExportingNonModuleClasses(subBuilder)) {
+                            File properties = subBuilder.getPropertiesFile();
+                            if (properties == null) {
+                                properties = p.getPropertiesFile();
+                            }
+
+                            File base = properties.getParentFile();
+                            aQute.bnd.build.Project project = new aQute.bnd.build.Project(getWorkspace(), base);
+
+                            project.setBase(base);
+                            project.set(Constants.DEFAULT_PROP_BIN_DIR, "bin_dummy");
+                            project.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
+                            project.prepare();
+
+
+                            Builder projectBuilder = new ProjectBuilder(project);
+                            if (subBuilder.getPropertiesFile() != null) {
+                                projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
+                            }
+                            projectBuilder.setBase(base);
+                            Jar build = projectBuilder.build();
+                            File outputFile = project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
+                            build.write(outputFile);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.error("Failed to generate magic buildpath jar for project: " + p, e);
+                }
+            });
+        }catch (Exception e) {
+            LOG.error("Failed to generate magic buildpath jar", e);
+        }
+
+    }
+
+    private boolean isExportingNonModuleClasses(Builder builder) {
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(myProject);
+        ProjectFileIndex index = ProjectRootManager.getInstance(myProject).getFileIndex();
+
+        Parameters exportPackage = builder.getExportPackage();
+        for (String pkg : exportPackage.keySet()) {
+            if (pkg.endsWith("*")) {
+                pkg = pkg.substring(0, pkg.length() - 1);
+            }
+            if (pkg.endsWith(".")) {
+                pkg = pkg.substring(0, pkg.length() - 1);
+            }
+
+            try {
+                PsiPackage psiPackage = javaPsiFacade.findPackage(pkg);
+                if (psiPackage == null) {
+                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No psi package for: " + pkg, NotificationType.INFORMATION));
+                    continue;
+                }
+
+                if (psiPackage.getDirectories() == null && psiPackage.getDirectories() == null) { // Check twice the first call somehow returns null sometimes where the second call doesn't
+                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No dirs for package: " + pkg, NotificationType.INFORMATION));
+                }
+
+                for (PsiDirectory psiDirectory : psiPackage.getDirectories()) {
+                    if (index.getModuleForFile(psiDirectory.getVirtualFile()) == null) {
+                        return true;
+                    }
+                }
+
+            } catch (Exception e) {
+                LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
+            }
+        }
+        return false;
+    }
+
 }

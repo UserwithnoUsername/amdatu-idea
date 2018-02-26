@@ -15,7 +15,6 @@
  */
 package org.amdatu.ide.imp;
 
-
 import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 import java.io.File;
@@ -24,17 +23,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.amdatu.ide.AmdatuIdePlugin;
+import org.amdatu.ide.AmdatuIdePluginImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -64,7 +60,6 @@ import com.intellij.openapi.roots.ExportableOrderEntry;
 import com.intellij.openapi.roots.JdkOrderEntry;
 import com.intellij.openapi.roots.LanguageLevelModuleExtension;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
-import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleJdkOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
@@ -91,12 +86,7 @@ import com.intellij.util.containers.ContainerUtil;
 
 import aQute.bnd.build.Container;
 import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Attrs;
-import aQute.bnd.osgi.Instruction;
-import aQute.bnd.osgi.Instructions;
-import aQute.lib.collections.MultiMap;
 
 public class BndProjectImporter {
   public static final String CNF_DIR = Workspace.CNFDIR;
@@ -366,142 +356,8 @@ public class BndProjectImporter {
     setDependencies(moduleModel, libraryModel, rootModel, project, project.getBuildpath(), false, bootSet, warnings);
     setDependencies(moduleModel, libraryModel, rootModel, project, project.getTestpath(), true, bootSet, warnings);
 
-    try {
-      List<Container> collect = project.getBuildpath().stream()
-        .filter(c -> c.getType() == Container.TYPE.PROJECT)
-        .filter(c -> project != c.getProject())
-        .collect(Collectors.toList());
-
-      for (Container dependency : collect) {
-
-        ProjectBuilder subBuilder = dependency.getProject().getSubBuilder(dependency.getBundleSymbolicName().replace(".jar", ""));
-        String exportPackage = subBuilder.get(Project.EXPORT_PACKAGE);
-        //String exportPackage = dependency.getProject().get(Project.EXPORT_PACKAGE);
-        if (exportPackage != null && !exportPackage.trim().isEmpty()) {
-          MultiMap<String, VirtualFile> index = new MultiMap<>();
-          Module dep = moduleModel.findModuleByName(dependency.getProject().getName());
-          ModifiableRootModel model1 = ModuleRootManager.getInstance(dep).getModifiableModel();
-          for (OrderEntry orderEntry : model1.getOrderEntries()) {
-            if (orderEntry instanceof LibraryOrderEntry) {
-              Library library = ((LibraryOrderEntry)orderEntry).getLibrary();
-
-              VirtualFile[] files = library.getFiles(OrderRootType.CLASSES);
-              for (VirtualFile f : files) {
-                getPackagesInJar(f).forEach(p -> index.add(p, f));
-              }
-            }
-          }
-
-          if (!index.isEmpty()) {
-            String libraryName = BND_LIB_PREFIX + "module:" + dependency.getBundleSymbolicName();
-
-            Library test = rootModel.getModuleLibraryTable().getLibraryByName(libraryName);
-            if (test == null) {
-              test = rootModel.getModuleLibraryTable().createLibrary(libraryName);
-            }
-            Library.ModifiableModel model = test.getModifiableModel();
-            Instructions instructions = new Instructions(exportPackage);
-
-            doExpand(model, index, instructions);
-
-            if (model.getUrls(OrderRootType.CLASSES).length > 0) {
-              model.commit();
-            } else {
-              rootModel.getModuleLibraryTable().removeLibrary(test);
-            }
-          }
-        }
-      }
-      } catch(Exception e){
-        e.printStackTrace();
-    }
     checkWarnings(project, warnings, false);
   }
-
-  SortedSet<String> getPackagesInJar(VirtualFile virtualFile) {
-    SortedSet<String> packages = new TreeSet<>();
-    if (virtualFile.isDirectory()) {
-      for (VirtualFile child : virtualFile.getChildren()) {
-        packages.addAll(getPackagesInJar(child));
-      }
-    } else if (virtualFile.getName().endsWith(".class")) {
-      String path = virtualFile.getParent().getPath();
-      String packageName = path.substring(path.indexOf("!") +2 ).replaceAll("/", ".");
-      if (!packages.contains(packageName)) {
-        packages.add(packageName);
-      }
-    }
-
-    return packages;
-  }
-
-
-  private void doExpand(Library.ModifiableModel model, MultiMap<String,VirtualFile> index, Instructions filter) throws Exception {
-    for (Map.Entry<Instruction,Attrs> e : filter.entrySet()) {
-      Instruction instruction = e.getKey();
-      if (instruction.isDuplicate())
-        continue;
-
-      //Attrs directives = e.getValue();
-
-      // We can optionally filter on the
-      // source of the package. We assume
-      // they all match but this can be overridden
-      // on the instruction
-      //Instruction from = new Instruction(directives.get(FROM_DIRECTIVE, "*"));
-
-      for (Iterator<Map.Entry<String,List<VirtualFile>>> entry = index.entrySet().iterator(); entry.hasNext();) {
-        Map.Entry<String,List<VirtualFile>> p = entry.next();
-
-        String packageName = p.getKey();
-
-
-        if (!instruction.matches(packageName))
-          continue;
-
-        // Ensure it is never matched again
-        entry.remove();
-
-        // ! effectively removes it from consideration by others (this includes exports)
-        if (instruction.isNegated()) {
-          continue;
-        }
-
-        // Do the from: directive, filters on the JAR type
-        //List<Jar> providers = filterFrom(from, p.getValue());
-        //if (providers.isEmpty())
-        //  continue;
-
-        //int splitStrategy = getSplitStrategy(directives.get(SPLIT_PACKAGE_DIRECTIVE));
-        //copyPackage(jar, providers, directory, splitStrategy);
-
-        List<VirtualFile> providers = p.getValue();
-        if (providers != null && !providers.isEmpty()) {
-          for (VirtualFile provider : providers) {
-            model.addRoot(provider, OrderRootType.CLASSES);
-            //VirtualFile packageDir = provider.findFileByRelativePath(packageName.replaceAll("\\.", "/"));
-            //
-            //for (VirtualFile file : packageDir.getChildren()) {
-            //  if (file.getName().endsWith(".class")) {
-            //    System.out.println("Add " + file);
-            //    model.addRoot(file, OrderRootType.CLASSES);
-            //  }
-            //}
-          }
-        }
-
-        //model.addRoot();
-
-        //Attrs contained = getContained().put(packageRef);
-
-        //contained.put(INTERNAL_SOURCE_DIRECTIVE, getName(providers.get(0)));
-
-
-
-      }
-    }
-  }
-
 
   private void setDependencies(ModifiableModuleModel moduleModel,
                                LibraryTable.ModifiableModel libraryModel,
@@ -580,6 +436,32 @@ public class BndProjectImporter {
         if (entry == null) {
           entry = rootModel.addModuleOrderEntry(module);
         }
+
+        /// TEST
+
+
+        File base = new File(module.getModuleFilePath()).getParentFile();
+        File nonSourceDepsBundle = new File (base, AmdatuIdePluginImpl.IDEA_TMP_GENERATED + "/"+ bsn);
+        if (nonSourceDepsBundle.exists()) {
+          String libName = "idea-" + BND_LIB_PREFIX + bsn + ":" + version;
+          Library library = libraryModel.getLibraryByName(libName);
+          if (library == null) {
+            library = libraryModel.createLibrary(libName);
+          }
+
+          Library.ModifiableModel model = library.getModifiableModel();
+          for (String url : model.getUrls(OrderRootType.CLASSES)) model.removeRoot(url, OrderRootType.CLASSES);
+          for (String url : model.getUrls(OrderRootType.SOURCES)) model.removeRoot(url, OrderRootType.SOURCES);
+          model.addRoot(url(nonSourceDepsBundle), OrderRootType.CLASSES);
+
+          model.commit();
+
+          entry = rootModel.addLibraryEntry(library);
+
+        }
+
+        ///
+
         break;
       }
 
