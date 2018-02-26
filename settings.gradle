@@ -1,0 +1,4 @@
+rootProject.name = 'amdatu-ide'
+include 'jps-plugin'
+rootProject.name = 'amdatu-ide'
+
