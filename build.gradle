@@ -5,10 +5,16 @@ plugins {
 group 'org.amdatu.ide'
 version '1.0-SNAPSHOT'
 
-apply plugin: "org.jetbrains.intellij"
+allprojects {
+    apply plugin: "org.jetbrains.intellij"
 
-intellij {
-    version '181.3741.2'
+    intellij {
+        version '181.3741.2'
+    }
+
+    runIde {
+        jvmArgs = ['-Dcompiler.process.debug.port=54321']
+    }
 }
 
 repositories {
@@ -17,4 +23,5 @@ repositories {
 
 dependencies {
     compile "biz.aQute.bnd:biz.aQute.bnd:3.5.0"
+    compile project('jps-plugin')
 }

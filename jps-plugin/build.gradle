@@ -1,0 +1,9 @@
+jar.archiveName = "jps-plugin.jar"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "biz.aQute.bnd:biz.aQute.bnd:3.5.0"
+}

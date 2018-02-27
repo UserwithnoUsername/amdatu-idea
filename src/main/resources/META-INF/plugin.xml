@@ -26,7 +26,9 @@
         <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"></postStartupActivity>
 
         <!-- Project import -->
-        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"/>
+        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectImportProvider>
+
+        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"></compileServer.plugin>
     </extensions>
 
 
