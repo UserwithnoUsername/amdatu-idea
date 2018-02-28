@@ -13,8 +13,10 @@
 // limitations under the License.
 package org.amdatu.ide.run;
 
+import aQute.bnd.build.Project;
 import aQute.bnd.build.ProjectLauncher;
 import aQute.bnd.build.ProjectTester;
+import aQute.bnd.build.Workspace;
 import aQute.bnd.service.EclipseJUnitTester;
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.ExecutionException;
@@ -46,6 +48,8 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+
+import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -88,7 +92,10 @@ public class BndTestState extends JavaCommandLineState {
         @Override
         protected ProjectTester compute(@NotNull ProgressIndicator indicator) throws Exception {
           indicator.setIndeterminate(true);
-          return BndLaunchUtil.getRun(runFile).getProjectTester();
+
+          Workspace workspace = environment.getProject().getComponent(AmdatuIdePlugin.class).getWorkspace();
+          Project project = workspace.getProject(myConfiguration.getName());
+          return project.getProjectTester();
         }
       });
     }

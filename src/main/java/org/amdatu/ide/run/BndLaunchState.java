@@ -14,6 +14,9 @@
 package org.amdatu.ide.run;
 
 import aQute.bnd.build.ProjectLauncher;
+import aQute.bnd.build.Run;
+import aQute.bnd.build.Workspace;
+
 import com.intellij.debugger.ui.HotSwapUI;
 import com.intellij.debugger.ui.HotSwapVetoableListener;
 import com.intellij.execution.CantRunException;
@@ -39,6 +42,8 @@ import com.intellij.openapi.util.io.FileAttributes;
 import com.intellij.openapi.util.io.FileSystemUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
+
+import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -86,7 +91,8 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         @Override
         protected ProjectLauncher compute(@NotNull ProgressIndicator indicator) throws Exception {
           indicator.setIndeterminate(true);
-          ProjectLauncher launcher = BndLaunchUtil.getRun(runFile).getProjectLauncher();
+          Workspace workspace = myProject.getComponent(AmdatuIdePlugin.class).getWorkspace();
+          ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
           launcher.prepare();
           return launcher;
         }
