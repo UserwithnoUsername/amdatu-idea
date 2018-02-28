@@ -15,17 +15,21 @@
  */
 package org.amdatu.ide.run;
 
-import com.intellij.execution.configurations.*;
-import com.intellij.openapi.project.Project;
-import icons.OsmorcIdeaIcons;
-
-import org.amdatu.ide.imp.BndProjectImporter;
-import org.jetbrains.annotations.NotNull;
-
+import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 import javax.swing.*;
 
-import static org.amdatu.ide.i18n.OsmorcBundle.message;
+import org.amdatu.ide.AmdatuIdePlugin;
+import org.jetbrains.annotations.NotNull;
+
+import com.intellij.execution.configurations.ConfigurationFactory;
+import com.intellij.execution.configurations.ConfigurationType;
+import com.intellij.execution.configurations.ConfigurationTypeBase;
+import com.intellij.execution.configurations.ConfigurationTypeUtil;
+import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.openapi.project.Project;
+
+import icons.OsmorcIdeaIcons;
 
 public class BndRunConfigurationType extends ConfigurationTypeBase {
   private static final String ID = "osgi.bnd.run";
@@ -63,7 +67,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
 
     @Override
     public boolean isApplicable(@NotNull Project project) {
-      return BndProjectImporter.getWorkspace(project) != null;
+      return project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
     }
   }
 

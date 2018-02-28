@@ -13,6 +13,11 @@
 // limitations under the License.
 package org.amdatu.ide.run;
 
+import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
+import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.execution.Location;
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.execution.actions.RunConfigurationProducer;
@@ -21,8 +26,6 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.osgi.bnd.BndFileType;
 
 public abstract class BndRunConfigurationProducer extends RunConfigurationProducer<BndRunConfigurationBase> {
   protected BndRunConfigurationProducer(@NotNull ConfigurationFactory factory) {
@@ -36,7 +39,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
       VirtualFile file = location.getVirtualFile();
       if (file != null && !file.isDirectory()) {
         String extension = file.getExtension();
-        if (BndFileType.BND_RUN_EXT.equals(extension) || BndFileType.BND_EXT.equals(extension)) {
+        if (BND_EXT.equals(extension) || BND_RUN_EXT.equals(extension)) {
           Boolean hasTestCases = BndLaunchUtil.hasTestCases(file.getPath());
           if (hasTestCases == Boolean.FALSE && configuration instanceof BndRunConfigurationBase.Launch ||
               hasTestCases == Boolean.TRUE && configuration instanceof BndRunConfigurationBase.Test) {

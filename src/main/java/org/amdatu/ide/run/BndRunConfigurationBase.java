@@ -28,7 +28,6 @@ import org.amdatu.ide.i18n.OsmorcBundle;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.osgi.bnd.run.BndRunConfigurationOptions;
 
 import java.io.File;
 
@@ -70,7 +69,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
     if (file == null || !new File(file).isFile()) {
       throw new RuntimeConfigurationException(OsmorcBundle.message("bnd.run.configuration.invalid", file));
     }
-    if (getOptions().getUseAlternativeJre()) {
+    if (getOptions().isUseAlternativeJre()) {
       JavaParametersUtil.checkAlternativeJRE(getOptions().getAlternativeJrePath());
     }
   }

@@ -13,6 +13,14 @@
 // limitations under the License.
 package org.amdatu.ide.run;
 
+import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
+import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
+
+import javax.swing.*;
+
+import org.amdatu.ide.i18n.OsmorcBundle;
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.execution.ui.DefaultJreSelector;
 import com.intellij.execution.ui.JrePathEditor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
@@ -20,12 +28,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.osgi.bnd.BndFileType;
-import org.jetbrains.osgi.bnd.run.BndRunConfigurationOptions;
-import org.amdatu.ide.i18n.OsmorcBundle;
-
-import javax.swing.*;
 
 public class BndRunConfigurationEditor extends SettingsEditor<BndRunConfigurationBase> {
   private JPanel myPanel;
@@ -38,7 +40,7 @@ public class BndRunConfigurationEditor extends SettingsEditor<BndRunConfiguratio
       .createSingleFileNoJarsDescriptor()
       .withFileFilter(file -> {
         String ext = file.getExtension();
-        return BndFileType.BND_RUN_EXT.equals(ext) || BndFileType.BND_EXT.equals(ext);
+        return BND_EXT.equals(ext) || BND_RUN_EXT.equals(ext);
       });
     myChooser.addBrowseFolderListener(OsmorcBundle.message("bnd.run.file.chooser.title"), null, project, descriptor);
   }
@@ -53,7 +55,7 @@ public class BndRunConfigurationEditor extends SettingsEditor<BndRunConfiguratio
   protected void resetEditorFrom(@NotNull BndRunConfigurationBase configuration) {
     BndRunConfigurationOptions options = configuration.getOptions();
     myChooser.setText(options.getBndRunFile());
-    myJrePathEditor.setPathOrName(options.getAlternativeJrePath(), options.getUseAlternativeJre());
+    myJrePathEditor.setPathOrName(options.getAlternativeJrePath(), options.isUseAlternativeJre());
   }
 
   @Override

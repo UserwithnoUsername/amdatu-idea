@@ -25,9 +25,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+
+import org.amdatu.ide.imp.BndProjectImporter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.osgi.bnd.imp.BndProjectImporter;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class BndLaunchUtil {
     File launcherDir = launcher.getCwd();
     parameters.setWorkingDirectory(launcherDir != null ? launcherDir.getPath() : project.getBasePath());
 
-    String jreHome = configuration.getOptions().getUseAlternativeJre() ? configuration.getOptions().getAlternativeJrePath() : null;
+    String jreHome = configuration.getOptions().isUseAlternativeJre() ? configuration.getOptions().getAlternativeJrePath() : null;
     JavaParametersUtil.configureProject(project, parameters, JavaParameters.JDK_ONLY, jreHome);
 
     parameters.getEnv().putAll(launcher.getRunEnv());
