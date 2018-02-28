@@ -14,6 +14,8 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -65,6 +67,9 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
                     Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Created bnd workspace'", NotificationType.INFORMATION));
                     reportWorkspaceIssues();
+
+                    // TODO: This could slow down startup a bit but we need these.
+                    generateExportedContentsJars();
 
                     MessageBusConnection connection = myProject.getMessageBus().connect();
                     connection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
@@ -198,14 +203,26 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     importProjects = true;
                 }
             }
-            if (refreshWorkspace) {
-                refreshWorkspace();
-                updateWorkspaceFileNames();
-            }
-            if (refreshWorkspace || importProjects) {
-                generateExportedContentsJars();
-                reImportProjects();
-            }
+
+            boolean finalRefreshWorkspace = refreshWorkspace;
+            boolean finalImportProjects = importProjects;
+
+            new Task.Backgroundable(myProject, "Refreshing", true) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    if (finalRefreshWorkspace) {
+                        refreshWorkspace();
+                        updateWorkspaceFileNames();
+                        // TODO: This is not the best place, come up with a good moment to generate these jars.
+                        generateExportedContentsJars();
+                    }
+                    if (finalRefreshWorkspace || finalImportProjects) {
+//                generateExportedContentsJars(); // TODO: Moved to do this after workspace refresh only for now
+                        reImportProjects();
+                    }
+                }
+            }.queue();
+
         }
     }
 
