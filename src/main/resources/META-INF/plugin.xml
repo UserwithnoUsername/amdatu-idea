@@ -26,7 +26,12 @@
         <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"></postStartupActivity>
 
         <!-- Project import -->
-        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectImportProvider>
+        <projectMaImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectMaImportProvider>
+
+        <!-- Language-->
+        <fileTypeFactory implementation="org.amdatu.ide.lang.BundleDescriptorFileTypeFactory"/>
+        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.BundleDescriptorParserDefinition"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.BundleDescriptorCompletionContributor"/>
 
         <!-- JPS plugin -->
         <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"></compileServer.plugin>
