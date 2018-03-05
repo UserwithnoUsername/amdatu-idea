@@ -176,7 +176,10 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         }
 
         private void updateWorkspaceFileNames() {
-            List<File> workspaceFiles = new ArrayList<>(workspace.getIncluded());
+            List<File> workspaceFiles = new ArrayList<>();
+            if ( workspace.getIncluded() != null) {
+                workspaceFiles.addAll(workspace.getIncluded());
+            }
             workspaceFiles.add(workspace.getPropertiesFile());
 
             myWorkspaceFileNames.clear();

@@ -26,7 +26,7 @@
         <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"></postStartupActivity>
 
         <!-- Project import -->
-        <projectMaImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectMaImportProvider>
+        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectImportProvider>
 
         <!-- Language-->
         <fileTypeFactory implementation="org.amdatu.ide.lang.BundleDescriptorFileTypeFactory"/>
@@ -40,6 +40,10 @@
         <configurationType implementation="org.amdatu.ide.run.BndRunConfigurationType"/>
         <runConfigurationProducer implementation="org.amdatu.ide.run.BndRunConfigurationProducer$Launch"/>
         <runConfigurationProducer implementation="org.amdatu.ide.run.BndRunConfigurationProducer$Test"/>
+
+        <!-- Custom module type supporting bndtools templates-->
+        <!--<projectTemplatesFactory implementation="org.amdatu.ide.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
+        <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.ide.templating.AmdatuIdeModuleType"/>
     </extensions>
 
 
