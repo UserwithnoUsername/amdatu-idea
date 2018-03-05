@@ -50,11 +50,9 @@ public class RepoTemplateLoader {
             osGiRepository.setProperties(map);
             repositories.add(osGiRepository);
 
-            List<Template> templates = repositories.stream()
+            return repositories.stream()
                     .flatMap(repo -> findTemplates(repo, templateType))
                     .collect(Collectors.toList());
-
-            return templates;
         } catch (Exception e) {
             throw new RuntimeException();
         }

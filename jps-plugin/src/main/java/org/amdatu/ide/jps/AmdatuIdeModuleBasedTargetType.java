@@ -30,7 +30,7 @@ public class AmdatuIdeModuleBasedTargetType extends ModuleBasedBuildTargetType<A
         super("AmdatuIde");
     }
 
-    private Map<String, AmdatuIdeModuleBasedBuildTarget> targets = new HashMap<>();
+    private final Map<String, AmdatuIdeModuleBasedBuildTarget> targets = new HashMap<>();
 
     @NotNull
     @Override

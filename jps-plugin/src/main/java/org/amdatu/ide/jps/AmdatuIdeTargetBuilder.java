@@ -19,7 +19,6 @@ import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.incremental.messages.DoneSomethingNotification;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 
 import aQute.bnd.build.Project;
@@ -76,11 +75,11 @@ public class AmdatuIdeTargetBuilder extends TargetBuilder<BuildRootDescriptor, A
 
                     builder.getWarnings().stream()
                             .map(message -> toCompilerMessage(BuildMessage.Kind.WARNING, message, builder))
-                            .forEach(message -> context.processMessage(message));
+                            .forEach(context::processMessage);
 
                     builder.getErrors().stream()
                             .map(message -> toCompilerMessage(BuildMessage.Kind.ERROR, message, builder))
-                            .forEach(message -> context.processMessage(message));
+                            .forEach(context::processMessage);
                 }
             }
 
@@ -98,10 +97,8 @@ public class AmdatuIdeTargetBuilder extends TargetBuilder<BuildRootDescriptor, A
         int line = -1;
 
         if (location != null) {
-            if (location != null) {
-                path = location.file;
-                line = location.line;
-            }
+            path = location.file;
+            line = location.line;
         }
         return new CompilerMessage(AmdatuIdeTargetBuilder.ID, kind, message, path, -1, -1, -1, line, -1);
     }

@@ -116,39 +116,37 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
 
         File moduleRootDir = new File(getContentEntryPath());
 
-        List<File> touchedFiles = new ArrayList<>();
-        touchedFiles.add(moduleRootDir);
-
         for (Map.Entry<String, Resource> entry : resourceMap.entries()) {
             String relativePath = entry.getKey();
             Resource resource = entry.getValue();
             ResourceType type = resource.getType();
-            if (type == ResourceType.Folder) {
-                File folder = new File(moduleRootDir, relativePath);
-                if (!folder.exists()) {
-                    folder.mkdirs();
-                    touchedFiles.add(folder);
-                } else if (!folder.isDirectory()) {
-                    throw new RuntimeException("File exists but is not a dir" + folder);
-                }
-            } else if (type == ResourceType.File) {
-                File file = new File(moduleRootDir, relativePath);
-                if (!file.exists()) {
-                    try (InputStream is = new BufferedInputStream(resource.getContent());
-                         FileOutputStream outputStream = new FileOutputStream(file)) {
-
-                        IOUtils.copy(is, outputStream);
-
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to write " + file, e);
+            switch (type) {
+                case Folder:
+                    File folder = new File(moduleRootDir, relativePath);
+                    if (!folder.exists()) {
+                        folder.mkdirs();
+                    } else if (!folder.isDirectory()) {
+                        throw new RuntimeException("File exists but is not a dir" + folder);
                     }
-                    touchedFiles.add(file);
-                } else {
-                    // TODO Just overwrite?
-                    throw new RuntimeException("File exists." + file);
-                }
-            } else {
-                throw new RuntimeException("Unsupported resource type" + type);
+                    break;
+                case File:
+                    File file = new File(moduleRootDir, relativePath);
+                    if (!file.exists()) {
+                        try (InputStream is = new BufferedInputStream(resource.getContent());
+                             FileOutputStream outputStream = new FileOutputStream(file)) {
+
+                            IOUtils.copy(is, outputStream);
+
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to write " + file, e);
+                        }
+                    } else {
+                        // TODO Just overwrite?
+                        throw new RuntimeException("File exists." + file);
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported resource type" + type);
             }
         }
     }

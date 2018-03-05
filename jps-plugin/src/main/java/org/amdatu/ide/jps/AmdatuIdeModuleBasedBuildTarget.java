@@ -72,9 +72,7 @@ public class AmdatuIdeModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoot
             if (sub != null) {
                 List<File> files = new ArrayList<>();
                 tree(files, project.getPropertiesFile().getParentFile(), new Instruction(sub));
-                files.forEach(file -> {
-                    rootDescriptors.add(new BuildRootDescriptorImpl(this, file));
-                });
+                files.forEach(file -> rootDescriptors.add(new BuildRootDescriptorImpl(this, file)));
 
             }
 

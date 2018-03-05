@@ -112,7 +112,7 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
     }
 
     if (myWorkspace != null) {
-      List<Project> toImport = ContainerUtil.filter(myProjects, project1 -> isMarked(project1));
+      List<Project> toImport = ContainerUtil.filter(myProjects, this::isMarked);
       final BndProjectImporter importer = new BndProjectImporter(project, myWorkspace, toImport);
       Module rootModule = importer.createRootModule(model);
       importer.setupProject();
