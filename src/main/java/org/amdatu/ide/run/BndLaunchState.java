@@ -91,9 +91,16 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         @Override
         protected ProjectLauncher compute(@NotNull ProgressIndicator indicator) throws Exception {
           indicator.setIndeterminate(true);
-          Workspace workspace = myProject.getComponent(AmdatuIdePlugin.class).getWorkspace();
+          AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
+          Workspace workspace = amdatuIdePlugin.getWorkspace();
+
           ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
           launcher.prepare();
+
+          if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
+            throw new CantRunException(message("bnd.test.cannot.run", "project has errors"));
+          }
+
           return launcher;
         }
       });

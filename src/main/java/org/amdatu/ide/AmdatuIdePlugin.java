@@ -15,4 +15,8 @@ public interface AmdatuIdePlugin {
     Workspace getWorkspace();
 
     void reImportProjects();
+
+    boolean reportErrors(aQute.bnd.build.Project project);
+
+    boolean reportWarnings(aQute.bnd.build.Project project);
 }

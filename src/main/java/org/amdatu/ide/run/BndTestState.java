@@ -87,17 +87,21 @@ public class BndTestState extends JavaCommandLineState {
           indicator.setIndeterminate(true);
 
           Workspace workspace = environment.getProject().getComponent(AmdatuIdePlugin.class).getWorkspace();
-            BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
-            Project project = workspace.getProject(configurationOptions.getModuleName());
+          BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
+          Project project = workspace.getProject(configurationOptions.getModuleName());
 
-          project.clear();
-          project.forceRefresh();
+          AmdatuIdePlugin amdatuIdePlugin = myConfiguration.getProject().getComponent(AmdatuIdePlugin.class);
+          if (amdatuIdePlugin.reportErrors(project)) {
+            throw new CantRunException(message("bnd.test.cannot.run", "project has errors"));
+          }
+          // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
+//          amdatuIdePlugin.reportWarnings(project);
 
-            ProjectTester projectTester = project.getProjectTester();
-            if (configurationOptions.getTest() != null) {
-              projectTester.addTest(configurationOptions.getTest());
-            }
-            return projectTester;
+          ProjectTester projectTester = project.getProjectTester();
+          if (configurationOptions.getTest() != null) {
+            projectTester.addTest(configurationOptions.getTest());
+          }
+          return projectTester;
         }
       });
     }
@@ -123,6 +127,7 @@ public class BndTestState extends JavaCommandLineState {
 
     try {
       myTester.prepare();
+
     }
     catch (Exception e) {
       LOG.info(e);

@@ -90,7 +90,6 @@ import aQute.bnd.build.Workspace;
 
 public class BndProjectImporter {
   public static final String CNF_DIR = Workspace.CNFDIR;
-  public static final String BUILD_FILE = Workspace.BUILDFILE;
   public static final String BND_FILE = Project.BNDFILE;
   public static final String BND_LIB_PREFIX = "bnd:";
 
@@ -98,8 +97,6 @@ public class BndProjectImporter {
     new NotificationGroup("OSGi Bnd Notifications", NotificationDisplayType.STICKY_BALLOON, true);
 
   private static final Logger LOG = Logger.getInstance(BndProjectImporter.class);
-
-  private static final Key<Workspace> BND_WORKSPACE_KEY = Key.create("bnd.workspace.key");
 
   private static final String JAVAC_SOURCE = "javac.source";
   private static final String JAVAC_TARGET = "javac.target";
@@ -195,16 +192,17 @@ public class BndProjectImporter {
         indicator.setText(project.getName());
       }
 
+      AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
       try {
         project.prepare();
       }
       catch (Exception e) {
-        checkErrors(project, e);
+        LOG.warn(e);
+        amdatuIdePlugin.reportErrors(project);
         return false;
       }
-
-      checkWarnings(project, project.getErrors(), true);
-      checkWarnings(project, project.getWarnings(), false);
+      amdatuIdePlugin.reportWarnings(project);
+      amdatuIdePlugin.reportErrors(project);
 
       findSources(project);
 
@@ -234,15 +232,11 @@ public class BndProjectImporter {
           String path = file.getPath();
           if (!mySourcesMap.containsKey(path)) {
             try {
-              ZipFile zipFile = new ZipFile(file);
-              try {
+              try (ZipFile zipFile = new ZipFile(file)) {
                 ZipEntry srcRoot = zipFile.getEntry(SRC_ROOT);
                 if (srcRoot != null) {
                   mySourcesMap.put(path, SRC_ROOT);
                 }
-              }
-              finally {
-                zipFile.close();
               }
             }
             catch (IOException e) {
@@ -507,18 +501,7 @@ public class BndProjectImporter {
     entry.setScope(scope);
   }
 
-  private void checkErrors(Project project, Exception e) {
-    if (!isUnitTestMode()) {
-      String text;
-      LOG.warn(e);
-      text = message("bnd.import.resolve.error", project.getName(), e.getMessage());
-      NOTIFICATIONS.createNotification(message("bnd.import.error.title"), text, NotificationType.ERROR, null).notify(myProject);
-    }
-    else {
-      throw new AssertionError(e);
-    }
-  }
-
+  // TODO: This method is not only reporting bnd project issues but also some additional messages in the warnings list. Have a better look at this and get rid of that ..
   private void checkWarnings(Project project, List<String> warnings, boolean error) {
     if (warnings != null && !warnings.isEmpty()) {
       if (!isUnitTestMode()) {
@@ -535,10 +518,6 @@ public class BndProjectImporter {
 
   private static boolean booleanProperty(String value) {
     return "on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value);
-  }
-
-  private static String path(File file) {
-    return FileUtil.toSystemIndependentName(file.getPath());
   }
 
   private static String url(File file) {
@@ -572,11 +551,6 @@ public class BndProjectImporter {
     Collection<Project> projects;
     try {
       projects = getWorkspaceProjects(workspace);
-      for (Project p : projects) {
-        if (indicator != null) indicator.checkCanceled();
-        p.clear();
-        p.forceRefresh();
-      }
     }
     catch (Exception e) {
       LOG.error("ws=" + workspace.getBase(), e);
@@ -621,12 +595,10 @@ public class BndProjectImporter {
       projects = ContainerUtil.newArrayListWithCapacity(projectDirs.size());
       for (String dir : projectDirs) {
         if (indicator != null) indicator.checkCanceled();
-        Project p = workspace.getProject(PathUtil.getFileName(dir));
-        if (p != null) {
-          p.clear();
-          p.forceRefresh();
-          projects.add(p);
-        }
+          Project p = workspace.getProject(PathUtil.getFileName(dir));
+          if (p != null) {
+            projects.add(p);
+          }
       }
     }
     catch (Exception e) {

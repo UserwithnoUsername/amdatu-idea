@@ -17,6 +17,7 @@ import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
 import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
 
 import aQute.bnd.osgi.Constants;
+import com.intellij.execution.actions.ConfigurationFromContext;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -39,6 +40,8 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.Nullable;
 import org.junit.runner.RunWith;
 
+import java.util.Objects;
+
 public abstract class BndRunConfigurationProducer extends RunConfigurationProducer<BndRunConfigurationBase> {
 
     private static final Logger LOG = Logger.getInstance(BndRunConfigurationProducer.class);
@@ -55,7 +58,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         PsiElement psiLocation = context.getPsiLocation();
 
         VirtualFile file = location.getVirtualFile();
-        if (configuration instanceof BndRunConfigurationBase.Launch) {
+        if (configuration instanceof BndRunConfigurationBase.Launch && !isTestModule(context.getModule())) {
             if (isBndPropertiesFile(file)) {
                 configuration.setName(context.getModule().getName());
                 configuration.getOptions().setBndRunFile(file.getPath());
@@ -63,12 +66,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                 return true;
             }
         }
-        else if (configuration instanceof BndRunConfigurationBase.Test) {
-            BndRunConfigurationBase.Test testConfiguration = (BndRunConfigurationBase.Test) configuration;
-
-            if (!isTestModule(context.getModule())) {
-                return false;
-            }
+        else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(context.getModule())) {
 
             if (isBndPropertiesFile(file) && file.getName().equals(BND_BND)) {
                 configuration.setName(context.getModule().getName());

@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationGroup;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.containers.ContainerUtil;
 import org.amdatu.ide.imp.BndProjectImporter;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,10 +43,16 @@ import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
 
+import static org.amdatu.ide.i18n.OsmorcBundle.message;
+
 public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
     public static final String IDEA_TMP_GENERATED = ".idea-tmp-generated";
-    private static final Logger LOG = Logger.getInstance(AmdatuIdePlugin.class);
+
+    private static final Logger LOG = Logger.getInstance(AmdatuIdePluginImpl.class);
+    public static final NotificationGroup NOTIFICATIONS =
+            new NotificationGroup("Amdatu IDE", NotificationDisplayType.TOOL_WINDOW, true);
+
 
     private final Object workspaceLock = new Object();
     private final Project myProject;
@@ -177,7 +188,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
         private void updateWorkspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
-            if ( workspace.getIncluded() != null) {
+            if (workspace.getIncluded() != null) {
                 workspaceFiles.addAll(workspace.getIncluded());
             }
             workspaceFiles.add(workspace.getPropertiesFile());
@@ -192,8 +203,10 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         public void after(@NotNull List<? extends VFileEvent> events) {
             boolean refreshWorkspace = false;
             boolean importProjects = false;
+            Set<String> modulesToRefresh = ContainerUtil.newHashSet();
             for (VFileEvent event : events) {
-                if (myWorkspaceFileNames.contains(event.getFile().getCanonicalPath())) {
+                VirtualFile file = event.getFile();
+                if (myWorkspaceFileNames.contains(file.getCanonicalPath())) {
                     // A workspace file has changed (.bnd file in cnf folder) refresh the workspace
 
                     // TODO: Do we need to de-bounce this refresh operation??
@@ -201,9 +214,11 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     break;
                 }
 
-                if (event.getFile().getName().endsWith(".bnd")) {
+                if (file.getName().endsWith(".bnd")) {
                     // Bnd file not part set of workspace configuration files has changed
                     importProjects = true;
+                    Module module = ProjectFileIndex.getInstance(myProject).getModuleForFile(file);
+                    modulesToRefresh.add(module.getName());
                 }
             }
 
@@ -221,11 +236,24 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     }
                     if (finalRefreshWorkspace || finalImportProjects) {
 //                generateExportedContentsJars(); // TODO: Moved to do this after workspace refresh only for now
+                        if (!finalRefreshWorkspace) {
+                            synchronized (workspaceLock) {
+                                for (String moduleName : modulesToRefresh) {
+                                    try {
+                                        aQute.bnd.build.Project project = getWorkspace().getProject(moduleName);
+                                        project.clear();
+                                        project.refresh();
+                                    } catch (Exception e) {
+                                        LOG.error("Failed to refresh project for module " + moduleName, e);
+                                    }
+                                }
+                            }
+                        }
+
                         reImportProjects();
                     }
                 }
             }.queue();
-
         }
     }
 
@@ -265,7 +293,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     LOG.error("Failed to generate magic buildpath jar for project: " + p, e);
                 }
             });
-        }catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Failed to generate magic buildpath jar", e);
         }
 
@@ -307,5 +335,40 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         }
         return false;
     }
+
+    @Override
+    public boolean reportErrors(aQute.bnd.build.Project project) {
+        return report(project, NotificationType.ERROR);
+    }
+
+    @Override
+    public boolean reportWarnings(aQute.bnd.build.Project project) {
+        return report(project, NotificationType.WARNING);
+    }
+
+    private boolean report(aQute.bnd.build.Project project, NotificationType type) {
+        List<String> messages;
+        switch (type) {
+            case ERROR:
+                messages = project.getErrors();
+                break;
+            case WARNING:
+                messages = project.getWarnings();
+                break;
+            default:
+                throw new RuntimeException("Unsupported type " + type);
+        }
+
+        if (messages != null && !messages.isEmpty()) {
+            for (String message : messages) {
+                LOG.info("Bnd project project: " + project.getName() + " message: " + message);
+                NOTIFICATIONS.createNotification("Amdatu IDE", message, type, null).notify(myProject);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
 }
