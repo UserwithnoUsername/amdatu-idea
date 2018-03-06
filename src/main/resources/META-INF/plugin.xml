@@ -44,6 +44,12 @@
         <!-- Custom module type supporting bndtools templates-->
         <!--<projectTemplatesFactory implementation="org.amdatu.ide.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
         <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.ide.templating.AmdatuIdeModuleType"/>
+
+        <!-- Plugin preferences -->
+        <applicationService serviceImplementation="org.amdatu.ide.preferences.AmdatuIdePreferences"></applicationService>
+        <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu IDE"
+                                 instance="org.amdatu.ide.preferences.AmdatuIdePreferencesEditor"></applicationConfigurable>
+
     </extensions>
 
 

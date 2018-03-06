@@ -28,7 +28,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
@@ -42,6 +46,7 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
     private Tree myTree;
     private WizardContext myWizardContext;
     private Template mySelectedTemplate;
+    private JCheckBox myOnyLatestCheckBox;
 
     public AmdatuIdeModuleSelectTemplateWizardStep(WizardContext context, AmdatuIdeModuleBuilder moduleBuilder) {
         super(context, moduleBuilder, moduleBuilder::isSuitableSdkType, null);
@@ -56,7 +61,10 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         }
 
         myTemplateMap = templateLoader.findTemplates(context.getProject(), templateType).stream()
+                .sorted(Comparator.comparing(Template::getCategory))
                 .collect(Collectors.groupingBy(Template::getCategory, LinkedHashMap::new, Collectors.toList()));
+        myTemplateMap.values().forEach(list -> Collections.sort(list, Comparator.comparing(Template::getName).thenComparing(Template::getVersion)));
+
     }
 
     @Override
@@ -67,9 +75,12 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
 
         component.add(super.getComponent());
 
+        myOnyLatestCheckBox = new JCheckBox("Only show latest version", null, true);
+
         myTree = new Tree();
         myTree.setRootVisible(false);
-        myTree.setModel(new TemplateTreeModel());
+        TemplateTreeModel treeModel = new TemplateTreeModel();
+        myTree.setModel(treeModel);
         myTree.setCellRenderer(new TemplateTreeCellRenderer());
 
         myTree.setSelectionRow(0);
@@ -78,6 +89,12 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         }
 
         component.add(new JBScrollPane(myTree, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED));
+
+        myOnyLatestCheckBox.addActionListener(e -> {
+            treeModel.update();
+            myTree.updateUI();
+        });
+        component.add(myOnyLatestCheckBox);
 
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
@@ -128,8 +145,10 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
     class TemplateTreeModel extends AbstractTreeModel {
 
         private final DefaultMutableTreeNode myRoot;
+        private LinkedHashMap<String, List<Template>> myFilteredTemplateMap;
 
         public TemplateTreeModel() {
+            update();
             myRoot = new DefaultMutableTreeNode(0);
         }
 
@@ -141,25 +160,25 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         @Override
         public Object getChild(Object parent, int index) {
             if (parent == myRoot) {
-                ArrayList<String> groups = new ArrayList<>(myTemplateMap.keySet());
+                ArrayList<String> groups = new ArrayList<>(myFilteredTemplateMap.keySet());
                 return groups.get(index);
             } else {
-                return myTemplateMap.get(parent).get(index);
+                return myFilteredTemplateMap.get(parent).get(index);
             }
         }
 
         @Override
         public int getChildCount(Object parent) {
             if (parent == myRoot) {
-                return myTemplateMap.size();
+                return myFilteredTemplateMap.size();
             } else {
-                return myTemplateMap.get(parent).size();
+                return myFilteredTemplateMap.get(parent).size();
             }
         }
 
         @Override
         public boolean isLeaf(Object node) {
-            return node != myRoot && !myTemplateMap.containsKey(node);
+            return node != myRoot && !myFilteredTemplateMap.containsKey(node);
         }
 
         @Override
@@ -170,10 +189,31 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         @Override
         public int getIndexOfChild(Object parent, Object child) {
             if (parent == myRoot) {
-                ArrayList<String> groups = new ArrayList<>(myTemplateMap.keySet());
+                ArrayList<String> groups = new ArrayList<>(myFilteredTemplateMap.keySet());
                 return groups.indexOf(child);
             } else {
-                return myTemplateMap.get(parent).indexOf(child);
+                return myFilteredTemplateMap.get(parent).indexOf(child);
+            }
+        }
+
+        public void update() {
+            myFilteredTemplateMap = new LinkedHashMap<>();
+            if (myOnyLatestCheckBox.isSelected()) {
+                for (Map.Entry<String, List<Template>> entry : myTemplateMap.entrySet()) {
+                    Map<String, Template> stringTemplateMap = new HashMap<>();
+                    for (Template template : entry.getValue()) {
+                        if (!stringTemplateMap.containsKey(template.getName())
+                                || stringTemplateMap.get(template.getName()).getVersion().compareTo(template.getVersion()) <= 0) {
+                            stringTemplateMap.put(template.getName(), template);
+                        }
+                    }
+                    ArrayList<Template> list = new ArrayList<>(stringTemplateMap.values());
+                    Collections.sort(list, Comparator.comparing(Template::getName));
+                    myFilteredTemplateMap.put(entry.getKey(), list);
+                }
+            }
+            else {
+                myFilteredTemplateMap = myTemplateMap;
             }
         }
     }
@@ -183,12 +223,20 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         @Override
         public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
             if (value instanceof String) {
-                append((String) value, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+                String category = (String) value;
+
+                if (category.contains("/")) {
+                    // The bndtools templates have some 'mmm /', 'nnnn /' prefix
+                    category = category.substring(category.indexOf("/") +1);
+                }
+
+                append(category, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
             } else if (value instanceof Template) {
                 Template template = (Template) value;
 
                 Icon icon = loadTemplateIcon(template);
                 setIcon(icon);
+
                 append(template.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
                 append(" - " + template.getVersion(), SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
                 append(" (" + template.getShortDescription() + ")", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
