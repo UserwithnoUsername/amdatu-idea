@@ -19,6 +19,9 @@ import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 import javax.swing.*;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.ui.LayeredIcon;
+import com.intellij.util.IconUtil;
 import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,7 +76,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
 
   private static class LaunchFactory extends FactoryBase {
     public LaunchFactory(@NotNull ConfigurationType type) {
-      super(type, message("bnd.run.configuration.name"), OsmorcIdeaIcons.BndLaunch);
+      super(type, message("bnd.run.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Application));
     }
 
     @NotNull
@@ -83,9 +86,16 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
     }
   }
 
+  private static Icon createLayeredIcon(Icon icon) {
+    LayeredIcon layeredIcon = new LayeredIcon(2);
+    layeredIcon.setIcon(OsmorcIdeaIcons.Bnd,0);
+    layeredIcon.setIcon(IconUtil.scale(icon, 0.5), 1,4);
+    return layeredIcon;
+  }
+
   private static class TestFactory extends FactoryBase {
     public TestFactory(@NotNull ConfigurationType type) {
-      super(type, message("bnd.test.configuration.name"), OsmorcIdeaIcons.BndTest);
+      super(type, message("bnd.test.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Junit));
     }
 
     @NotNull

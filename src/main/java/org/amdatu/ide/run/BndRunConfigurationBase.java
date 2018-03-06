@@ -32,69 +32,69 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 
 public abstract class BndRunConfigurationBase extends LocatableConfigurationBase implements ModuleRunProfile, PersistentStateComponent<Element> {
-  public BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {
-    super(project, factory, name);
-  }
-
-  @Override
-  protected Class<BndRunConfigurationOptions> getOptionsClass() {
-    return BndRunConfigurationOptions.class;
-  }
-
-  @Override
-  protected BndRunConfigurationOptions getOptions() {
-    return (BndRunConfigurationOptions)super.getOptions();
-  }
-
-  @Override
-  public Element getState() {
-    Element element = new Element("state");
-    super.writeExternal(element);
-    return element;
-  }
-
-  @NotNull
-  @Override
-  public SettingsEditor<? extends BndRunConfigurationBase> getConfigurationEditor() {
-    return new BndRunConfigurationEditor(getProject());
-  }
-
-  @Nullable
-  @Override
-  public abstract RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException;
-
-  @Override
-  public void checkConfiguration() throws RuntimeConfigurationException {
-    String file = getOptions().getBndRunFile();
-    if (file == null || !new File(file).isFile()) {
-      throw new RuntimeConfigurationException(OsmorcBundle.message("bnd.run.configuration.invalid", file));
+    public BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {
+        super(project, factory, name);
     }
-    if (getOptions().isUseAlternativeJre()) {
-      JavaParametersUtil.checkAlternativeJRE(getOptions().getAlternativeJrePath());
-    }
-  }
 
-  public static class Launch extends BndRunConfigurationBase {
-    public Launch(Project project, @NotNull ConfigurationFactory factory, String name) {
-      super(project, factory, name);
+    @Override
+    protected Class<BndRunConfigurationOptions> getOptionsClass() {
+        return BndRunConfigurationOptions.class;
+    }
+
+    @Override
+    protected BndRunConfigurationOptions getOptions() {
+        return (BndRunConfigurationOptions) super.getOptions();
+    }
+
+    @Override
+    public Element getState() {
+        Element element = new Element("state");
+        super.writeExternal(element);
+        return element;
+    }
+
+    @NotNull
+    @Override
+    public SettingsEditor<? extends BndRunConfigurationBase> getConfigurationEditor() {
+        return new BndRunConfigurationEditor(getProject());
     }
 
     @Nullable
     @Override
-    public BndLaunchState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
-      return new BndLaunchState(environment, this);
-    }
-  }
+    public abstract RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException;
 
-  public static class Test extends BndRunConfigurationBase {
-    public Test(Project project, @NotNull ConfigurationFactory factory, String name) {
-      super(project, factory, name);
-    }
-
-    @Nullable
     @Override
-    public BndTestState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
-      return new BndTestState(environment, this);
+    public void checkConfiguration() throws RuntimeConfigurationException {
+        String file = getOptions().getBndRunFile();
+        if (file == null || !new File(file).isFile()) {
+            throw new RuntimeConfigurationException(OsmorcBundle.message("bnd.run.configuration.invalid", file));
+        }
+        if (getOptions().isUseAlternativeJre()) {
+            JavaParametersUtil.checkAlternativeJRE(getOptions().getAlternativeJrePath());
+        }
     }
-  }
+
+    public static class Launch extends BndRunConfigurationBase {
+        public Launch(Project project, @NotNull ConfigurationFactory factory, String name) {
+            super(project, factory, name);
+        }
+
+        @Nullable
+        @Override
+        public BndLaunchState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
+            return new BndLaunchState(environment, this);
+        }
+    }
+
+    public static class Test extends BndRunConfigurationBase {
+        public Test(Project project, @NotNull ConfigurationFactory factory, String name) {
+            super(project, factory, name);
+        }
+
+        @Nullable
+        @Override
+        public BndTestState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
+            return new BndTestState(environment, this);
+        }
+    }
 }

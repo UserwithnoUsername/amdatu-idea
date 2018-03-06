@@ -18,9 +18,13 @@ package org.amdatu.ide.run;
 import com.intellij.execution.configurations.LocatableRunConfigurationOptions;
 
 public class BndRunConfigurationOptions extends LocatableRunConfigurationOptions {
-  private String bndRunFile;
-  private boolean useAlternativeJre = false;
-  private String alternativeJrePath;
+    private String bndRunFile;
+    private boolean useAlternativeJre = false;
+    private String alternativeJrePath;
+
+    private String moduleName;
+
+    private String test;
 
     public String getBndRunFile() {
         return bndRunFile;
@@ -44,5 +48,21 @@ public class BndRunConfigurationOptions extends LocatableRunConfigurationOptions
 
     public void setAlternativeJrePath(String alternativeJrePath) {
         this.alternativeJrePath = alternativeJrePath;
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
+    }
+
+    public String getTest() {
+        return test;
+    }
+
+    public void setTest(String tests) {
+        this.test = tests;
     }
 }

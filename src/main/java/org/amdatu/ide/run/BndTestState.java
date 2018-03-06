@@ -54,7 +54,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
@@ -80,12 +79,6 @@ public class BndTestState extends JavaCommandLineState {
 
     myConfiguration = configuration;
 
-    String bndRunFile = myConfiguration.getOptions().getBndRunFile();
-    File runFile = bndRunFile == null ? null : new File(bndRunFile);
-    if (runFile == null || !runFile.isFile()) {
-      throw new CantRunException(message("bnd.run.configuration.invalid", bndRunFile));
-    }
-
     try {
       String title = message("bnd.run.configuration.progress");
       myTester = ProgressManager.getInstance().run(new Task.WithResult<ProjectTester, Exception>(myConfiguration.getProject(), title, false) {
@@ -94,14 +87,23 @@ public class BndTestState extends JavaCommandLineState {
           indicator.setIndeterminate(true);
 
           Workspace workspace = environment.getProject().getComponent(AmdatuIdePlugin.class).getWorkspace();
-          Project project = workspace.getProject(myConfiguration.getName());
-          return project.getProjectTester();
+            BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
+            Project project = workspace.getProject(configurationOptions.getModuleName());
+
+          project.clear();
+          project.forceRefresh();
+
+            ProjectTester projectTester = project.getProjectTester();
+            if (configurationOptions.getTest() != null) {
+              projectTester.addTest(configurationOptions.getTest());
+            }
+            return projectTester;
         }
       });
     }
     catch (Throwable t) {
       LOG.info(t);
-      throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(t)));
+      throw new CantRunException(message("bnd.test.cannot.run", BndLaunchUtil.message(t)));
     }
 
     //noinspection InstanceofIncompatibleInterface
@@ -124,7 +126,7 @@ public class BndTestState extends JavaCommandLineState {
     }
     catch (Exception e) {
       LOG.info(e);
-      throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, e.getMessage()));
+      throw new CantRunException(message("bnd.test.cannot.run", e.getMessage()));
     }
   }
 
