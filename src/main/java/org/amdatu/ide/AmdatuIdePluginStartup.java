@@ -10,8 +10,9 @@ public class AmdatuIdePluginStartup implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
         AmdatuIdePlugin amdatuIdePlugin = project.getComponent(AmdatuIdePlugin.class);
-        amdatuIdePlugin.getWorkspace();
-        amdatuIdePlugin.reImportProjects();
+        if (amdatuIdePlugin.getWorkspace() != null) {
+            amdatuIdePlugin.reImportProjects();
+        }
     }
 
 }

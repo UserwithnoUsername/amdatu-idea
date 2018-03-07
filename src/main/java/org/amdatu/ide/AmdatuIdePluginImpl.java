@@ -1,37 +1,5 @@
 package org.amdatu.ide;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.intellij.notification.NotificationDisplayType;
-import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.containers.ContainerUtil;
-import org.amdatu.ide.imp.BndProjectImporter;
-import org.jetbrains.annotations.NotNull;
-
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.newvfs.BulkFileListener;
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiPackage;
-import com.intellij.util.messages.MessageBusConnection;
-
 import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Parameters;
@@ -42,8 +10,37 @@ import aQute.bnd.repository.maven.provider.MavenBndRepository;
 import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiDirectory;
+import com.intellij.psi.PsiPackage;
+import com.intellij.util.containers.ContainerUtil;
+import com.intellij.util.messages.MessageBusConnection;
+import org.amdatu.ide.imp.BndProjectImporter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import static org.amdatu.ide.i18n.OsmorcBundle.message;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
@@ -69,8 +66,13 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         return cnfDir.isDirectory() && getWorkspace() != null;
     }
 
+    @Nullable
     @Override
     public Workspace getWorkspace() {
+        if (workspace == null && !isBndWorkspace()) {
+            return null;
+        }
+
         synchronized (workspaceLock) {
             if (workspace == null) {
                 try {
@@ -218,7 +220,11 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     // Bnd file not part set of workspace configuration files has changed
                     importProjects = true;
                     Module module = ProjectFileIndex.getInstance(myProject).getModuleForFile(file);
-                    modulesToRefresh.add(module.getName());
+                    if (module != null) {
+                        modulesToRefresh.add(module.getName());
+                    } else {
+                        LOG.warn("Module unknown for file " + file.getPath());
+                    }
                 }
             }
 
