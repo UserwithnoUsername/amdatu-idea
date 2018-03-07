@@ -35,73 +35,73 @@ import com.intellij.openapi.project.Project;
 import icons.OsmorcIdeaIcons;
 
 public class BndRunConfigurationType extends ConfigurationTypeBase {
-  private static final String ID = "osgi.bnd.run";
-
-  @NotNull
-  public static BndRunConfigurationType getInstance() {
-    return ConfigurationTypeUtil.findConfigurationType(BndRunConfigurationType.class);
-  }
-
-  public BndRunConfigurationType() {
-    super(ID, message("bnd.configuration.name"), message("bnd.configuration.description"), OsmorcIdeaIcons.Bnd);
-    addFactory(new LaunchFactory(this));
-    addFactory(new TestFactory(this));
-  }
-
-  private static abstract class FactoryBase extends ConfigurationFactory {
-    private final String myName;
-    private final Icon myIcon;
-
-    public FactoryBase(@NotNull ConfigurationType type, @NotNull String name, @NotNull Icon icon) {
-      super(type);
-      myName = name;
-      myIcon = icon;
-    }
-
-    @Override
-    public String getName() {
-      return myName;
-    }
-
-    @Override
-    public Icon getIcon() {
-      return myIcon;
-    }
-
-    @Override
-    public boolean isApplicable(@NotNull Project project) {
-      return project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
-    }
-  }
-
-  private static class LaunchFactory extends FactoryBase {
-    public LaunchFactory(@NotNull ConfigurationType type) {
-      super(type, message("bnd.run.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Application));
-    }
+    private static final String ID = "osgi.bnd.run";
 
     @NotNull
-    @Override
-    public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
-      return new BndRunConfigurationBase.Launch(project, this, "");
-    }
-  }
-
-  private static Icon createLayeredIcon(Icon icon) {
-    LayeredIcon layeredIcon = new LayeredIcon(2);
-    layeredIcon.setIcon(OsmorcIdeaIcons.Bnd,0);
-    layeredIcon.setIcon(IconUtil.scale(icon, 0.5), 1,4);
-    return layeredIcon;
-  }
-
-  private static class TestFactory extends FactoryBase {
-    public TestFactory(@NotNull ConfigurationType type) {
-      super(type, message("bnd.test.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Junit));
+    public static BndRunConfigurationType getInstance() {
+        return ConfigurationTypeUtil.findConfigurationType(BndRunConfigurationType.class);
     }
 
-    @NotNull
-    @Override
-    public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
-      return new BndRunConfigurationBase.Test(project, this, "");
+    public BndRunConfigurationType() {
+        super(ID, message("bnd.configuration.name"), message("bnd.configuration.description"), OsmorcIdeaIcons.Bnd);
+        addFactory(new LaunchFactory(this));
+        addFactory(new TestFactory(this));
     }
-  }
+
+    private static abstract class FactoryBase extends ConfigurationFactory {
+        private final String myName;
+        private final Icon myIcon;
+
+        public FactoryBase(@NotNull ConfigurationType type, @NotNull String name, @NotNull Icon icon) {
+            super(type);
+            myName = name;
+            myIcon = icon;
+        }
+
+        @Override
+        public String getName() {
+            return myName;
+        }
+
+        @Override
+        public Icon getIcon() {
+            return myIcon;
+        }
+
+        @Override
+        public boolean isApplicable(@NotNull Project project) {
+            return project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
+        }
+    }
+
+    private static class LaunchFactory extends FactoryBase {
+        public LaunchFactory(@NotNull ConfigurationType type) {
+            super(type, message("bnd.run.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Application));
+        }
+
+        @NotNull
+        @Override
+        public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
+            return new BndRunConfigurationBase.Launch(project, this, "");
+        }
+    }
+
+    private static Icon createLayeredIcon(Icon icon) {
+        LayeredIcon layeredIcon = new LayeredIcon(2);
+        layeredIcon.setIcon(OsmorcIdeaIcons.Bnd, 0);
+        layeredIcon.setIcon(IconUtil.scale(icon, 0.5), 1, 4);
+        return layeredIcon;
+    }
+
+    private static class TestFactory extends FactoryBase {
+        public TestFactory(@NotNull ConfigurationType type) {
+            super(type, message("bnd.test.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Junit));
+        }
+
+        @NotNull
+        @Override
+        public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
+            return new BndRunConfigurationBase.Test(project, this, "");
+        }
+    }
 }

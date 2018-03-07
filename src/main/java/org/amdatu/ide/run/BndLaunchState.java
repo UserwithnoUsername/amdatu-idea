@@ -16,7 +16,6 @@ package org.amdatu.ide.run;
 import aQute.bnd.build.ProjectLauncher;
 import aQute.bnd.build.Run;
 import aQute.bnd.build.Workspace;
-
 import com.intellij.debugger.ui.HotSwapUI;
 import com.intellij.debugger.ui.HotSwapVetoableListener;
 import com.intellij.execution.CantRunException;
@@ -42,7 +41,6 @@ import com.intellij.openapi.util.io.FileAttributes;
 import com.intellij.openapi.util.io.FileSystemUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
-
 import org.amdatu.ide.AmdatuIdePlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,128 +51,135 @@ import static com.intellij.openapi.util.Pair.pair;
 import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 public class BndLaunchState extends JavaCommandLineState implements CompilationStatusListener, HotSwapVetoableListener {
-  private static final Logger LOG = Logger.getInstance(BndLaunchState.class);
-  private static final Pair<Long, Long> MISSING_BUNDLE = pair(0L, 0L);
+    private static final Logger LOG = Logger.getInstance(BndLaunchState.class);
+    private static final Pair<Long, Long> MISSING_BUNDLE = pair(0L, 0L);
 
-  private static final Map<String, NotificationGroup> ourNotificationGroups = ContainerUtil.newHashMap();
+    private static final Map<String, NotificationGroup> ourNotificationGroups = ContainerUtil.newHashMap();
 
-  private final BndRunConfigurationBase.Launch myConfiguration;
-  private final Project myProject;
-  private final NotificationGroup myNotifications;
-  private final ProjectLauncher myLauncher;
-  private final Map<String, Pair<Long, Long>> myBundleStamps;
+    private final BndRunConfigurationBase.Launch myConfiguration;
+    private final Project myProject;
+    private final NotificationGroup myNotifications;
+    private final ProjectLauncher myLauncher;
+    private final Map<String, Pair<Long, Long>> myBundleStamps;
 
-  public BndLaunchState(@NotNull ExecutionEnvironment environment, @NotNull BndRunConfigurationBase.Launch configuration) throws ExecutionException {
-    super(environment);
+    public BndLaunchState(@NotNull ExecutionEnvironment environment,
+                    @NotNull BndRunConfigurationBase.Launch configuration) throws ExecutionException {
+        super(environment);
 
-    myConfiguration = configuration;
-    myProject = myConfiguration.getProject();
+        myConfiguration = configuration;
+        myProject = myConfiguration.getProject();
 
-    String toolWindowId = environment.getExecutor().getToolWindowId();
-    NotificationGroup notificationGroup = ourNotificationGroups.get(toolWindowId);
-    if (notificationGroup == null) {
-      String name = BndRunConfigurationType.getInstance().getDisplayName() + " (" + toolWindowId + ")";
-      notificationGroup = NotificationGroup.toolWindowGroup(name, toolWindowId);
-      ourNotificationGroups.put(toolWindowId, notificationGroup);
-    }
-    myNotifications = notificationGroup;
-
-    String bndRunFile = myConfiguration.getOptions().getBndRunFile();
-    File runFile = bndRunFile == null ? null : new File(bndRunFile);
-    if (runFile == null || !runFile.isFile()) {
-      throw new CantRunException(message("bnd.run.configuration.invalid", bndRunFile));
-    }
-
-    try {
-      String title = message("bnd.run.configuration.progress");
-      myLauncher = ProgressManager.getInstance().run(new Task.WithResult<ProjectLauncher, Exception>(myProject, title, false) {
-        @Override
-        protected ProjectLauncher compute(@NotNull ProgressIndicator indicator) throws Exception {
-          indicator.setIndeterminate(true);
-          AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
-          Workspace workspace = amdatuIdePlugin.getWorkspace();
-
-          ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
-          launcher.prepare();
-
-          if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
-            throw new CantRunException(message("bnd.test.cannot.run", "project has errors"));
-          }
-
-          return launcher;
+        String toolWindowId = environment.getExecutor().getToolWindowId();
+        NotificationGroup notificationGroup = ourNotificationGroups.get(toolWindowId);
+        if (notificationGroup == null) {
+            String name = BndRunConfigurationType.getInstance().getDisplayName() + " (" + toolWindowId + ")";
+            notificationGroup = NotificationGroup.toolWindowGroup(name, toolWindowId);
+            ourNotificationGroups.put(toolWindowId, notificationGroup);
         }
-      });
-    }
-    catch (Throwable t) {
-      LOG.info(t);
-      throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(t)));
-    }
+        myNotifications = notificationGroup;
 
-    myBundleStamps = ContainerUtil.newHashMap();
-    bundlesChanged();
-  }
+        String bndRunFile = myConfiguration.getOptions().getBndRunFile();
+        File runFile = bndRunFile == null ? null : new File(bndRunFile);
+        if (runFile == null || !runFile.isFile()) {
+            throw new CantRunException(message("bnd.run.configuration.invalid", bndRunFile));
+        }
 
-  @Override
-  protected JavaParameters createJavaParameters() throws ExecutionException {
-    return BndLaunchUtil.createJavaParameters(myConfiguration, myLauncher);
-  }
+        try {
+            String title = message("bnd.run.configuration.progress");
+            myLauncher = ProgressManager.getInstance()
+                            .run(new Task.WithResult<ProjectLauncher, Exception>(myProject, title, false) {
+                                @Override
+                                protected ProjectLauncher compute(@NotNull ProgressIndicator indicator)
+                                                throws Exception {
+                                    indicator.setIndeterminate(true);
+                                    AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
+                                    Workspace workspace = amdatuIdePlugin.getWorkspace();
 
-  @NotNull
-  @Override
-  protected OSProcessHandler startProcess() throws ExecutionException {
-    OSProcessHandler handler = super.startProcess();
+                                    ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
+                                    launcher.prepare();
 
-    MessageBusConnection connection = myProject.getMessageBus().connect();
-    connection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
+                                    if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
+                                        throw new CantRunException(
+                                                        message("bnd.test.cannot.run", "project has errors"));
+                                    }
 
-    HotSwapUI hotSwapManager = HotSwapUI.getInstance(myProject);
-    hotSwapManager.addListener(this);
+                                    return launcher;
+                                }
+                            });
+        }
+        catch (Throwable t) {
+            LOG.info(t);
+            throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(t)));
+        }
 
-    handler.addProcessListener(new ProcessAdapter() {
-      @Override
-      public void processTerminated(@NotNull ProcessEvent event) {
-        connection.disconnect();
-        hotSwapManager.removeListener(BndLaunchState.this);
-        myLauncher.cleanup();
-      }
-    });
-
-    return handler;
-  }
-
-  @Override
-  public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext context) {
-    if (!aborted && errors == 0 && bundlesChanged()) {
-      try {
-        myLauncher.update();
-        myNotifications.createNotification(message("bnd.run.reloaded.text"), NotificationType.INFORMATION).notify(myProject);
-      }
-      catch (Exception e) {
-        LOG.error(e);
-      }
-    }
-  }
-
-  private boolean bundlesChanged() {
-    boolean changed = false;
-
-    for (String bundle : myLauncher.getRunBundles()) {
-      FileAttributes attributes = FileSystemUtil.getAttributes(bundle);
-      Pair<Long, Long> current = attributes != null ? pair(attributes.lastModified, attributes.length) : MISSING_BUNDLE;
-      if (!current.equals(myBundleStamps.get(bundle))) {
-        myBundleStamps.put(bundle, current);
-        changed = true;
-      }
+        myBundleStamps = ContainerUtil.newHashMap();
+        bundlesChanged();
     }
 
-    return changed;
-  }
+    @Override
+    protected JavaParameters createJavaParameters() throws ExecutionException {
+        return BndLaunchUtil.createJavaParameters(myConfiguration, myLauncher);
+    }
 
-  @Override
-  public void fileGenerated(String outputRoot, String relativePath) { }
+    @NotNull
+    @Override
+    protected OSProcessHandler startProcess() throws ExecutionException {
+        OSProcessHandler handler = super.startProcess();
 
-  @Override
-  public boolean shouldHotSwap(CompileContext context) {
-    return false;
-  }
+        MessageBusConnection connection = myProject.getMessageBus().connect();
+        connection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
+
+        HotSwapUI hotSwapManager = HotSwapUI.getInstance(myProject);
+        hotSwapManager.addListener(this);
+
+        handler.addProcessListener(new ProcessAdapter() {
+            @Override
+            public void processTerminated(@NotNull ProcessEvent event) {
+                connection.disconnect();
+                hotSwapManager.removeListener(BndLaunchState.this);
+                myLauncher.cleanup();
+            }
+        });
+
+        return handler;
+    }
+
+    @Override
+    public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext context) {
+        if (!aborted && errors == 0 && bundlesChanged()) {
+            try {
+                myLauncher.update();
+                myNotifications.createNotification(message("bnd.run.reloaded.text"), NotificationType.INFORMATION)
+                                .notify(myProject);
+            }
+            catch (Exception e) {
+                LOG.error(e);
+            }
+        }
+    }
+
+    private boolean bundlesChanged() {
+        boolean changed = false;
+
+        for (String bundle : myLauncher.getRunBundles()) {
+            FileAttributes attributes = FileSystemUtil.getAttributes(bundle);
+            Pair<Long, Long> current =
+                            attributes != null ? pair(attributes.lastModified, attributes.length) : MISSING_BUNDLE;
+            if (!current.equals(myBundleStamps.get(bundle))) {
+                myBundleStamps.put(bundle, current);
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    @Override
+    public void fileGenerated(String outputRoot, String relativePath) {
+    }
+
+    @Override
+    public boolean shouldHotSwap(CompileContext context) {
+        return false;
+    }
 }

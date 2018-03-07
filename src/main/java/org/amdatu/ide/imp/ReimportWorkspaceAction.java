@@ -15,26 +15,25 @@
  */
 package org.amdatu.ide.imp;
 
-import org.amdatu.ide.AmdatuIdePlugin;
-import org.jetbrains.annotations.NotNull;
-
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
+import org.amdatu.ide.AmdatuIdePlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class ReimportWorkspaceAction extends AnAction {
-  @Override
-  public void update(@NotNull AnActionEvent e) {
-    Project project = e.getProject();
-    boolean available = project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
-    e.getPresentation().setEnabledAndVisible(available);
-  }
-
-  @Override
-  public void actionPerformed(@NotNull AnActionEvent e) {
-    Project project = e.getProject();
-    if (project != null) {
-      BndProjectImporter.reimportWorkspace(project);
+    @Override
+    public void update(@NotNull AnActionEvent e) {
+        Project project = e.getProject();
+        boolean available = project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
+        e.getPresentation().setEnabledAndVisible(available);
     }
-  }
+
+    @Override
+    public void actionPerformed(@NotNull AnActionEvent e) {
+        Project project = e.getProject();
+        if (project != null) {
+            BndProjectImporter.reimportWorkspace(project);
+        }
+    }
 }

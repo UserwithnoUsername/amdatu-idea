@@ -15,45 +15,46 @@
  */
 package org.amdatu.ide.imp;
 
-import static org.amdatu.ide.i18n.OsmorcBundle.message;
-
-import java.io.File;
-
-import org.amdatu.ide.AmdatuIdePlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import aQute.bnd.build.Workspace;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.projectImport.ProjectImportProvider;
+import org.amdatu.ide.AmdatuIdePlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import aQute.bnd.build.Workspace;
+import java.io.File;
+
+import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 public class BndModuleImportProvider extends ProjectImportProvider {
-  public BndModuleImportProvider() {
-    super(new BndProjectImportBuilder());
-  }
+    public BndModuleImportProvider() {
+        super(new BndProjectImportBuilder());
+    }
 
-  @Override
-  public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
-    Workspace ws = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
-    if (ws == null) return false;
+    @Override
+    public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
+        Workspace ws = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
+        if (ws == null)
+            return false;
 
-    File projectDir = fileOrDir.isDirectory() ? new File(fileOrDir.getPath()) : new File(fileOrDir.getPath()).getParentFile();
-    return FileUtil.filesEqual(ws.getBase(), projectDir.getParentFile()) &&
-           projectDir.isDirectory() &&
-           new File(projectDir, BndProjectImporter.BND_FILE).isFile();
-  }
+        File projectDir = fileOrDir.isDirectory() ?
+                        new File(fileOrDir.getPath()) :
+                        new File(fileOrDir.getPath()).getParentFile();
+        return FileUtil.filesEqual(ws.getBase(), projectDir.getParentFile()) &&
+                        projectDir.isDirectory() &&
+                        new File(projectDir, BndProjectImporter.BND_FILE).isFile();
+    }
 
-  @Override
-  public boolean canCreateNewProject() {
-    return false;
-  }
+    @Override
+    public boolean canCreateNewProject() {
+        return false;
+    }
 
-  @Nullable
-  @Override
-  public String getFileSample() {
-    return message("bnd.import.project.sample");
-  }
+    @Nullable
+    @Override
+    public String getFileSample() {
+        return message("bnd.import.project.sample");
+    }
 }

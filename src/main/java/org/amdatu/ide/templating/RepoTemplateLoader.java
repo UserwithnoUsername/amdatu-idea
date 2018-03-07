@@ -52,7 +52,7 @@ public class RepoTemplateLoader {
                     .flatMap(repo -> findTemplates(repo, templateType))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 

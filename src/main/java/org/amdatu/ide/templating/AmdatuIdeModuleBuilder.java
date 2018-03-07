@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +41,6 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
 
     private WizardContext myWizardContext;
 
-
     public AmdatuIdeModuleBuilder() {
     }
 
@@ -52,7 +50,7 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
 
     @Override
     public ModuleType getModuleType() {
-    return AmdatuIdeModuleType.getInstance();
+        return AmdatuIdeModuleType.getInstance();
     }
 
     @Nullable
@@ -62,8 +60,9 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
     }
 
     @Override
-    public ModuleWizardStep[] createWizardSteps(@NotNull WizardContext wizardContext, @NotNull ModulesProvider modulesProvider) {
-        return new ModuleWizardStep[]{new AmdatuIdeModuleTemplateParamsStep(wizardContext)};
+    public ModuleWizardStep[] createWizardSteps(@NotNull WizardContext wizardContext,
+                    @NotNull ModulesProvider modulesProvider) {
+        return new ModuleWizardStep[] { new AmdatuIdeModuleTemplateParamsStep(wizardContext) };
     }
 
     @Nullable
@@ -81,13 +80,15 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
             assert rootDir != null : project;
             ModuleRootModificationUtil.addContentRoot(module, rootDir);
             ModuleRootModificationUtil.setSdkInherited(module);
-        } else {
+        }
+        else {
             Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
             workspace.refresh();
             try {
                 aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
                 new BndProjectImporter(project, workspace, Collections.singletonList(bndProject)).resolve(true);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -110,7 +111,8 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
         ResourceMap resourceMap;
         try {
             resourceMap = template.generateOutputs(map);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException("Failed to process myTemplate " + template.getName(), e);
         }
 
@@ -125,7 +127,8 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
                     File folder = new File(moduleRootDir, relativePath);
                     if (!folder.exists()) {
                         folder.mkdirs();
-                    } else if (!folder.isDirectory()) {
+                    }
+                    else if (!folder.isDirectory()) {
                         throw new RuntimeException("File exists but is not a dir" + folder);
                     }
                     break;
@@ -137,10 +140,12 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
 
                             IOUtils.copy(is, outputStream);
 
-                        } catch (IOException e) {
+                        }
+                        catch (IOException e) {
                             throw new RuntimeException("Failed to write " + file, e);
                         }
-                    } else {
+                    }
+                    else {
                         // TODO Just overwrite?
                         throw new RuntimeException("File exists." + file);
                     }

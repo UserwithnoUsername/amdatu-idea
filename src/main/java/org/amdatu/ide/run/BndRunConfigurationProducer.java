@@ -96,6 +96,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         return false;
     }
 
+
     @Nullable
     private static PsiMethod findTestMethod(PsiElement psiLocation) {
         PsiMethod psiMethod;

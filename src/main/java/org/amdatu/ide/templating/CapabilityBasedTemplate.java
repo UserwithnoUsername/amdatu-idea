@@ -1,6 +1,5 @@
 package org.amdatu.ide.templating;
 
-
 import aQute.bnd.osgi.resource.ResourceUtils;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.lib.io.IO;
@@ -70,7 +69,7 @@ public class CapabilityBasedTemplate implements Template {
         this.engine = engine;
         this.repository = repository;
 
-        Map<String,Object> attrs = capability.getAttributes();
+        Map<String, Object> attrs = capability.getAttributes();
 
         Object nameObj = attrs.get("name");
         this.name = nameObj instanceof String ? (String) nameObj : "<<unknown>>";
@@ -97,7 +96,8 @@ public class CapabilityBasedTemplate implements Template {
             if (dirStr.charAt(dirStr.length() - 1) != '/')
                 dirStr += '/';
             this.dir = dirStr;
-        } else {
+        }
+        else {
             this.dir = DEFAULT_DIR;
         }
 
@@ -160,19 +160,21 @@ public class CapabilityBasedTemplate implements Template {
                     if (ocdMap != null) {
                         if (ocdMap.size() == 1) {
                             @SuppressWarnings("unchecked")
-                            Entry<String,OCD> entry = (Entry<String,OCD>) ocdMap.entrySet().iterator().next();
+                            Entry<String, OCD> entry = (Entry<String, OCD>) ocdMap.entrySet().iterator().next();
                             // There is exactly one OCD, but if the capability specified the 'ocd' property then it must match.
                             if (ocdRef == null || ocdRef.equals(entry.getKey()))
                                 return new FelixOCDAdapter(entry.getValue());
 //                            log(IStatus.WARNING, String.format("MetaType entry '%s' from resource '%s' did not contain an Object Class Definition with id '%s'", metaTypePath, resourceId, ocdRef), null);
-                        } else {
+                        }
+                        else {
                             // There are multiple OCDs in the MetaType record, so the capability must have specified the 'ocd' property.
                             if (ocdRef != null) {
                                 OCD ocd = (OCD) ocdMap.get(ocdRef);
                                 if (ocd != null)
                                     return new FelixOCDAdapter(ocd);
 //                                log(IStatus.WARNING, String.format("MetaType entry '%s' from resource '%s' did not contain an Object Class Definition with id '%s'", metaTypePath, resourceId, ocdRef), null);
-                            } else {
+                            }
+                            else {
 //                                log(IStatus.WARNING, String.format("MetaType entry '%s' from resource '%s' contains multiple Object Class Definitions, and no 'ocd' property was specified.", metaTypePath, resourceId), null);
                             }
                         }
@@ -184,12 +186,13 @@ public class CapabilityBasedTemplate implements Template {
         // No MetaType could be loaded, so build one automatically from the parameters used in the templates.
         ObjectClassDefinitionImpl ocdImpl = new ObjectClassDefinitionImpl(name, description, null);
         ResourceMap inputs = getInputSources();
-        Map<String,String> params = engine.getTemplateParameters(inputs, monitor);
-        for (Entry<String,String> entry : params.entrySet()) {
-            AttributeDefinitionImpl ad = new AttributeDefinitionImpl(entry.getKey(), entry.getKey(), 0, AttributeDefinition.STRING);
+        Map<String, String> params = engine.getTemplateParameters(inputs, monitor);
+        for (Entry<String, String> entry : params.entrySet()) {
+            AttributeDefinitionImpl ad =
+                            new AttributeDefinitionImpl(entry.getKey(), entry.getKey(), 0, AttributeDefinition.STRING);
             if (entry.getValue() != null)
                 ad.setDefaultValue(new String[] {
-                        entry.getValue()
+                                entry.getValue()
                 });
             ocdImpl.addAttribute(ad, true);
         }
@@ -197,12 +200,13 @@ public class CapabilityBasedTemplate implements Template {
     }
 
     @Override
-    public ResourceMap generateOutputs(Map<String,List<Object>> parameters) throws Exception {
+    public ResourceMap generateOutputs(Map<String, List<Object>> parameters) throws Exception {
         return generateOutputs(parameters, new NullProgressMonitor());
     }
 
     @Override
-    public ResourceMap generateOutputs(Map<String,List<Object>> parameters, IProgressMonitor monitor) throws Exception {
+    public ResourceMap generateOutputs(Map<String, List<Object>> parameters, IProgressMonitor monitor)
+                    throws Exception {
         ResourceMap inputs = getInputSources();
         return engine.generateOutputs(inputs, parameters, monitor);
     }
@@ -219,7 +223,8 @@ public class CapabilityBasedTemplate implements Template {
             try {
                 File f = fetchBundle();
                 uri = new URI("jar:" + f.toURI().toURL() + "!/" + helpPath);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 // ignore
             }
         }
@@ -242,7 +247,8 @@ public class CapabilityBasedTemplate implements Template {
                             // strip the trailing slash
                             relativePath.substring(0, relativePath.length());
                             resource = new FolderResource();
-                        } else {
+                        }
+                        else {
                             // cannot use IO.collect() because it closes the whole JarInputStream
                             resource = BytesResource.loadFrom(in);
                         }
@@ -291,11 +297,12 @@ public class CapabilityBasedTemplate implements Template {
 //        }
 
         try {
-            _bundleFile =  repository.get(id, new aQute.bnd.version.Version(version.toString()), Collections.emptyMap());
+            _bundleFile = repository.get(id, new aQute.bnd.version.Version(version.toString()), Collections.emptyMap());
             if (_bundleFile != null) {
                 return _bundleFile;
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new IOException("Unable to fetch bundle for template: " + getName(), e);
         }
 
@@ -322,7 +329,8 @@ public class CapabilityBasedTemplate implements Template {
         if (capability == null) {
             if (other.capability != null)
                 return false;
-        } else if (!capability.equals(other.capability))
+        }
+        else if (!capability.equals(other.capability))
             return false;
         return true;
     }
@@ -425,7 +433,8 @@ public class CapabilityBasedTemplate implements Template {
             if (filter == ObjectClassDefinition.OPTIONAL || filter == ObjectClassDefinition.REQUIRED) {
                 boolean required = (filter == ObjectClassDefinition.REQUIRED);
                 iter = new RequiredFilterIterator(iter, required);
-            } else if (filter != ObjectClassDefinition.ALL) {
+            }
+            else if (filter != ObjectClassDefinition.ALL) {
                 return null;
             }
 
@@ -486,7 +495,8 @@ public class CapabilityBasedTemplate implements Template {
                     AD next;
                     do {
                         next = (AD) base.next();
-                    } while (next.isRequired() != required && base.hasNext());
+                    }
+                    while (next.isRequired() != required && base.hasNext());
 
                     if (next.isRequired() == required) {
                         return next;

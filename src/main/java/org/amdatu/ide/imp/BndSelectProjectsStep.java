@@ -15,59 +15,60 @@
  */
 package org.amdatu.ide.imp;
 
-import java.io.File;
-
-import org.amdatu.ide.i18n.OsmorcBundle;
-import org.jetbrains.annotations.NotNull;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.Workspace;
 import com.intellij.ide.util.projectWizard.WizardContext;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.projectImport.SelectImportedProjectsStep;
+import org.amdatu.ide.i18n.OsmorcBundle;
+import org.jetbrains.annotations.NotNull;
 
-import aQute.bnd.build.Project;
-import aQute.bnd.build.Workspace;
+import java.io.File;
 
 class BndSelectProjectsStep extends SelectImportedProjectsStep<Project> {
-  public BndSelectProjectsStep(WizardContext context) {
-    super(context);
-  }
+    public BndSelectProjectsStep(WizardContext context) {
+        super(context);
+    }
 
-  @Override
-  public String getHelpId() {
-    return "Import from Bnd_Bndtools Page 1";
-  }
+    @Override
+    public String getHelpId() {
+        return "Import from Bnd_Bndtools Page 1";
+    }
 
-  @Override
-  public void updateStep() {
-    initWorkspace();
-    super.updateStep();
-  }
+    @Override
+    public void updateStep() {
+        initWorkspace();
+        super.updateStep();
+    }
 
-  private void initWorkspace() {
-    final BndProjectImportBuilder builder = (BndProjectImportBuilder)getContext();
+    private void initWorkspace() {
+        final BndProjectImportBuilder builder = (BndProjectImportBuilder) getContext();
 
-    Workspace workspace = builder.getWorkspace();
-    if (workspace != null) return;
+        Workspace workspace = builder.getWorkspace();
+        if (workspace != null)
+            return;
 
-    ProgressManager.getInstance().run(new Task.Modal(null, OsmorcBundle.message("bnd.import.progress.enumerating"), false) {
-      @Override
-      public void run(@NotNull ProgressIndicator indicator) {
-        try {
-          String directory = getWizardContext().getProjectFileDirectory();
-          Workspace workspace = Workspace.getWorkspace(new File(directory), BndProjectImporter.CNF_DIR);
-          builder.setWorkspace(workspace, BndProjectImporter.getWorkspaceProjects(workspace));
-        }
-        catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-    });
-  }
+        ProgressManager.getInstance()
+                        .run(new Task.Modal(null, OsmorcBundle.message("bnd.import.progress.enumerating"), false) {
+                            @Override
+                            public void run(@NotNull ProgressIndicator indicator) {
+                                try {
+                                    String directory = getWizardContext().getProjectFileDirectory();
+                                    Workspace workspace = Workspace.getWorkspace(new File(directory),
+                                                    BndProjectImporter.CNF_DIR);
+                                    builder.setWorkspace(workspace, BndProjectImporter.getWorkspaceProjects(workspace));
+                                }
+                                catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        });
+    }
 
-  @Override
-  protected String getElementText(Project project) {
-    return project.getName() + " (" + project.getBase() + ")";
-  }
+    @Override
+    protected String getElementText(Project project) {
+        return project.getName() + " (" + project.getBase() + ")";
+    }
 }

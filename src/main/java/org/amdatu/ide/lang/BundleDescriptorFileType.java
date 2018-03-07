@@ -1,13 +1,12 @@
 package org.amdatu.ide.lang;
 
-import javax.swing.*;
-
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.fileTypes.LanguageFileType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.fileTypes.LanguageFileType;
+import javax.swing.Icon;
 
 public class BundleDescriptorFileType extends LanguageFileType {
 

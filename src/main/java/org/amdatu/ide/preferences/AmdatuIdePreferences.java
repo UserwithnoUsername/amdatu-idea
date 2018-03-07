@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 @State(name = "AmdatuIde", storages = @Storage("amdatu-ide.xml"))
-public class AmdatuIdePreferences implements PersistentStateComponent<AmdatuIdePreferences>{
+public class AmdatuIdePreferences implements PersistentStateComponent<AmdatuIdePreferences> {
 
     private List<String> myTemplateRepositoryUrls = ContainerUtil.newArrayList();
 

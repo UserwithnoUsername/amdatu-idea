@@ -24,164 +24,163 @@
  */
 package org.amdatu.ide.lang;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
+import com.intellij.lexer.LexerBase;
+import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.lang.manifest.psi.ManifestTokenType;
 
-import com.intellij.lexer.LexerBase;
-import com.intellij.psi.tree.IElementType;
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Slightly modified copy of the {@link org.jetbrains.lang.manifest.parser.ManifestLexer} that supports the line
  * continuations in bnd's bundle descriptor files.
  */
 public class BundleDescriptorLexer extends LexerBase {
-  private static final Map<Character, IElementType> SPECIAL_CHARACTERS_TOKEN_MAPPING;
-  static {
-    SPECIAL_CHARACTERS_TOKEN_MAPPING = new HashMap<>();
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put(':', ManifestTokenType.COLON);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put(';', ManifestTokenType.SEMICOLON);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put(',', ManifestTokenType.COMMA);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put('=', ManifestTokenType.EQUALS);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put('(', ManifestTokenType.OPENING_PARENTHESIS_TOKEN);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put(')', ManifestTokenType.CLOSING_PARENTHESIS_TOKEN);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put('[', ManifestTokenType.OPENING_BRACKET_TOKEN);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put(']', ManifestTokenType.CLOSING_BRACKET_TOKEN);
-    SPECIAL_CHARACTERS_TOKEN_MAPPING.put('\"', ManifestTokenType.QUOTE);
-  }
+    private static final Map<Character, IElementType> SPECIAL_CHARACTERS_TOKEN_MAPPING;
 
-  private CharSequence myBuffer;
-  private int myEndOffset;
-  private int myTokenStart;
-  private int myTokenEnd;
-  private boolean myDefaultState;
-  private IElementType myTokenType;
-
-  @Override
-  public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
-    myBuffer = buffer;
-    myEndOffset = endOffset;
-    myTokenStart = myTokenEnd = startOffset;
-    myDefaultState = initialState == 0;
-
-    parseNextToken();
-  }
-
-  @Override
-  public void advance() {
-    myTokenStart = myTokenEnd;
-    parseNextToken();
-  }
-
-  @Override
-  public int getState() {
-    return myDefaultState ? 0 : 1;
-  }
-
-  @Nullable
-  @Override
-  public IElementType getTokenType() {
-    return myTokenType;
-  }
-
-  @Override
-  public int getTokenStart() {
-    return myTokenStart;
-  }
-
-  @Override
-  public int getTokenEnd() {
-    return myTokenEnd;
-  }
-
-  @Override
-  public int getBufferEnd() {
-    return myEndOffset;
-  }
-
-  @NotNull
-  @Override
-  public CharSequence getBufferSequence() {
-    return myBuffer;
-  }
-
-  private void parseNextToken() {
-    if (myTokenStart >= myEndOffset) {
-      myTokenType = null;
-      myTokenEnd = myTokenStart;
-      return;
+    static {
+        SPECIAL_CHARACTERS_TOKEN_MAPPING = new HashMap<>();
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put(':', ManifestTokenType.COLON);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put(';', ManifestTokenType.SEMICOLON);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put(',', ManifestTokenType.COMMA);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put('=', ManifestTokenType.EQUALS);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put('(', ManifestTokenType.OPENING_PARENTHESIS_TOKEN);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put(')', ManifestTokenType.CLOSING_PARENTHESIS_TOKEN);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put('[', ManifestTokenType.OPENING_BRACKET_TOKEN);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put(']', ManifestTokenType.CLOSING_BRACKET_TOKEN);
+        SPECIAL_CHARACTERS_TOKEN_MAPPING.put('\"', ManifestTokenType.QUOTE);
     }
 
-    boolean atLineStart = myTokenStart == 0 ||
-            (myBuffer.charAt(myTokenStart - 1) == '\n'
-              && (myTokenStart == 1 || myBuffer.charAt(myTokenStart - 2) != '\\'));
-    char c = myBuffer.charAt(myTokenStart);
+    private CharSequence myBuffer;
+    private int myEndOffset;
+    private int myTokenStart;
+    private int myTokenEnd;
+    private boolean myDefaultState;
+    private IElementType myTokenType;
 
-    if (atLineStart) {
-      myDefaultState = true;
-      if (c == ' ') {
-        myTokenType = ManifestTokenType.SIGNIFICANT_SPACE;
-        myTokenEnd = myTokenStart + 1;
-      }
-      else if (c == '\n') {
-        myTokenType = ManifestTokenType.SECTION_END;
-        myTokenEnd = myTokenStart + 1;
-      }
-      else {
-        int headerEnd = myTokenStart + 1;
-        while (headerEnd < myEndOffset) {
-          c = myBuffer.charAt(headerEnd);
-          if (c == ':') {
-            myDefaultState = false;
-            break;
-          }
-          else if (c == '\n') {
-            break;
-          }
-          ++headerEnd;
+    @Override
+    public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
+        myBuffer = buffer;
+        myEndOffset = endOffset;
+        myTokenStart = myTokenEnd = startOffset;
+        myDefaultState = initialState == 0;
+
+        parseNextToken();
+    }
+
+    @Override
+    public void advance() {
+        myTokenStart = myTokenEnd;
+        parseNextToken();
+    }
+
+    @Override
+    public int getState() {
+        return myDefaultState ? 0 : 1;
+    }
+
+    @Nullable
+    @Override
+    public IElementType getTokenType() {
+        return myTokenType;
+    }
+
+    @Override
+    public int getTokenStart() {
+        return myTokenStart;
+    }
+
+    @Override
+    public int getTokenEnd() {
+        return myTokenEnd;
+    }
+
+    @Override
+    public int getBufferEnd() {
+        return myEndOffset;
+    }
+
+    @NotNull
+    @Override
+    public CharSequence getBufferSequence() {
+        return myBuffer;
+    }
+
+    private void parseNextToken() {
+        if (myTokenStart >= myEndOffset) {
+            myTokenType = null;
+            myTokenEnd = myTokenStart;
+            return;
         }
-        myTokenType = ManifestTokenType.HEADER_NAME;
-        myTokenEnd = headerEnd;
-      }
-    }
-    else if (!myDefaultState && c == ':') {
-      myTokenType = ManifestTokenType.COLON;
-      myTokenEnd = myTokenStart + 1;
-    }
-    else if (!myDefaultState && c == ' ') {
-      myTokenType = ManifestTokenType.SIGNIFICANT_SPACE;
-      myTokenEnd = myTokenStart + 1;
-      myDefaultState = true;
-    }
-    else {
-      myDefaultState = true;
-      IElementType special;
-      if (c == '\n') {
-        myTokenType = ManifestTokenType.NEWLINE;
-        myTokenEnd = myTokenStart + 1;
-      }
-      else if ((special = SPECIAL_CHARACTERS_TOKEN_MAPPING.get(c)) != null) {
-        myTokenType = special;
-        myTokenEnd = myTokenStart + 1;
-      }
-      else {
-        int valueEnd = myTokenStart + 1;
-        char prev = c;
-        while (valueEnd < myEndOffset) {
-          c = myBuffer.charAt(valueEnd);
-          if (prev != '\\' && c == '\n' /*|| SPECIAL_CHARACTERS_TOKEN_MAPPING.containsKey(c)*/) {
-            break;
-          }
-          ++valueEnd;
-          prev = c;
+
+        boolean atLineStart = myTokenStart == 0 ||
+                        (myBuffer.charAt(myTokenStart - 1) == '\n'
+                                        && (myTokenStart == 1 || myBuffer.charAt(myTokenStart - 2) != '\\'));
+        char c = myBuffer.charAt(myTokenStart);
+
+        if (atLineStart) {
+            myDefaultState = true;
+            if (c == ' ') {
+                myTokenType = ManifestTokenType.SIGNIFICANT_SPACE;
+                myTokenEnd = myTokenStart + 1;
+            }
+            else if (c == '\n') {
+                myTokenType = ManifestTokenType.SECTION_END;
+                myTokenEnd = myTokenStart + 1;
+            }
+            else {
+                int headerEnd = myTokenStart + 1;
+                while (headerEnd < myEndOffset) {
+                    c = myBuffer.charAt(headerEnd);
+                    if (c == ':') {
+                        myDefaultState = false;
+                        break;
+                    }
+                    else if (c == '\n') {
+                        break;
+                    }
+                    ++headerEnd;
+                }
+                myTokenType = ManifestTokenType.HEADER_NAME;
+                myTokenEnd = headerEnd;
+            }
         }
-        myTokenType = ManifestTokenType.HEADER_VALUE_PART;
-        myTokenEnd = valueEnd;
-      }
+        else if (!myDefaultState && c == ':') {
+            myTokenType = ManifestTokenType.COLON;
+            myTokenEnd = myTokenStart + 1;
+        }
+        else if (!myDefaultState && c == ' ') {
+            myTokenType = ManifestTokenType.SIGNIFICANT_SPACE;
+            myTokenEnd = myTokenStart + 1;
+            myDefaultState = true;
+        }
+        else {
+            myDefaultState = true;
+            IElementType special;
+            if (c == '\n') {
+                myTokenType = ManifestTokenType.NEWLINE;
+                myTokenEnd = myTokenStart + 1;
+            }
+            else if ((special = SPECIAL_CHARACTERS_TOKEN_MAPPING.get(c)) != null) {
+                myTokenType = special;
+                myTokenEnd = myTokenStart + 1;
+            }
+            else {
+                int valueEnd = myTokenStart + 1;
+                char prev = c;
+                while (valueEnd < myEndOffset) {
+                    c = myBuffer.charAt(valueEnd);
+                    if (prev != '\\' && c == '\n' /*|| SPECIAL_CHARACTERS_TOKEN_MAPPING.containsKey(c)*/) {
+                        break;
+                    }
+                    ++valueEnd;
+                    prev = c;
+                }
+                myTokenType = ManifestTokenType.HEADER_VALUE_PART;
+                myTokenEnd = valueEnd;
+            }
+        }
     }
-  }
 }

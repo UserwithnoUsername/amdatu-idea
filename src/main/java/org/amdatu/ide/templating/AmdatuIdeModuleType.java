@@ -5,7 +5,7 @@ import com.intellij.openapi.module.ModuleType;
 import com.intellij.openapi.module.ModuleTypeManager;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
+import javax.swing.Icon;
 
 public class AmdatuIdeModuleType extends ModuleType<AmdatuIdeModuleBuilder> {
 

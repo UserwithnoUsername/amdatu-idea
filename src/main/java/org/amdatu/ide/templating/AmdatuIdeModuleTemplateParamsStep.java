@@ -61,7 +61,7 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
 
                     JPanel attributePanel = new JPanel();
                     attributePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-                    attributePanel.setMaximumSize(new Dimension(4000, 30) );
+                    attributePanel.setMaximumSize(new Dimension(4000, 30));
 
                     JLabel label = new JLabel(attributeDefinition.getName());
                     label.setPreferredSize(new Dimension(120, 30));
@@ -69,15 +69,16 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
                     JTextField textField = new JTextField(defaultValue) {
                         @Override
                         public Dimension getPreferredSize() {
-                            return new Dimension(getParent().getWidth() - 140 ,30);
+                            return new Dimension(getParent().getWidth() - 140, 30);
                         }
                     };
 
-                    attrUpdaters.add(map -> map.put(attributeDefinition.getName(), singletonList(textField.getText().trim())));
+                    attrUpdaters.add(map -> map.put(attributeDefinition.getName(),
+                                    singletonList(textField.getText().trim())));
 
                     attributePanel.add(label);
                     attributePanel.add(textField);
-                    attrPanel.add( attributePanel );
+                    attrPanel.add(attributePanel);
                 }
 
             }
@@ -85,7 +86,8 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
             Spacer spacer = new Spacer();
             spacer.setPreferredSize(new Dimension(1000, 1000));
             attrPanel.add(spacer);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         component.add(attrPanel);
@@ -102,10 +104,11 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
         try {
             Template template = getTemplate();
             return template != null
-                    && template.getMetadata() != null
-                    && template.getMetadata().getAttributeDefinitions(-1) != null
-                    && template.getMetadata().getAttributeDefinitions(-1).length > 0;
-        } catch (Exception e) {
+                            && template.getMetadata() != null
+                            && template.getMetadata().getAttributeDefinitions(-1) != null
+                            && template.getMetadata().getAttributeDefinitions(-1).length > 0;
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -118,7 +121,7 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
 
     public Map<String, List<Object>> getAttributes() {
         Map<String, List<Object>> map = new HashMap<>();
-        attrUpdaters.forEach(consumer ->consumer.accept(map));
+        attrUpdaters.forEach(consumer -> consumer.accept(map));
         return map;
     }
 }

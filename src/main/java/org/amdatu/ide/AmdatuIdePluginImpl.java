@@ -48,8 +48,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
     private static final Logger LOG = Logger.getInstance(AmdatuIdePluginImpl.class);
     public static final NotificationGroup NOTIFICATIONS =
-            new NotificationGroup("Amdatu IDE", NotificationDisplayType.TOOL_WINDOW, true);
-
+                    new NotificationGroup("Amdatu IDE", NotificationDisplayType.TOOL_WINDOW, true);
 
     private final Object workspaceLock = new Object();
     private final Project myProject;
@@ -78,7 +77,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 try {
                     workspace = new Workspace(new File(myProject.getBasePath()));
 
-                    Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Created bnd workspace'", NotificationType.INFORMATION));
+                    Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Created bnd workspace'",
+                                    NotificationType.INFORMATION));
                     reportWorkspaceIssues();
 
                     // TODO: This could slow down startup a bit but we need these.
@@ -86,9 +86,11 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
                     MessageBusConnection connection = myProject.getMessageBus().connect();
                     connection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     LOG.error("Failed to create bnd workspace", e);
-                    throw new RuntimeException(e); // TODO: Just logging should do but for now this makes errors show quickly
+                    throw new RuntimeException(
+                                    e); // TODO: Just logging should do but for now this makes errors show quickly
                 }
             }
             return workspace;
@@ -98,7 +100,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     public void refreshWorkspace() {
         synchronized (workspaceLock) {
             if (workspace == null) {
-                Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Workspace not initialized, not refresing'", NotificationType.INFORMATION));
+                Notifications.Bus.notify(new Notification("amdatu-ide", "Success",
+                                "Workspace not initialized, not refresing'", NotificationType.INFORMATION));
                 return;
             }
             long start = System.currentTimeMillis();
@@ -107,7 +110,9 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
             refreshRepositories();
 
-            Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms", NotificationType.INFORMATION));
+            Notifications.Bus.notify(new Notification("amdatu-ide", "Success",
+                            "Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms",
+                            NotificationType.INFORMATION));
             reportWorkspaceIssues();
         }
     }
@@ -119,8 +124,10 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
          */
         if (workspace.isOk()) {
             BndProjectImporter.reimportWorkspace(myProject);
-            Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Projects re-imported", NotificationType.INFORMATION));
-        } else {
+            Notifications.Bus.notify(new Notification("amdatu-ide", "Success", "Projects re-imported",
+                            NotificationType.INFORMATION));
+        }
+        else {
             LOG.warn("Workspace not ok, not re-importing projects.");
         }
     }
@@ -131,12 +138,14 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             if (plugin instanceof Refreshable) {
                 try {
                     ((Refreshable) plugin).refresh();
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     if (plugin instanceof MavenBndRepository && e instanceof NullPointerException) {
                         // This repo doesn't init until it's used and throws an NPE on refresh
                         // TODO: Report as BND issue (if not already fixed in next)
                         LOG.info("Failed to refresh repository, '" + plugin.getName() + "'", e);
-                    } else {
+                    }
+                    else {
                         LOG.error("Failed to refresh repository, '" + plugin.getName() + "'", e);
                     }
 
@@ -148,13 +157,15 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     private void reportWorkspaceIssues() {
         if (workspace.getWarnings() != null && !workspace.getWarnings().isEmpty()) {
             for (String warning : workspace.getWarnings()) {
-                Notifications.Bus.notify(new Notification("amdatu-ide", "Warning", formatMessage(warning), NotificationType.WARNING));
+                Notifications.Bus.notify(new Notification("amdatu-ide", "Warning", formatMessage(warning),
+                                NotificationType.WARNING));
             }
         }
 
         if (workspace.getErrors() != null && !workspace.getErrors().isEmpty()) {
             for (String error : workspace.getErrors()) {
-                Notifications.Bus.notify(new Notification("amdatu-ide", "Error", formatMessage(error), NotificationType.ERROR));
+                Notifications.Bus.notify(new Notification("amdatu-ide", "Error", formatMessage(error),
+                                NotificationType.ERROR));
             }
         }
     }
@@ -163,7 +174,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         Report.Location location = workspace.getLocation(message);
         if (location == null) {
             return message;
-        } else {
+        }
+        else {
             int line = location.line + 1; // lines seem to start at 0 for bnd
             return "[file: '" + location.file + "', line: " + line + "]: " + message;
         }
@@ -197,8 +209,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
             myWorkspaceFileNames.clear();
             myWorkspaceFileNames.addAll(workspaceFiles.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toSet()));
+                            .map(File::getAbsolutePath)
+                            .collect(Collectors.toSet()));
         }
 
         @Override
@@ -222,7 +234,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     Module module = ProjectFileIndex.getInstance(myProject).getModuleForFile(file);
                     if (module != null) {
                         modulesToRefresh.add(module.getName());
-                    } else {
+                    }
+                    else {
                         LOG.warn("Module unknown for file " + file.getPath());
                     }
                 }
@@ -249,7 +262,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                                         aQute.bnd.build.Project project = getWorkspace().getProject(moduleName);
                                         project.clear();
                                         project.refresh();
-                                    } catch (Exception e) {
+                                    }
+                                    catch (Exception e) {
                                         LOG.error("Failed to refresh project for module " + moduleName, e);
                                     }
                                 }
@@ -284,22 +298,24 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                             project.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
                             project.prepare();
 
-
                             Builder projectBuilder = new ProjectBuilder(project);
                             if (subBuilder.getPropertiesFile() != null) {
                                 projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
                             }
                             projectBuilder.setBase(base);
                             Jar build = projectBuilder.build();
-                            File outputFile = project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
+                            File outputFile =
+                                            project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
                             build.write(outputFile);
                         }
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     LOG.error("Failed to generate magic buildpath jar for project: " + p, e);
                 }
             });
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             LOG.error("Failed to generate magic buildpath jar", e);
         }
 
@@ -321,12 +337,15 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             try {
                 PsiPackage psiPackage = javaPsiFacade.findPackage(pkg);
                 if (psiPackage == null) {
-                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No psi package for: " + pkg, NotificationType.INFORMATION));
+                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No psi package for: " + pkg,
+                                    NotificationType.INFORMATION));
                     continue;
                 }
 
-                if (psiPackage.getDirectories() == null && psiPackage.getDirectories() == null) { // Check twice the first call somehow returns null sometimes where the second call doesn't
-                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No dirs for package: " + pkg, NotificationType.INFORMATION));
+                if (psiPackage.getDirectories() == null && psiPackage.getDirectories()
+                                == null) { // Check twice the first call somehow returns null sometimes where the second call doesn't
+                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No dirs for package: " + pkg,
+                                    NotificationType.INFORMATION));
                 }
 
                 for (PsiDirectory psiDirectory : psiPackage.getDirectories()) {
@@ -335,7 +354,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     }
                 }
 
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
             }
         }
@@ -371,10 +391,10 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 NOTIFICATIONS.createNotification("Amdatu IDE", message, type, null).notify(myProject);
             }
             return true;
-        } else {
+        }
+        else {
             return false;
         }
     }
-
 
 }

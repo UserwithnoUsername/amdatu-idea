@@ -9,7 +9,6 @@ public interface AmdatuIdePlugin {
     /**
      * Get the bnd workspace for a project
      *
-     *
      * @return The bnd {@link Workspace} for the project
      */
     Workspace getWorkspace();
