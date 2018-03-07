@@ -56,14 +56,16 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         String templateType;
         if (context.isCreatingNewProject()) {
             templateType = "workspace";
-        } else {
+        }
+        else {
             templateType = "project";
         }
 
         myTemplateMap = templateLoader.findTemplates(context.getProject(), templateType).stream()
-                .sorted(Comparator.comparing(Template::getCategory))
-                .collect(Collectors.groupingBy(Template::getCategory, LinkedHashMap::new, Collectors.toList()));
-        myTemplateMap.values().forEach(list -> Collections.sort(list, Comparator.comparing(Template::getName).thenComparing(Template::getVersion)));
+                        .sorted(Comparator.comparing(Template::getCategory))
+                        .collect(Collectors.groupingBy(Template::getCategory, LinkedHashMap::new, Collectors.toList()));
+        myTemplateMap.values().forEach(list -> Collections
+                        .sort(list, Comparator.comparing(Template::getName).thenComparing(Template::getVersion)));
 
     }
 
@@ -108,11 +110,13 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
                 mySelectedTemplate = ((Template) selected);
                 try {
                     textPane.setText(IOUtils.toString(mySelectedTemplate.getHelpContent()));
-                } catch (IOException e1) {
+                }
+                catch (IOException e1) {
                     textPane.setText("<p>Failed to load description<p>");
                 }
 
-            } else {
+            }
+            else {
                 mySelectedTemplate = null;
                 textPane.setText("");
             }
@@ -162,8 +166,12 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
             if (parent == myRoot) {
                 ArrayList<String> groups = new ArrayList<>(myFilteredTemplateMap.keySet());
                 return groups.get(index);
-            } else {
+            }
+            else if (parent instanceof String) {
                 return myFilteredTemplateMap.get(parent).get(index);
+            }
+            else {
+                throw new RuntimeException("Unknown parent " + parent);
             }
         }
 
@@ -171,14 +179,18 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         public int getChildCount(Object parent) {
             if (parent == myRoot) {
                 return myFilteredTemplateMap.size();
-            } else {
+            }
+            else if (parent instanceof String) {
                 return myFilteredTemplateMap.get(parent).size();
+            }
+            else {
+                throw new RuntimeException("Unknown parent " + parent);
             }
         }
 
         @Override
         public boolean isLeaf(Object node) {
-            return node != myRoot && !myFilteredTemplateMap.containsKey(node);
+            return node != myRoot && node instanceof String && !myFilteredTemplateMap.containsKey(node);
         }
 
         @Override
@@ -188,11 +200,15 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
 
         @Override
         public int getIndexOfChild(Object parent, Object child) {
-            if (parent == myRoot) {
+            if (parent == myRoot && child instanceof String) {
                 ArrayList<String> groups = new ArrayList<>(myFilteredTemplateMap.keySet());
                 return groups.indexOf(child);
-            } else {
+            }
+            else if (parent instanceof String && child instanceof Template) {
                 return myFilteredTemplateMap.get(parent).indexOf(child);
+            }
+            else {
+                throw new RuntimeException("Unknown parent child combination parent: " + parent + " child: " + child);
             }
         }
 
@@ -203,7 +219,8 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
                     Map<String, Template> stringTemplateMap = new HashMap<>();
                     for (Template template : entry.getValue()) {
                         if (!stringTemplateMap.containsKey(template.getName())
-                                || stringTemplateMap.get(template.getName()).getVersion().compareTo(template.getVersion()) <= 0) {
+                                        || stringTemplateMap.get(template.getName()).getVersion()
+                                        .compareTo(template.getVersion()) <= 0) {
                             stringTemplateMap.put(template.getName(), template);
                         }
                     }
@@ -221,17 +238,19 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
     class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
 
         @Override
-        public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+        public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded,
+                        boolean leaf, int row, boolean hasFocus) {
             if (value instanceof String) {
                 String category = (String) value;
 
                 if (category.contains("/")) {
                     // The bndtools templates have some 'mmm /', 'nnnn /' prefix
-                    category = category.substring(category.indexOf("/") +1);
+                    category = category.substring(category.indexOf("/") + 1);
                 }
 
                 append(category, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
-            } else if (value instanceof Template) {
+            }
+            else if (value instanceof Template) {
                 Template template = (Template) value;
 
                 Icon icon = loadTemplateIcon(template);
@@ -254,12 +273,14 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
                 if (iconUri.getScheme().equals("data")) {
                     DataUrl dataUrl = new DataUrlSerializer().unserialize(iconUri.toString());
                     data = dataUrl.getData();
-                } else {
+                }
+                else {
                     data = IOUtils.toByteArray(iconUri.toURL().openStream());
                 }
                 BufferedImage image = ImageIO.read(new ByteArrayInputStream(data));
                 icon = IconUtil.createImageIcon((Image) image);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 LOG.warn("Failed to load icon for template: " + template, e);
             }
         }
