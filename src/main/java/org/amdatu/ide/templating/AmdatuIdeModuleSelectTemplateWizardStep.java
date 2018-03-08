@@ -71,8 +71,8 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
         myTemplateMap = templateLoader.findTemplates(context.getProject(), templateType).stream()
                         .sorted(Comparator.comparing(Template::getCategory))
                         .collect(Collectors.groupingBy(Template::getCategory, LinkedHashMap::new, Collectors.toList()));
-        myTemplateMap.values().forEach(list -> Collections
-                        .sort(list, Comparator.comparing(Template::getName).thenComparing(Template::getVersion)));
+        myTemplateMap.values().forEach(list -> list
+                        .sort(Comparator.comparing(Template::getName).thenComparing(Template::getVersion)));
 
     }
 
@@ -232,7 +232,7 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
                         }
                     }
                     ArrayList<Template> list = new ArrayList<>(stringTemplateMap.values());
-                    Collections.sort(list, Comparator.comparing(Template::getName));
+                    list.sort(Comparator.comparing(Template::getName));
                     myFilteredTemplateMap.put(entry.getKey(), list);
                 }
             }

@@ -62,7 +62,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     public boolean isBndWorkspace() {
         File projectBase = new File(myProject.getBasePath());
         File cnfDir = new File(projectBase, Workspace.CNFDIR);
-        return cnfDir.isDirectory() && getWorkspace() != null;
+        return cnfDir.isDirectory();
     }
 
     @Nullable

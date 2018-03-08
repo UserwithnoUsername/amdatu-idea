@@ -17,7 +17,6 @@ import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
 import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
 
 import aQute.bnd.osgi.Constants;
-import com.intellij.execution.actions.ConfigurationFromContext;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -39,8 +38,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.Nullable;
 import org.junit.runner.RunWith;
-
-import java.util.Objects;
 
 public abstract class BndRunConfigurationProducer extends RunConfigurationProducer<BndRunConfigurationBase> {
 
