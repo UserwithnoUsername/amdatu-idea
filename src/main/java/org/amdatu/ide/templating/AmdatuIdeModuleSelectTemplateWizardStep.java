@@ -191,7 +191,7 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
                 return myFilteredTemplateMap.get(parent).size();
             }
             else {
-                throw new RuntimeException("Unknown parent " + parent);
+                return 0;
             }
         }
 

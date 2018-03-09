@@ -15,6 +15,7 @@ import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -22,6 +23,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
@@ -322,44 +324,48 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     }
 
     private boolean isExportingNonModuleClasses(Builder builder) {
-        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(myProject);
-        ProjectFileIndex index = ProjectRootManager.getInstance(myProject).getFileIndex();
+        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
+            JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(myProject);
+            ProjectFileIndex index = ProjectRootManager.getInstance(myProject).getFileIndex();
 
-        Parameters exportPackage = builder.getExportPackage();
-        for (String pkg : exportPackage.keySet()) {
-            if (pkg.endsWith("*")) {
-                pkg = pkg.substring(0, pkg.length() - 1);
-            }
-            if (pkg.endsWith(".")) {
-                pkg = pkg.substring(0, pkg.length() - 1);
-            }
-
-            try {
-                PsiPackage psiPackage = javaPsiFacade.findPackage(pkg);
-                if (psiPackage == null) {
-                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No psi package for: " + pkg,
-                                    NotificationType.INFORMATION));
-                    continue;
+            Parameters exportPackage = builder.getExportPackage();
+            for (String pkg : exportPackage.keySet()) {
+                if (pkg.endsWith("*")) {
+                    pkg = pkg.substring(0, pkg.length() - 1);
+                }
+                if (pkg.endsWith(".")) {
+                    pkg = pkg.substring(0, pkg.length() - 1);
                 }
 
-                if (psiPackage.getDirectories() == null && psiPackage.getDirectories()
-                                == null) { // Check twice the first call somehow returns null sometimes where the second call doesn't
-                    Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG", "No dirs for package: " + pkg,
-                                    NotificationType.INFORMATION));
-                }
-
-                for (PsiDirectory psiDirectory : psiPackage.getDirectories()) {
-                    if (index.getModuleForFile(psiDirectory.getVirtualFile()) == null) {
-                        return true;
+                try {
+                    PsiPackage psiPackage = javaPsiFacade.findPackage(pkg);
+                    if (psiPackage == null) {
+                        Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG",
+                                        "No psi package for: " + pkg,
+                                        NotificationType.INFORMATION));
+                        continue;
                     }
-                }
 
+                    if (psiPackage.getDirectories() == null && psiPackage.getDirectories()
+                                    == null) { // Check twice the first call somehow returns null sometimes where the second call doesn't
+                        Notifications.Bus.notify(new Notification("amdatu-ide", "DEBUG",
+                                        "No dirs for package: " + pkg,
+                                        NotificationType.INFORMATION));
+                    }
+
+                    for (PsiDirectory psiDirectory : psiPackage.getDirectories()) {
+                        if (index.getModuleForFile(psiDirectory.getVirtualFile()) == null) {
+                            return true;
+                        }
+                    }
+
+                }
+                catch (Exception e) {
+                    LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
+                }
             }
-            catch (Exception e) {
-                LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
-            }
-        }
-        return false;
+            return false;
+        });
     }
 
     @Override

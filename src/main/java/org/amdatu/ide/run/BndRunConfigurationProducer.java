@@ -184,6 +184,10 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
     }
 
     public static boolean isTestModule(Module module) {
+        if (module == null || module.getProject() == null) {
+            return false;
+        }
+
         AmdatuIdePlugin amdatuIdePlugin = module.getProject().getComponent(AmdatuIdePlugin.class);
         try {
             aQute.bnd.build.Project project = amdatuIdePlugin.getWorkspace().getProject(module.getName());
