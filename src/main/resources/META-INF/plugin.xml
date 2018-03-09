@@ -21,20 +21,34 @@
     </project-components>
 
 
+    <extensionPoints>
+        <extensionPoint name="lang.bundledescriptor.parser.provider" interface="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserProvider"/>
+    </extensionPoints>
+
+
+
     <extensions defaultExtensionNs="com.intellij">
         <!-- Initialize AmdatuIde plugin -->
-        <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"></postStartupActivity>
+        <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"/>
 
         <!-- Project import -->
-        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"></projectImportProvider>
+        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"/>
 
-        <!-- Language-->
-        <fileTypeFactory implementation="org.amdatu.ide.lang.BundleDescriptorFileTypeFactory"/>
-        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.BundleDescriptorParserDefinition"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.BundleDescriptorCompletionContributor"/>
+        <!-- Language -->
+        <fileTypeFactory implementation="org.amdatu.ide.lang.bundledescriptor.BundleDescriptorTypeFactory"/>
+        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.highlighting.BundleDescriptorSyntaxHighlighterFactory"/>
+        <annotator language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.highlighting.HeaderAnnotator"/>
+        <lang.elementManipulator forClass="org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart"
+                                 implementationClass="org.amdatu.ide.lang.bundledescriptor.psi.impl.HeaderValuePartManipulator"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
+
+        <applicationService serviceImplementation="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository"/>
+
 
         <!-- JPS plugin -->
-        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"></compileServer.plugin>
+        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"/>
 
         <!--  Run -->
         <configurationType implementation="org.amdatu.ide.run.BndRunConfigurationType"/>
@@ -46,12 +60,17 @@
         <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.ide.templating.AmdatuIdeModuleType"/>
 
         <!-- Plugin preferences -->
-        <applicationService serviceImplementation="org.amdatu.ide.preferences.AmdatuIdePreferences"></applicationService>
+        <applicationService serviceImplementation="org.amdatu.ide.preferences.AmdatuIdePreferences"/>
         <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu IDE"
-                                 instance="org.amdatu.ide.preferences.AmdatuIdePreferencesEditor"></applicationConfigurable>
+                                 instance="org.amdatu.ide.preferences.AmdatuIdePreferencesEditor"/>
 
     </extensions>
 
+    <extensions defaultExtensionNs="org.amdatu.ide">
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.StandardManifestHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.BndHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
+    </extensions>
 
     <actions>
         <!-- Project re-import (manual) -->
