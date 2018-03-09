@@ -29,22 +29,24 @@ import com.intellij.psi.AbstractElementManipulator;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.util.IncorrectOperationException;
-import org.amdatu.ide.lang.bundledescriptor.ManifestFileTypeFactory;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorTypeFactory;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorFile;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValue;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestFile;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderValuePartManipulator extends AbstractElementManipulator<HeaderValuePart> {
-  @Override
-  public HeaderValuePart handleContentChange(@NotNull HeaderValuePart element, @NotNull TextRange range, String newContent) throws IncorrectOperationException {
-    String text = "HeaderValuePartManipulator: " + range.replace(element.getText(), newContent);
-    PsiFile file = PsiFileFactory.getInstance(element.getProject()).createFileFromText("DUMMY.MF", ManifestFileTypeFactory.MANIFEST, text);
-    HeaderValue value = ((ManifestFile)file).getHeaders().get(0).getHeaderValue();
-    assert value != null : text;
-    return (HeaderValuePart)element.replace(value);
-  }
+    @Override
+    public HeaderValuePart handleContentChange(@NotNull HeaderValuePart element, @NotNull TextRange range,
+                    String newContent) throws IncorrectOperationException {
+        String text = "HeaderValuePartManipulator: " + range.replace(element.getText(), newContent);
+        PsiFile file = PsiFileFactory.getInstance(element.getProject())
+                        .createFileFromText("DUMMY.MF", BundleDescriptorTypeFactory.BUNDLE_DESCRIPTOR_FILE_TYPE, text);
+        HeaderValue value = ((BundleDescriptorFile) file).getHeaders().get(0).getHeaderValue();
+        assert value != null : text;
+        return (HeaderValuePart) element.replace(value);
+    }
 }

@@ -17,17 +17,17 @@ package org.amdatu.ide.lang.bundledescriptor.highlighting;
 
 import com.intellij.codeInspection.LocalQuickFixOnPsiElement;
 import com.intellij.psi.PsiElement;
-import org.amdatu.ide.lang.bundledescriptor.ManifestBundle;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractManifestQuickFix extends LocalQuickFixOnPsiElement {
-  protected AbstractManifestQuickFix(@NotNull PsiElement element) {
-    super(element);
-  }
+    protected AbstractManifestQuickFix(@NotNull PsiElement element) {
+        super(element);
+    }
 
-  @NotNull
-  @Override
-  public final String getFamilyName() {
-    return ManifestBundle.message("inspection.group");
-  }
+    @NotNull
+    @Override
+    public final String getFamilyName() {
+        return BundleDescriptorBundle.message("inspection.group");
+    }
 }

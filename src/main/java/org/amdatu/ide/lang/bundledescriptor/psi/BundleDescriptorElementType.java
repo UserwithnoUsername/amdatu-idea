@@ -28,7 +28,7 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
-import org.amdatu.ide.lang.bundledescriptor.ManifestLanguage;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorLanguage;
 import org.amdatu.ide.lang.bundledescriptor.psi.impl.HeaderImpl;
 import org.amdatu.ide.lang.bundledescriptor.psi.impl.HeaderValuePartImpl;
 import org.amdatu.ide.lang.bundledescriptor.psi.impl.SectionImpl;
@@ -36,38 +36,39 @@ import org.amdatu.ide.lang.bundledescriptor.psi.impl.SectionImpl;
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public abstract class ManifestElementType extends IElementType {
-  public static final IFileElementType FILE = new IFileElementType("ManifestFile", ManifestLanguage.INSTANCE);
+public abstract class BundleDescriptorElementType extends IElementType {
+    public static final IFileElementType FILE =
+                    new IFileElementType("BundleDescriptorFile", BundleDescriptorLanguage.INSTANCE);
 
-  public static final IElementType SECTION = new ManifestElementType("SECTION") {
-    @Override
-    public PsiElement createPsi(ASTNode node) {
-      return new SectionImpl(node);
+    public static final IElementType SECTION = new BundleDescriptorElementType("SECTION") {
+        @Override
+        public PsiElement createPsi(ASTNode node) {
+            return new SectionImpl(node);
+        }
+    };
+
+    public static final IElementType HEADER = new BundleDescriptorElementType("HEADER") {
+        @Override
+        public PsiElement createPsi(ASTNode node) {
+            return new HeaderImpl(node);
+        }
+    };
+
+    public static final IElementType HEADER_VALUE_PART = new BundleDescriptorElementType("HEADER_VALUE_PART") {
+        @Override
+        public PsiElement createPsi(ASTNode node) {
+            return new HeaderValuePartImpl(node);
+        }
+    };
+
+    public BundleDescriptorElementType(String name) {
+        super(name, BundleDescriptorLanguage.INSTANCE);
     }
-  };
 
-  public static final IElementType HEADER = new ManifestElementType("HEADER") {
+    public abstract PsiElement createPsi(ASTNode node);
+
     @Override
-    public PsiElement createPsi(ASTNode node) {
-      return new HeaderImpl(node);
+    public String toString() {
+        return "BundleDescriptor:" + super.toString();
     }
-  };
-
-  public static final IElementType HEADER_VALUE_PART = new ManifestElementType("HEADER_VALUE_PART") {
-    @Override
-    public PsiElement createPsi(ASTNode node) {
-      return new HeaderValuePartImpl(node);
-    }
-  };
-
-  public ManifestElementType(String name) {
-    super(name, ManifestLanguage.INSTANCE);
-  }
-
-  public abstract PsiElement createPsi(ASTNode node);
-
-  @Override
-  public String toString() {
-    return "MF:" + super.toString();
-  }
 }

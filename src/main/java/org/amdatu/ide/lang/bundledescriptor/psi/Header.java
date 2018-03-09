@@ -34,22 +34,22 @@ import java.util.List;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public interface Header extends PsiNamedElement {
-  @NotNull
-  @Override
-  String getName();
+    @NotNull
+    @Override
+    String getName();
 
-  @NotNull
-  ManifestToken getNameElement();
+    @NotNull
+    BundleDescriptorToken getNameElement();
 
-  /**
-   * Returns a first header value element if exists.
-   */
-  @Nullable
-  HeaderValue getHeaderValue();
+    /**
+     * Returns a first header value element if exists.
+     */
+    @Nullable
+    HeaderValue getHeaderValue();
 
-  /**
-   * Returns a list of all header value elements.
-   */
-  @NotNull
-  List<HeaderValue> getHeaderValues();
+    /**
+     * Returns a list of all header value elements.
+     */
+    @NotNull
+    List<HeaderValue> getHeaderValues();
 }

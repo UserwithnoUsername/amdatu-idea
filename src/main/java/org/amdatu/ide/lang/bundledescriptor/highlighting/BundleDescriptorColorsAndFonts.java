@@ -22,47 +22,25 @@
  * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.amdatu.ide.lang.bundledescriptor;
+package org.amdatu.ide.lang.bundledescriptor.highlighting;
 
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.fileTypes.LanguageFileType;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.Icon;
+import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestFileType extends LanguageFileType {
-  public ManifestFileType() {
-    super(ManifestLanguage.INSTANCE);
-  }
+public class BundleDescriptorColorsAndFonts {
+    public static final TextAttributesKey HEADER_NAME_KEY =
+                    TextAttributesKey.createTextAttributesKey("manifest.header.name",
+                                    DefaultLanguageHighlighterColors.KEYWORD);
+    public static final TextAttributesKey HEADER_ASSIGNMENT_KEY =
+                    TextAttributesKey.createTextAttributesKey("manifest.header.assignment",
+                                    DefaultLanguageHighlighterColors.OPERATION_SIGN);
+    public static final TextAttributesKey HEADER_VALUE_KEY =
+                    TextAttributesKey.createTextAttributesKey("manifest.header.value",
+                                    DefaultLanguageHighlighterColors.IDENTIFIER);
 
-  @NotNull
-  @NonNls
-  @Override
-  public String getName() {
-    return "Manifest";
-  }
-
-  @NotNull
-  @Override
-  public String getDescription() {
-    return "Manifest";
-  }
-
-  @NotNull
-  @NonNls
-  @Override
-  public String getDefaultExtension() {
-    return "MF";
-  }
-
-  @Nullable
-  @Override
-  public Icon getIcon() {
-    return AllIcons.FileTypes.Manifest;
-  }
+    private BundleDescriptorColorsAndFonts() {
+    }
 }

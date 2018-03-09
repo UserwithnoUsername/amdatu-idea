@@ -29,6 +29,6 @@ import com.intellij.psi.PsiElement;
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public interface ManifestToken extends PsiElement {
-  ManifestTokenType getTokenType();
+public interface BundleDescriptorToken extends PsiElement {
+    BundleDescriptorTokenType getTokenType();
 }

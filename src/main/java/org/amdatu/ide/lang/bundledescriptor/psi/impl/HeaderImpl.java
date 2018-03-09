@@ -30,10 +30,10 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.source.tree.LeafElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorToken;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValue;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestToken;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,44 +43,45 @@ import java.util.List;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderImpl extends ASTWrapperPsiElement implements Header {
-  public HeaderImpl(@NotNull ASTNode node) {
-    super(node);
-  }
+    public HeaderImpl(@NotNull ASTNode node) {
+        super(node);
+    }
 
-  @NotNull
-  @Override
-  public String getName() {
-    return getNameElement().getText();
-  }
+    @NotNull
+    @Override
+    public String getName() {
+        return getNameElement().getText();
+    }
 
-  @Override
-  public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
-    ((LeafElement)getNameElement().getNode()).replaceWithText(name);
-    return this;
-  }
+    @Override
+    public PsiElement setName(@NotNull String name) throws IncorrectOperationException {
+        ((LeafElement) getNameElement().getNode()).replaceWithText(name);
+        return this;
+    }
 
-  @NotNull
-  @Override
-  public ManifestToken getNameElement() {
-    ManifestToken token = (ManifestToken)getNode().findChildByType(ManifestTokenType.HEADER_NAME);
-    assert token != null : getText();
-    return token;
-  }
+    @NotNull
+    @Override
+    public BundleDescriptorToken getNameElement() {
+        BundleDescriptorToken token =
+                        (BundleDescriptorToken) getNode().findChildByType(BundleDescriptorTokenType.HEADER_NAME);
+        assert token != null : getText();
+        return token;
+    }
 
-  @Nullable
-  @Override
-  public HeaderValue getHeaderValue() {
-    return PsiTreeUtil.getChildOfType(this, HeaderValue.class);
-  }
+    @Nullable
+    @Override
+    public HeaderValue getHeaderValue() {
+        return PsiTreeUtil.getChildOfType(this, HeaderValue.class);
+    }
 
-  @NotNull
-  @Override
-  public List<HeaderValue> getHeaderValues() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, HeaderValue.class);
-  }
+    @NotNull
+    @Override
+    public List<HeaderValue> getHeaderValues() {
+        return PsiTreeUtil.getChildrenOfTypeAsList(this, HeaderValue.class);
+    }
 
-  @Override
-  public String toString() {
-    return "Header:" + getName();
-  }
+    @Override
+    public String toString() {
+        return "Header:" + getName();
+    }
 }

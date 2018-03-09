@@ -36,69 +36,69 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.PsiUtilCore;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorElementType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestElementType;
-import org.amdatu.ide.lang.bundledescriptor.psi.impl.ManifestFileImpl;
+import org.amdatu.ide.lang.bundledescriptor.psi.impl.BundleDescriptorFileImpl;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestParserDefinition implements ParserDefinition {
-  @NotNull
-  @Override
-  public Lexer createLexer(Project project) {
-    return new ManifestLexer();
-  }
-
-  @Override
-  public PsiParser createParser(Project project) {
-    return new ManifestParser();
-  }
-
-  @Override
-  public IFileElementType getFileNodeType() {
-    return ManifestElementType.FILE;
-  }
-
-  @NotNull
-  @Override
-  public TokenSet getWhitespaceTokens() {
-    return TokenSet.EMPTY;
-  }
-
-  @NotNull
-  @Override
-  public TokenSet getCommentTokens() {
-    return TokenSet.EMPTY;
-  }
-
-  @NotNull
-  @Override
-  public TokenSet getStringLiteralElements() {
-    return TokenSet.EMPTY;
-  }
-
-  @NotNull
-  @Override
-  public PsiElement createElement(ASTNode node) {
-    IElementType type = node.getElementType();
-    if (type instanceof ManifestElementType) {
-      return ((ManifestElementType)type).createPsi(node);
+public class BundleDescriptorParserDefinition implements ParserDefinition {
+    @NotNull
+    @Override
+    public Lexer createLexer(Project project) {
+        return new BundleDescriptorLexer();
     }
 
-    return PsiUtilCore.NULL_PSI_ELEMENT;
-  }
+    @Override
+    public PsiParser createParser(Project project) {
+        return new BundleDescriptorParser();
+    }
 
-  @Override
-  public PsiFile createFile(FileViewProvider viewProvider) {
-    return new ManifestFileImpl(viewProvider);
-  }
+    @Override
+    public IFileElementType getFileNodeType() {
+        return BundleDescriptorElementType.FILE;
+    }
 
-  @SuppressWarnings("SpellCheckingInspection")
-  @Override
-  public SpaceRequirements spaceExistanceTypeBetweenTokens(ASTNode left, ASTNode right) {
-    return left.getPsi() instanceof Header || right.getPsi() instanceof Header ?
-           SpaceRequirements.MUST_LINE_BREAK : SpaceRequirements.MUST_NOT;
-  }
+    @NotNull
+    @Override
+    public TokenSet getWhitespaceTokens() {
+        return TokenSet.EMPTY;
+    }
+
+    @NotNull
+    @Override
+    public TokenSet getCommentTokens() {
+        return TokenSet.EMPTY;
+    }
+
+    @NotNull
+    @Override
+    public TokenSet getStringLiteralElements() {
+        return TokenSet.EMPTY;
+    }
+
+    @NotNull
+    @Override
+    public PsiElement createElement(ASTNode node) {
+        IElementType type = node.getElementType();
+        if (type instanceof BundleDescriptorElementType) {
+            return ((BundleDescriptorElementType) type).createPsi(node);
+        }
+
+        return PsiUtilCore.NULL_PSI_ELEMENT;
+    }
+
+    @Override
+    public PsiFile createFile(FileViewProvider viewProvider) {
+        return new BundleDescriptorFileImpl(viewProvider);
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    @Override
+    public SpaceRequirements spaceExistanceTypeBetweenTokens(ASTNode left, ASTNode right) {
+        return left.getPsi() instanceof Header || right.getPsi() instanceof Header ?
+                        SpaceRequirements.MUST_LINE_BREAK : SpaceRequirements.MUST_NOT;
+    }
 }

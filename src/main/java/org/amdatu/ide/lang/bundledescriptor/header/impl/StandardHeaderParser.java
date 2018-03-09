@@ -29,12 +29,12 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.tree.IElementType;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParser;
-import org.amdatu.ide.lang.bundledescriptor.parser.ManifestParser;
+import org.amdatu.ide.lang.bundledescriptor.parser.BundleDescriptorParser;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorElementType;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValue;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestElementType;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,36 +42,37 @@ import org.jetbrains.annotations.Nullable;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class StandardHeaderParser implements HeaderParser {
-  public static final HeaderParser INSTANCE = new StandardHeaderParser();
+    public static final HeaderParser INSTANCE = new StandardHeaderParser();
 
-  @Override
-  public void parse(@NotNull PsiBuilder builder) {
-    PsiBuilder.Marker marker = builder.mark();
-    while (!builder.eof() && !ManifestParser.HEADER_END_TOKENS.contains(builder.getTokenType())) {
-      IElementType lastToken = builder.getTokenType();
-      builder.advanceLexer();
-      if (lastToken == ManifestTokenType.NEWLINE && builder.getTokenType() != ManifestTokenType.SIGNIFICANT_SPACE) {
-        break;
-      }
+    @Override
+    public void parse(@NotNull PsiBuilder builder) {
+        PsiBuilder.Marker marker = builder.mark();
+        while (!builder.eof() && !BundleDescriptorParser.HEADER_END_TOKENS.contains(builder.getTokenType())) {
+            IElementType lastToken = builder.getTokenType();
+            builder.advanceLexer();
+            if (lastToken == BundleDescriptorTokenType.NEWLINE
+                            && builder.getTokenType() != BundleDescriptorTokenType.SIGNIFICANT_SPACE) {
+                break;
+            }
+        }
+        marker.done(BundleDescriptorElementType.HEADER_VALUE_PART);
     }
-    marker.done(ManifestElementType.HEADER_VALUE_PART);
-  }
 
-  @Override
-  public boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder) {
-    return false;
-  }
+    @Override
+    public boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder) {
+        return false;
+    }
 
-  @Nullable
-  @Override
-  public Object getConvertedValue(@NotNull Header header) {
-    HeaderValue value = header.getHeaderValue();
-    return value != null ? value.getUnwrappedText() : null;
-  }
+    @Nullable
+    @Override
+    public Object getConvertedValue(@NotNull Header header) {
+        HeaderValue value = header.getHeaderValue();
+        return value != null ? value.getUnwrappedText() : null;
+    }
 
-  @NotNull
-  @Override
-  public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
-    return PsiReference.EMPTY_ARRAY;
-  }
+    @NotNull
+    @Override
+    public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
+        return PsiReference.EMPTY_ARRAY;
+    }
 }

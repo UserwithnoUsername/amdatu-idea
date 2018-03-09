@@ -32,12 +32,12 @@ import org.amdatu.ide.lang.bundledescriptor.psi.Section;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class SectionImpl extends ASTWrapperPsiElement implements Section {
-  public SectionImpl(ASTNode node) {
-    super(node);
-  }
+    public SectionImpl(ASTNode node) {
+        super(node);
+    }
 
-  @Override
-  public String toString() {
-    return "Section";
-  }
+    @Override
+    public String toString() {
+        return "Section";
+    }
 }

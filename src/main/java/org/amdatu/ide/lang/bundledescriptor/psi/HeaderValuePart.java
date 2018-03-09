@@ -33,9 +33,9 @@ import org.jetbrains.annotations.NotNull;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public interface HeaderValuePart extends HeaderValue {
-  /**
-   * Returns the range to highlight in the element.
-   */
-  @NotNull
-  TextRange getHighlightingRange();
+    /**
+     * Returns the range to highlight in the element.
+     */
+    @NotNull
+    TextRange getHighlightingRange();
 }

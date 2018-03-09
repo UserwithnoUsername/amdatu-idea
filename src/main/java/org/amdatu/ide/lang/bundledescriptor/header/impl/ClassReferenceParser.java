@@ -33,96 +33,105 @@ import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassRe
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
 import com.intellij.psi.util.PsiMethodUtil;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParser;
-import org.amdatu.ide.lang.bundledescriptor.ManifestBundle;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValue;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart;
 import org.jetbrains.annotations.NotNull;
 
 public class ClassReferenceParser extends StandardHeaderParser {
-  public static final String MAIN_CLASS = "Main-Class";
-  public static final String PREMAIN_CLASS = "Premain-Class";
-  public static final String AGENT_CLASS = "Agent-Class";
-  public static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
+    public static final String MAIN_CLASS = "Main-Class";
+    public static final String PREMAIN_CLASS = "Premain-Class";
+    public static final String AGENT_CLASS = "Agent-Class";
+    public static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
 
-  public static final HeaderParser INSTANCE = new ClassReferenceParser();
+    public static final HeaderParser INSTANCE = new ClassReferenceParser();
 
-  @NotNull
-  @Override
-  public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
-    Module module = ModuleUtilCore.findModuleForPsiElement(headerValuePart);
-    JavaClassReferenceProvider provider;
-    if (module != null) {
-      provider = new JavaClassReferenceProvider() {
-        @Override
-        public GlobalSearchScope getScope(Project project) {
-          return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module);
+    @NotNull
+    @Override
+    public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
+        Module module = ModuleUtilCore.findModuleForPsiElement(headerValuePart);
+        JavaClassReferenceProvider provider;
+        if (module != null) {
+            provider = new JavaClassReferenceProvider() {
+                @Override
+                public GlobalSearchScope getScope(Project project) {
+                    return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module);
+                }
+            };
         }
-      };
-    }
-    else {
-      provider = new JavaClassReferenceProvider();
-    }
-    return provider.getReferencesByElement(headerValuePart);
-  }
-
-  @Override
-  public boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder) {
-    HeaderValue value = header.getHeaderValue();
-    if (!(value instanceof HeaderValuePart)) return false;
-    HeaderValuePart valuePart = (HeaderValuePart)value;
-
-    String className = valuePart.getUnwrappedText();
-    if (StringUtil.isEmptyOrSpaces(className)) {
-      holder.createErrorAnnotation(valuePart.getHighlightingRange(), ManifestBundle.message("header.reference.invalid"));
-      return true;
+        else {
+            provider = new JavaClassReferenceProvider();
+        }
+        return provider.getReferencesByElement(headerValuePart);
     }
 
-    Project project = header.getProject();
-    Module module = ModuleUtilCore.findModuleForPsiElement(header);
-    GlobalSearchScope scope = module != null ? module.getModuleWithDependenciesAndLibrariesScope(false) : ProjectScope.getAllScope(project);
-    PsiClass aClass = JavaPsiFacade.getInstance(project).findClass(className, scope);
-    if (aClass == null) {
-      String message = JavaErrorMessages.message("error.cannot.resolve.class", className);
-      Annotation anno = holder.createErrorAnnotation(valuePart.getHighlightingRange(), message);
-      anno.setHighlightType(ProblemHighlightType.LIKE_UNKNOWN_SYMBOL);
-      return true;
+    @Override
+    public boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder) {
+        HeaderValue value = header.getHeaderValue();
+        if (!(value instanceof HeaderValuePart))
+            return false;
+        HeaderValuePart valuePart = (HeaderValuePart) value;
+
+        String className = valuePart.getUnwrappedText();
+        if (StringUtil.isEmptyOrSpaces(className)) {
+            holder.createErrorAnnotation(valuePart.getHighlightingRange(),
+                            BundleDescriptorBundle.message("header.reference.invalid"));
+            return true;
+        }
+
+        Project project = header.getProject();
+        Module module = ModuleUtilCore.findModuleForPsiElement(header);
+        GlobalSearchScope scope = module != null ?
+                        module.getModuleWithDependenciesAndLibrariesScope(false) :
+                        ProjectScope.getAllScope(project);
+        PsiClass aClass = JavaPsiFacade.getInstance(project).findClass(className, scope);
+        if (aClass == null) {
+            String message = JavaErrorMessages.message("error.cannot.resolve.class", className);
+            Annotation anno = holder.createErrorAnnotation(valuePart.getHighlightingRange(), message);
+            anno.setHighlightType(ProblemHighlightType.LIKE_UNKNOWN_SYMBOL);
+            return true;
+        }
+
+        return checkClass(valuePart, aClass, holder);
     }
 
-    return checkClass(valuePart, aClass, holder);
-  }
+    protected boolean checkClass(@NotNull HeaderValuePart valuePart, @NotNull PsiClass aClass,
+                    @NotNull AnnotationHolder holder) {
+        String header = ((Header) valuePart.getParent()).getName();
 
-  protected boolean checkClass(@NotNull HeaderValuePart valuePart, @NotNull PsiClass aClass, @NotNull AnnotationHolder holder) {
-    String header = ((Header)valuePart.getParent()).getName();
+        if (MAIN_CLASS.equals(header) && !PsiMethodUtil.hasMainMethod(aClass)) {
+            holder.createErrorAnnotation(valuePart.getHighlightingRange(),
+                            BundleDescriptorBundle.message("header.main.class.invalid"));
+            return true;
+        }
 
-    if (MAIN_CLASS.equals(header) && !PsiMethodUtil.hasMainMethod(aClass)) {
-      holder.createErrorAnnotation(valuePart.getHighlightingRange(), ManifestBundle.message("header.main.class.invalid"));
-      return true;
+        if (PREMAIN_CLASS.equals(header) && !hasInstrumenterMethod(aClass, "premain")) {
+            holder.createErrorAnnotation(valuePart.getHighlightingRange(),
+                            BundleDescriptorBundle.message("header.pre-main.class.invalid"));
+            return true;
+        }
+
+        if ((AGENT_CLASS.equals(header) || LAUNCHER_AGENT_CLASS.equals(header)) && !hasInstrumenterMethod(aClass,
+                        "agentmain")) {
+            holder.createErrorAnnotation(valuePart.getHighlightingRange(),
+                            BundleDescriptorBundle.message("header.agent.class.invalid"));
+            return true;
+        }
+
+        return false;
     }
 
-    if (PREMAIN_CLASS.equals(header) && !hasInstrumenterMethod(aClass, "premain")) {
-      holder.createErrorAnnotation(valuePart.getHighlightingRange(), ManifestBundle.message("header.pre-main.class.invalid"));
-      return true;
+    private static boolean hasInstrumenterMethod(PsiClass aClass, String methodName) {
+        for (PsiMethod method : aClass.findMethodsByName(methodName, false)) {
+            if (PsiType.VOID.equals(method.getReturnType()) &&
+                            method.hasModifierProperty(PsiModifier.PUBLIC) &&
+                            method.hasModifierProperty(PsiModifier.STATIC)) {
+                return true;
+            }
+        }
+
+        return false;
     }
-
-    if ((AGENT_CLASS.equals(header) || LAUNCHER_AGENT_CLASS.equals(header)) && !hasInstrumenterMethod(aClass, "agentmain")) {
-      holder.createErrorAnnotation(valuePart.getHighlightingRange(), ManifestBundle.message("header.agent.class.invalid"));
-      return true;
-    }
-
-    return false;
-  }
-
-  private static boolean hasInstrumenterMethod(PsiClass aClass, String methodName) {
-    for (PsiMethod method : aClass.findMethodsByName(methodName, false)) {
-      if (PsiType.VOID.equals(method.getReturnType()) &&
-          method.hasModifierProperty(PsiModifier.PUBLIC) &&
-          method.hasModifierProperty(PsiModifier.STATIC)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 }

@@ -36,9 +36,9 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.editor.EditorModificationUtil;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.util.ProcessingContext;
-import org.amdatu.ide.lang.bundledescriptor.ManifestLanguage;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorLanguage;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,29 +47,31 @@ import org.jetbrains.annotations.NotNull;
  * @author <a href="mailto:janthomae@janthomae.de">Jan Thom&auml;</a>
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestCompletionContributor extends CompletionContributor {
-  public ManifestCompletionContributor(@NotNull final HeaderParserRepository repository) {
-    extend(CompletionType.BASIC,
-           PlatformPatterns.psiElement(ManifestTokenType.HEADER_NAME).withLanguage(ManifestLanguage.INSTANCE),
-           new CompletionProvider<CompletionParameters>() {
-             @Override
-             public void addCompletions(@NotNull CompletionParameters parameters,
-                                        ProcessingContext context,
-                                        @NotNull CompletionResultSet resultSet) {
-               for (String header : repository.getAllHeaderNames()) {
-                 resultSet.addElement(LookupElementBuilder.create(header).withInsertHandler(HEADER_INSERT_HANDLER));
-               }
-             }
-           }
-    );
-  }
-
-  private static final InsertHandler<LookupElement> HEADER_INSERT_HANDLER = new InsertHandler<LookupElement>() {
-    @Override
-    public void handleInsert(InsertionContext context, LookupElement item) {
-      context.setAddCompletionChar(false);
-      EditorModificationUtil.insertStringAtCaret(context.getEditor(), ": ");
-      context.commitDocument();
+public class BundleDescriptorCompletionContributor extends CompletionContributor {
+    public BundleDescriptorCompletionContributor(@NotNull final HeaderParserRepository repository) {
+        extend(CompletionType.BASIC,
+                        PlatformPatterns.psiElement(BundleDescriptorTokenType.HEADER_NAME)
+                                        .withLanguage(BundleDescriptorLanguage.INSTANCE),
+                        new CompletionProvider<CompletionParameters>() {
+                            @Override
+                            public void addCompletions(@NotNull CompletionParameters parameters,
+                                            ProcessingContext context,
+                                            @NotNull CompletionResultSet resultSet) {
+                                for (String header : repository.getAllHeaderNames()) {
+                                    resultSet.addElement(LookupElementBuilder.create(header)
+                                                    .withInsertHandler(HEADER_INSERT_HANDLER));
+                                }
+                            }
+                        }
+        );
     }
-  };
+
+    private static final InsertHandler<LookupElement> HEADER_INSERT_HANDLER = new InsertHandler<LookupElement>() {
+        @Override
+        public void handleInsert(InsertionContext context, LookupElement item) {
+            context.setAddCompletionChar(false);
+            EditorModificationUtil.insertStringAtCaret(context.getEditor(), ": ");
+            context.commitDocument();
+        }
+    };
 }

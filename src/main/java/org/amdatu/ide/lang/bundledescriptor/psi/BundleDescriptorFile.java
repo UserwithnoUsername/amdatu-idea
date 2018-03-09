@@ -22,28 +22,39 @@
  * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.amdatu.ide.lang.bundledescriptor.psi.impl;
+package org.amdatu.ide.lang.bundledescriptor.psi;
 
-import com.intellij.psi.impl.source.tree.LeafPsiElement;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestToken;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestTokenImpl extends LeafPsiElement implements ManifestToken {
-  public ManifestTokenImpl(@NotNull ManifestTokenType type, CharSequence text) {
-    super(type, text);
-  }
+public interface BundleDescriptorFile extends PsiFile {
+    /**
+     * Returns all sections of the file.
+     */
+    @NotNull
+    List<Section> getSections();
 
-  @Override
-  public ManifestTokenType getTokenType() {
-    return (ManifestTokenType)getElementType();
-  }
+    /**
+     * Returns main (first) section if not empty.
+     */
+    @Nullable
+    Section getMainSection();
 
-  @Override
-  public String toString() {
-    return "ManifestToken:" + getTokenType();
-  }
+    /**
+     * Returns all headers from the main section in this file.
+     */
+    @NotNull
+    List<Header> getHeaders();
+
+    /**
+     * Returns the header from the main section with the given name, or null if no such header exists.
+     */
+    @Nullable
+    Header getHeader(@NotNull String name);
 }

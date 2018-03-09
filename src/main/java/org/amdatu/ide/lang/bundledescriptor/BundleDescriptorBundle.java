@@ -15,19 +15,22 @@
  */
 package org.amdatu.ide.lang.bundledescriptor;
 
-import com.intellij.openapi.fileTypes.FileTypeConsumer;
-import com.intellij.openapi.fileTypes.FileTypeFactory;
-import com.intellij.openapi.fileTypes.LanguageFileType;
+import com.intellij.AbstractBundle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.PropertyKey;
 
-/**
- * @author yole
- */
-public class ManifestFileTypeFactory extends FileTypeFactory {
-  public final static LanguageFileType MANIFEST = new ManifestFileType();
+public class BundleDescriptorBundle extends AbstractBundle {
 
-  @Override
-  public void createFileTypes(@NotNull FileTypeConsumer consumer) {
-    consumer.consume(MANIFEST, "MF");
-  }
+    public static String message(@NotNull @PropertyKey(resourceBundle = PATH_TO_BUNDLE) String key,
+                    @NotNull Object... params) {
+        return BUNDLE.getMessage(key, params);
+    }
+
+    public static final String PATH_TO_BUNDLE = "org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle";
+    private static final BundleDescriptorBundle
+                    BUNDLE = new BundleDescriptorBundle();
+
+    private BundleDescriptorBundle() {
+        super(PATH_TO_BUNDLE);
+    }
 }

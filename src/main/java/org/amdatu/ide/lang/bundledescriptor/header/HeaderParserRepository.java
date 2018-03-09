@@ -43,48 +43,51 @@ import java.util.Set;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderParserRepository {
-  public static HeaderParserRepository getInstance() {
-    return ServiceManager.getService(HeaderParserRepository.class);
-  }
+    public static HeaderParserRepository getInstance() {
+        return ServiceManager.getService(HeaderParserRepository.class);
+    }
 
-  private final NotNullLazyValue<Map<String, HeaderParser>> myParsers = new NotNullLazyValue<Map<String, HeaderParser>>() {
+    private final NotNullLazyValue<Map<String, HeaderParser>> myParsers =
+                    new NotNullLazyValue<Map<String, HeaderParser>>() {
+                        @NotNull
+                        @Override
+                        protected Map<String, HeaderParser> compute() {
+                            Map<String, HeaderParser> map =
+                                            new THashMap<>(CaseInsensitiveStringHashingStrategy.INSTANCE);
+                            for (HeaderParserProvider provider : Extensions
+                                            .getExtensions(HeaderParserProvider.EP_NAME)) {
+                                map.putAll(provider.getHeaderParsers());
+                            }
+                            return map;
+                        }
+                    };
+
+    @Nullable
+    public HeaderParser getHeaderParser(@Nullable String headerName) {
+        return myParsers.getValue().get(headerName);
+    }
+
     @NotNull
-    @Override
-    protected Map<String, HeaderParser> compute() {
-      Map<String, HeaderParser> map = new THashMap<>(CaseInsensitiveStringHashingStrategy.INSTANCE);
-      for (HeaderParserProvider provider : Extensions.getExtensions(HeaderParserProvider.EP_NAME)) {
-        map.putAll(provider.getHeaderParsers());
-      }
-      return map;
-    }
-  };
-
-  @Nullable
-  public HeaderParser getHeaderParser(@Nullable String headerName) {
-    return myParsers.getValue().get(headerName);
-  }
-
-  @NotNull
-  public Set<String> getAllHeaderNames() {
-    return myParsers.getValue().keySet();
-  }
-
-  @Nullable
-  public Object getConvertedValue(@NotNull Header header) {
-    HeaderParser parser = getHeaderParser(header.getName());
-    return parser != null ? parser.getConvertedValue(header) : null;
-  }
-
-  @NotNull
-  public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
-    Header header = PsiTreeUtil.getParentOfType(headerValuePart, Header.class);
-    if (header != null) {
-      HeaderParser parser = getHeaderParser(header.getName());
-      if (parser != null) {
-        return parser.getReferences(headerValuePart);
-      }
+    public Set<String> getAllHeaderNames() {
+        return myParsers.getValue().keySet();
     }
 
-    return PsiReference.EMPTY_ARRAY;
-  }
+    @Nullable
+    public Object getConvertedValue(@NotNull Header header) {
+        HeaderParser parser = getHeaderParser(header.getName());
+        return parser != null ? parser.getConvertedValue(header) : null;
+    }
+
+    @NotNull
+    public PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart) {
+        Header header = PsiTreeUtil.getParentOfType(headerValuePart, Header.class);
+        if (header != null) {
+            HeaderParser parser = getHeaderParser(header.getName());
+            if (parser != null) {
+                return parser.getReferences(headerValuePart);
+            }
+        }
+
+        return PsiReference.EMPTY_ARRAY;
+    }
 }

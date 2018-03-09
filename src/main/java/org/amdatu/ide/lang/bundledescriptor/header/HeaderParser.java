@@ -36,26 +36,26 @@ import org.jetbrains.annotations.Nullable;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public interface HeaderParser {
-  /**
-   * Parses a header starting from a first token after semicolon and space.
-   */
-  void parse(@NotNull PsiBuilder builder);
+    /**
+     * Parses a header starting from a first token after semicolon and space.
+     */
+    void parse(@NotNull PsiBuilder builder);
 
-  /**
-   * Annotates the header with errors or any other useful information.
-   * Should return true if the element was annotated with errors.
-   */
-  boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder);
+    /**
+     * Annotates the header with errors or any other useful information.
+     * Should return true if the element was annotated with errors.
+     */
+    boolean annotate(@NotNull Header header, @NotNull AnnotationHolder holder);
 
-  /**
-   * Returns the raw data of the header converted into some domain specific value (e.g. Version or VersionRange).
-   */
-  @Nullable
-  Object getConvertedValue(@NotNull Header header);
+    /**
+     * Returns the raw data of the header converted into some domain specific value (e.g. Version or VersionRange).
+     */
+    @Nullable
+    Object getConvertedValue(@NotNull Header header);
 
-  /**
-   * Returns references from a given header value, or empty array if none/not applicable.
-   */
-  @NotNull
-  PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart);
+    /**
+     * Returns references from a given header value, or empty array if none/not applicable.
+     */
+    @NotNull
+    PsiReference[] getReferences(@NotNull HeaderValuePart headerValuePart);
 }

@@ -28,10 +28,10 @@ import com.intellij.extapi.psi.PsiFileBase;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.util.PsiTreeUtil;
-import org.amdatu.ide.lang.bundledescriptor.ManifestFileTypeFactory;
-import org.amdatu.ide.lang.bundledescriptor.ManifestLanguage;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorLanguage;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorTypeFactory;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorFile;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestFile;
 import org.amdatu.ide.lang.bundledescriptor.psi.Section;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,50 +41,50 @@ import java.util.List;
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestFileImpl extends PsiFileBase implements ManifestFile {
-  public ManifestFileImpl(FileViewProvider viewProvider) {
-    super(viewProvider, ManifestLanguage.INSTANCE);
-  }
-
-  @NotNull
-  @Override
-  public FileType getFileType() {
-    return ManifestFileTypeFactory.MANIFEST;
-  }
-
-  @NotNull
-  @Override
-  public List<Section> getSections() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, Section.class);
-  }
-
-  @Nullable
-  @Override
-  public Section getMainSection() {
-    return findChildByClass(Section.class);
-  }
-
-  @NotNull
-  @Override
-  public List<Header> getHeaders() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(getFirstChild(), Header.class);
-  }
-
-  @Nullable
-  @Override
-  public Header getHeader(@NotNull String name) {
-    Header child = PsiTreeUtil.findChildOfType(getFirstChild(), Header.class);
-    while (child != null) {
-      if (name.equals(child.getName())) {
-        return child;
-      }
-      child = PsiTreeUtil.getNextSiblingOfType(child, Header.class);
+public class BundleDescriptorFileImpl extends PsiFileBase implements BundleDescriptorFile {
+    public BundleDescriptorFileImpl(FileViewProvider viewProvider) {
+        super(viewProvider, BundleDescriptorLanguage.INSTANCE);
     }
-    return null;
-  }
 
-  @Override
-  public String toString() {
-    return "ManifestFile:" + getName();
-  }
+    @NotNull
+    @Override
+    public FileType getFileType() {
+        return BundleDescriptorTypeFactory.BUNDLE_DESCRIPTOR_FILE_TYPE;
+    }
+
+    @NotNull
+    @Override
+    public List<Section> getSections() {
+        return PsiTreeUtil.getChildrenOfTypeAsList(this, Section.class);
+    }
+
+    @Nullable
+    @Override
+    public Section getMainSection() {
+        return findChildByClass(Section.class);
+    }
+
+    @NotNull
+    @Override
+    public List<Header> getHeaders() {
+        return PsiTreeUtil.getChildrenOfTypeAsList(getFirstChild(), Header.class);
+    }
+
+    @Nullable
+    @Override
+    public Header getHeader(@NotNull String name) {
+        Header child = PsiTreeUtil.findChildOfType(getFirstChild(), Header.class);
+        while (child != null) {
+            if (name.equals(child.getName())) {
+                return child;
+            }
+            child = PsiTreeUtil.getNextSiblingOfType(child, Header.class);
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return "BundleDescriptorFile:" + getName();
+    }
 }

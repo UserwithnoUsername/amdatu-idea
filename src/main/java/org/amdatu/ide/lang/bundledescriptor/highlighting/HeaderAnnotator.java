@@ -28,8 +28,8 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.psi.PsiElement;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParser;
-import org.amdatu.ide.lang.bundledescriptor.ManifestBundle;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.jetbrains.annotations.NotNull;
@@ -38,37 +38,38 @@ import org.jetbrains.annotations.NotNull;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderAnnotator implements Annotator {
-  private final HeaderParserRepository myRepository;
+    private final HeaderParserRepository myRepository;
 
-  public HeaderAnnotator(@NotNull HeaderParserRepository repository) {
-    myRepository = repository;
-  }
+    public HeaderAnnotator(@NotNull HeaderParserRepository repository) {
+        myRepository = repository;
+    }
 
-  @Override
-  public void annotate(@NotNull PsiElement psiElement, @NotNull AnnotationHolder holder) {
-    if (psiElement instanceof Header) {
-      Header header = (Header)psiElement;
-      String name = header.getName();
-      if (!isValidName(name)) {
-        holder.createAnnotation(HighlightSeverity.ERROR, header.getNameElement().getTextRange(), ManifestBundle.message("header.name.invalid"));
-      }
-      else {
-        HeaderParser headerParser = myRepository.getHeaderParser(name);
-        if (headerParser != null) {
-          headerParser.annotate(header, holder);
+    @Override
+    public void annotate(@NotNull PsiElement psiElement, @NotNull AnnotationHolder holder) {
+        if (psiElement instanceof Header) {
+            Header header = (Header) psiElement;
+            String name = header.getName();
+            if (!isValidName(name)) {
+                holder.createAnnotation(HighlightSeverity.ERROR, header.getNameElement().getTextRange(),
+                                BundleDescriptorBundle.message("header.name.invalid"));
+            }
+            else {
+                HeaderParser headerParser = myRepository.getHeaderParser(name);
+                if (headerParser != null) {
+                    headerParser.annotate(header, holder);
+                }
+            }
         }
-      }
-    }
-  }
-
-  private static boolean isValidName(String name) {
-    for (int i = 0; i < name.length(); i++) {
-      char c = name.charAt(i);
-      if (!(c == '-' || c == '_' || Character.isLetterOrDigit(c))) {
-        return false;
-      }
     }
 
-    return true;
-  }
+    private static boolean isValidName(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!(c == '-' || c == '_' || Character.isLetterOrDigit(c))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

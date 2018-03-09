@@ -35,9 +35,9 @@ import org.jetbrains.annotations.NotNull;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public interface HeaderValue extends PsiElement {
-  /**
-   * Returns the unwrapped text without the newlines and extra continuation spaces.
-   */
-  @NotNull
-  String getUnwrappedText();
+    /**
+     * Returns the unwrapped text without the newlines and extra continuation spaces.
+     */
+    @NotNull
+    String getUnwrappedText();
 }

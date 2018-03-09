@@ -32,10 +32,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import org.amdatu.ide.lang.bundledescriptor.ManifestBundle;
+import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorFile;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestFile;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Section;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,42 +45,45 @@ import java.util.List;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class MissingFinalNewlineInspection extends LocalInspectionTool {
-  @Override
-  public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull InspectionManager manager, boolean isOnTheFly) {
-    if (file instanceof ManifestFile) {
-      String text = file.getText();
-      if (text != null && text.length() > 0 && !StringUtil.endsWith(text, "\n")) {
-        List<Section> sections = ((ManifestFile)file).getSections();
-        assert sections.size() > 0 : text;
-        Section section = sections.get(sections.size() - 1);
-        ProblemDescriptor descriptor = manager.createProblemDescriptor(
-          section.getLastChild(), ManifestBundle.message("inspection.newline.message"),
-          new AddNewlineQuickFix(section), ProblemHighlightType.GENERIC_ERROR_OR_WARNING, isOnTheFly
-        );
-        return new ProblemDescriptor[]{descriptor};
-      }
-    }
-
-    return null;
-  }
-
-  private static class AddNewlineQuickFix extends AbstractManifestQuickFix {
-    private AddNewlineQuickFix(Section section) {
-      super(section);
-    }
-
-    @NotNull
     @Override
-    public String getText() {
-      return ManifestBundle.message("inspection.newline.fix");
+    public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull InspectionManager manager,
+                    boolean isOnTheFly) {
+        if (file instanceof BundleDescriptorFile) {
+            String text = file.getText();
+            if (text != null && text.length() > 0 && !StringUtil.endsWith(text, "\n")) {
+                List<Section> sections = ((BundleDescriptorFile) file).getSections();
+                assert sections.size() > 0 : text;
+                Section section = sections.get(sections.size() - 1);
+                ProblemDescriptor descriptor = manager.createProblemDescriptor(
+                                section.getLastChild(), BundleDescriptorBundle.message("inspection.newline.message"),
+                                new AddNewlineQuickFix(section), ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
+                                isOnTheFly
+                );
+                return new ProblemDescriptor[] { descriptor };
+            }
+        }
+
+        return null;
     }
 
-    @Override
-    public void invoke(@NotNull Project project, @NotNull PsiFile file, @NotNull PsiElement startElement, @NotNull PsiElement endElement) {
-      PsiElement lastChild = startElement.getLastChild();
-      if (lastChild instanceof Header) {
-        lastChild.getNode().addLeaf(ManifestTokenType.NEWLINE, "\n", null);
-      }
+    private static class AddNewlineQuickFix extends AbstractManifestQuickFix {
+        private AddNewlineQuickFix(Section section) {
+            super(section);
+        }
+
+        @NotNull
+        @Override
+        public String getText() {
+            return BundleDescriptorBundle.message("inspection.newline.fix");
+        }
+
+        @Override
+        public void invoke(@NotNull Project project, @NotNull PsiFile file, @NotNull PsiElement startElement,
+                        @NotNull PsiElement endElement) {
+            PsiElement lastChild = startElement.getLastChild();
+            if (lastChild instanceof Header) {
+                lastChild.getNode().addLeaf(BundleDescriptorTokenType.NEWLINE, "\n", null);
+            }
+        }
     }
-  }
 }

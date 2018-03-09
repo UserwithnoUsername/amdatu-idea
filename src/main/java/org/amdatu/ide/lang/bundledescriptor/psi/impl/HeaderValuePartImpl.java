@@ -32,70 +32,72 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.tree.TokenSet;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorToken;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestToken;
-import org.amdatu.ide.lang.bundledescriptor.psi.ManifestTokenType;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderValuePartImpl extends ASTWrapperPsiElement implements HeaderValuePart {
-  private static final TokenSet SPACES = TokenSet.create(ManifestTokenType.SIGNIFICANT_SPACE, ManifestTokenType.NEWLINE);
+    private static final TokenSet SPACES =
+                    TokenSet.create(BundleDescriptorTokenType.SIGNIFICANT_SPACE, BundleDescriptorTokenType.NEWLINE);
 
-  private final HeaderParserRepository myRepository;
+    private final HeaderParserRepository myRepository;
 
-  public HeaderValuePartImpl(ASTNode node) {
-    super(node);
-    myRepository = ServiceManager.getService(HeaderParserRepository.class);
-  }
-
-  @NotNull
-  @Override
-  public PsiReference[] getReferences() {
-    return getUnwrappedText().isEmpty() ? PsiReference.EMPTY_ARRAY : myRepository.getReferences(this);
-  }
-
-  @NotNull
-  @Override
-  public String getUnwrappedText() {
-    StringBuilder builder = new StringBuilder();
-
-    for (PsiElement element = getFirstChild(); element != null; element = element.getNextSibling()) {
-      if (!(isSpace(element))) {
-        builder.append(element.getText());
-      }
+    public HeaderValuePartImpl(ASTNode node) {
+        super(node);
+        myRepository = ServiceManager.getService(HeaderParserRepository.class);
     }
 
-    return builder.toString().trim();
-  }
-
-  @NotNull
-  @Override
-  public TextRange getHighlightingRange() {
-    int endOffset = getTextRange().getEndOffset();
-    PsiElement last = getLastChild();
-    while (isSpace(last)) {
-      endOffset -= last.getTextLength();
-      last = last.getPrevSibling();
+    @NotNull
+    @Override
+    public PsiReference[] getReferences() {
+        return getUnwrappedText().isEmpty() ? PsiReference.EMPTY_ARRAY : myRepository.getReferences(this);
     }
 
-    int startOffset = getTextOffset();
-    PsiElement first = getFirstChild();
-    while (startOffset < endOffset && isSpace(first)) {
-      startOffset += first.getTextLength();
-      first = first.getNextSibling();
+    @NotNull
+    @Override
+    public String getUnwrappedText() {
+        StringBuilder builder = new StringBuilder();
+
+        for (PsiElement element = getFirstChild(); element != null; element = element.getNextSibling()) {
+            if (!(isSpace(element))) {
+                builder.append(element.getText());
+            }
+        }
+
+        return builder.toString().trim();
     }
 
-    return new TextRange(startOffset, endOffset);
-  }
+    @NotNull
+    @Override
+    public TextRange getHighlightingRange() {
+        int endOffset = getTextRange().getEndOffset();
+        PsiElement last = getLastChild();
+        while (isSpace(last)) {
+            endOffset -= last.getTextLength();
+            last = last.getPrevSibling();
+        }
 
-  @Override
-  public String toString() {
-    return "HeaderValuePart";
-  }
+        int startOffset = getTextOffset();
+        PsiElement first = getFirstChild();
+        while (startOffset < endOffset && isSpace(first)) {
+            startOffset += first.getTextLength();
+            first = first.getNextSibling();
+        }
 
-  private static boolean isSpace(PsiElement element) {
-    return element instanceof ManifestToken && SPACES.contains(((ManifestToken)element).getTokenType());
-  }
+        return new TextRange(startOffset, endOffset);
+    }
+
+    @Override
+    public String toString() {
+        return "HeaderValuePart";
+    }
+
+    private static boolean isSpace(PsiElement element) {
+        return element instanceof BundleDescriptorToken && SPACES
+                        .contains(((BundleDescriptorToken) element).getTokenType());
+    }
 }

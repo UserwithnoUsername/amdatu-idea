@@ -22,21 +22,28 @@
  * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.amdatu.ide.lang.bundledescriptor.highlighting;
+package org.amdatu.ide.lang.bundledescriptor.psi.impl;
 
-import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.psi.impl.source.tree.LeafPsiElement;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorToken;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
-public class ManifestColorsAndFonts {
-  public static final TextAttributesKey HEADER_NAME_KEY =
-    TextAttributesKey.createTextAttributesKey("manifest.header.name", DefaultLanguageHighlighterColors.KEYWORD);
-  public static final TextAttributesKey HEADER_ASSIGNMENT_KEY =
-    TextAttributesKey.createTextAttributesKey("manifest.header.assignment", DefaultLanguageHighlighterColors.OPERATION_SIGN);
-  public static final TextAttributesKey HEADER_VALUE_KEY =
-    TextAttributesKey.createTextAttributesKey("manifest.header.value", DefaultLanguageHighlighterColors.IDENTIFIER);
+public class BundleDescriptorTokenImpl extends LeafPsiElement implements BundleDescriptorToken {
+    public BundleDescriptorTokenImpl(@NotNull BundleDescriptorTokenType type, CharSequence text) {
+        super(type, text);
+    }
 
-  private ManifestColorsAndFonts() { }
+    @Override
+    public BundleDescriptorTokenType getTokenType() {
+        return (BundleDescriptorTokenType) getElementType();
+    }
+
+    @Override
+    public String toString() {
+        return "BundleDescriptorToken:" + getTokenType();
+    }
 }

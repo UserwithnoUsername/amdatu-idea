@@ -33,8 +33,9 @@ import java.util.Map;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public interface HeaderParserProvider {
-  ExtensionPointName<HeaderParserProvider> EP_NAME = ExtensionPointName.create("com.intellij.manifest.parser.provider");
+    ExtensionPointName<HeaderParserProvider> EP_NAME =
+                    ExtensionPointName.create("com.intellij.manifest.parser.provider");
 
-  @NotNull
-  Map<String, HeaderParser> getHeaderParsers();
+    @NotNull
+    Map<String, HeaderParser> getHeaderParsers();
 }
