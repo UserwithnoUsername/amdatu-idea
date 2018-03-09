@@ -65,7 +65,7 @@ public class HeaderAnnotator implements Annotator {
     private static boolean isValidName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (!(c == '-' || c == '_' || Character.isLetterOrDigit(c))) {
+            if (!(c == '-' || c == '_' || c == '.' || Character.isLetterOrDigit(c))) {
                 return false;
             }
         }

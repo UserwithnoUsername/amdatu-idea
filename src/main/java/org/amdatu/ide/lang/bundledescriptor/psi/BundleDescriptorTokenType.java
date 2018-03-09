@@ -64,6 +64,8 @@ public final class BundleDescriptorTokenType extends IElementType implements ILe
                     OPENING_BRACKET_TOKEN = new BundleDescriptorTokenType("OPENING_BRACKET_TOKEN");
     public static final BundleDescriptorTokenType
                     CLOSING_BRACKET_TOKEN = new BundleDescriptorTokenType("CLOSING_BRACKET_TOKEN");
+    public static final BundleDescriptorTokenType
+                    COMMENT = new BundleDescriptorTokenType("COMMENT");
 
     private BundleDescriptorTokenType(@NotNull @NonNls String debugName) {
         super(debugName, BundleDescriptorLanguage.INSTANCE);

@@ -101,7 +101,8 @@ public class BundleDescriptorParser implements PsiParser {
             builder.advanceLexer();
 
             if (!expect(builder, BundleDescriptorTokenType.SIGNIFICANT_SPACE)) {
-                builder.error(BundleDescriptorBundle.message("manifest.whitespace.expected"));
+                // This is not an error in a bnd descriptor
+//                builder.error(BundleDescriptorBundle.message("manifest.whitespace.expected"));
             }
 
             HeaderParser headerParser =

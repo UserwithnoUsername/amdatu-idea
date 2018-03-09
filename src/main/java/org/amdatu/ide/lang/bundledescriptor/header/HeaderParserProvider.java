@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public interface HeaderParserProvider {
     ExtensionPointName<HeaderParserProvider> EP_NAME =
-                    ExtensionPointName.create("com.intellij.manifest.parser.provider");
+                    ExtensionPointName.create("org.amdatu.ide.lang.bundledescriptor.parser.provider");
 
     @NotNull
     Map<String, HeaderParser> getHeaderParsers();

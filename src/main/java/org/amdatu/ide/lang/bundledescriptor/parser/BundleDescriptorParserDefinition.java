@@ -37,6 +37,7 @@ import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.PsiUtilCore;
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorElementType;
+import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.amdatu.ide.lang.bundledescriptor.psi.impl.BundleDescriptorFileImpl;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +71,7 @@ public class BundleDescriptorParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public TokenSet getCommentTokens() {
-        return TokenSet.EMPTY;
+        return TokenSet.create(BundleDescriptorTokenType.COMMENT);
     }
 
     @NotNull

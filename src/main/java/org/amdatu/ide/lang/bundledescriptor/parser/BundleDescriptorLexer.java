@@ -119,13 +119,26 @@ public class BundleDescriptorLexer extends LexerBase {
 
         if (atLineStart) {
             myDefaultState = true;
-            if (c == ' ') {
+            if (c == ' ' || c == '\t') {
                 myTokenType = BundleDescriptorTokenType.SIGNIFICANT_SPACE;
                 myTokenEnd = myTokenStart + 1;
             }
             else if (c == '\n') {
                 myTokenType = BundleDescriptorTokenType.SECTION_END;
                 myTokenEnd = myTokenStart + 1;
+            }
+            else if (c == '#') {
+                int valueEnd = myTokenStart + 1;
+                while (valueEnd < myEndOffset) {
+                    c = myBuffer.charAt(valueEnd);
+                    if (c == '\n') {
+                        ++valueEnd;
+                        break;
+                    }
+                    ++valueEnd;
+                }
+                myTokenType = BundleDescriptorTokenType.COMMENT;
+                myTokenEnd = valueEnd;
             }
             else {
                 int headerEnd = myTokenStart + 1;

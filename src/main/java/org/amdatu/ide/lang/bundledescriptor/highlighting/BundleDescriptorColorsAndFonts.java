@@ -27,19 +27,24 @@ package org.amdatu.ide.lang.bundledescriptor.highlighting;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 
+import static com.intellij.openapi.editor.DefaultLanguageHighlighterColors.LINE_COMMENT;
+
 /**
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class BundleDescriptorColorsAndFonts {
     public static final TextAttributesKey HEADER_NAME_KEY =
-                    TextAttributesKey.createTextAttributesKey("manifest.header.name",
+                    TextAttributesKey.createTextAttributesKey("bundledescriptor.header.name",
                                     DefaultLanguageHighlighterColors.KEYWORD);
     public static final TextAttributesKey HEADER_ASSIGNMENT_KEY =
-                    TextAttributesKey.createTextAttributesKey("manifest.header.assignment",
+                    TextAttributesKey.createTextAttributesKey("bundledescriptor.header.assignment",
                                     DefaultLanguageHighlighterColors.OPERATION_SIGN);
     public static final TextAttributesKey HEADER_VALUE_KEY =
-                    TextAttributesKey.createTextAttributesKey("manifest.header.value",
+                    TextAttributesKey.createTextAttributesKey("bundledescriptor.header.value",
                                     DefaultLanguageHighlighterColors.IDENTIFIER);
+
+    public static final TextAttributesKey COMMENT_KEY = TextAttributesKey
+                    .createTextAttributesKey("bundledescriptor.comment", LINE_COMMENT);
 
     private BundleDescriptorColorsAndFonts() {
     }

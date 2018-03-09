@@ -41,6 +41,7 @@ public class BundleDescriptorSyntaxHighlighterFactory extends SyntaxHighlighterF
             myAttributes.put(BundleDescriptorTokenType.COLON, BundleDescriptorColorsAndFonts.HEADER_ASSIGNMENT_KEY);
             myAttributes.put(BundleDescriptorTokenType.HEADER_VALUE_PART,
                             BundleDescriptorColorsAndFonts.HEADER_VALUE_KEY);
+            myAttributes.put(BundleDescriptorTokenType.COMMENT, BundleDescriptorColorsAndFonts.COMMENT_KEY);
         }
 
         @NotNull
