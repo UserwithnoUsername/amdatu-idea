@@ -69,7 +69,7 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
     }
 
     @Override
-    public void setList(List<Project> list) throws ConfigurationException {
+    public void setList(List<Project> list) {
         myChosenProjects = ContainerUtil.newHashSet(list);
     }
 

@@ -35,7 +35,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -144,7 +143,7 @@ public class AmdatuIdeModuleSelectTemplateWizardStep extends SdkSettingsStep {
     }
 
     @Override
-    public void _commit(boolean finishChosen) throws CommitStepException {
+    public void _commit(boolean finishChosen) {
 
     }
 

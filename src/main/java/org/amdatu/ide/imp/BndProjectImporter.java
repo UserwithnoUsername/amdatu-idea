@@ -361,7 +361,7 @@ public class BndProjectImporter {
                     Collection<Container> classpath,
                     boolean tests,
                     Set<Container> excluded,
-                    List<String> warnings) throws Exception {
+                    List<String> warnings) {
         DependencyScope scope = tests ? DependencyScope.TEST : DependencyScope.COMPILE;
         for (Container dependency : classpath) {
             if (excluded.contains(dependency)) {

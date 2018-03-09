@@ -7,12 +7,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BundleDescriptorTypeFactory extends FileTypeFactory {
 
     public final static LanguageFileType BUNDLE_DESCRIPTOR_FILE_TYPE = new BundleDescriptorFileType();
-    public static final String EXTENSIONS = Arrays.asList("bnd", "bndrun")
-                    .stream()
+    public static final String EXTENSIONS = Stream.of("bnd", "bndrun")
                     .collect(Collectors.joining(FileTypeConsumer.EXTENSION_DELIMITER));
 
     @Override

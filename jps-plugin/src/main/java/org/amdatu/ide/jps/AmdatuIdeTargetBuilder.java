@@ -45,14 +45,14 @@ public class AmdatuIdeTargetBuilder extends TargetBuilder<BuildRootDescriptor, A
     public void build(@NotNull AmdatuIdeModuleBasedBuildTarget target,
                       @NotNull DirtyFilesHolder<BuildRootDescriptor, AmdatuIdeModuleBasedBuildTarget> holder,
                       @NotNull BuildOutputConsumer outputConsumer,
-                      @NotNull CompileContext context) throws ProjectBuildException, IOException {
+                      @NotNull CompileContext context) throws IOException {
         if (JavaBuilderUtil.isForcedRecompilationAllJavaModules(context) ||
                 holder.hasDirtyFiles() || holder.hasRemovedFiles()) {
             doBuild(target, context);
         }
     }
 
-    public void doBuild(@NotNull AmdatuIdeModuleBasedBuildTarget target, @NotNull CompileContext context) throws IOException {
+    public void doBuild(@NotNull AmdatuIdeModuleBasedBuildTarget target, @NotNull CompileContext context) {
 
         context.processMessage(new ProgressMessage("Running bnd build for: " + target.getModule().getName()));
 

@@ -24,7 +24,6 @@
  */
 package org.amdatu.ide.lang.bundledescriptor.completion;
 
-import aQute.bnd.build.Workspace;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
@@ -36,24 +35,13 @@ import com.intellij.codeInsight.completion.PlainPrefixMatcher;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.editor.EditorModificationUtil;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
-import org.amdatu.ide.AmdatuIdePlugin;
 import org.amdatu.ide.lang.bundledescriptor.BundleDescriptorLanguage;
 import org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository;
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
-import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 
@@ -64,6 +52,12 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class BundleDescriptorCompletionContributor extends CompletionContributor {
+
+    private static final InsertHandler<LookupElement> HEADER_INSERT_HANDLER = (context, item) -> {
+        context.setAddCompletionChar(false);
+        EditorModificationUtil.insertStringAtCaret(context.getEditor(), ": ");
+        context.commitDocument();
+    };
 
     public BundleDescriptorCompletionContributor(@NotNull final HeaderParserRepository repository) {
         extend(CompletionType.BASIC,
@@ -90,6 +84,7 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
     }
 
     // For debugging, this method is called just before creating the list of completions and is a nice place to put a break point
+    @SuppressWarnings("EmptyMethod")
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
         super.fillCompletionVariants(parameters, result);
@@ -111,12 +106,5 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
         return substr.trim();
     }
 
-    private static final InsertHandler<LookupElement> HEADER_INSERT_HANDLER = new InsertHandler<LookupElement>() {
-        @Override
-        public void handleInsert(InsertionContext context, LookupElement item) {
-            context.setAddCompletionChar(false);
-            EditorModificationUtil.insertStringAtCaret(context.getEditor(), ": ");
-            context.commitDocument();
-        }
-    };
+
 }

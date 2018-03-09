@@ -54,6 +54,7 @@ public class AmdatuIdePreferencesEditor implements SearchableConfigurable {
         ToolbarDecorator decorator = ToolbarDecorator.createDecorator(templateRepoList);
         templateRepoListPanel.add(decorator.createPanel());
 
+        //noinspection unchecked
         templateRepoList.setModel(myTemplateRepoListModel);
         return root;
     }
@@ -72,7 +73,7 @@ public class AmdatuIdePreferencesEditor implements SearchableConfigurable {
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         AmdatuIdePreferences preferences = AmdatuIdePreferences.getInstance();
         preferences.setTemplateRepositoryUrls(myTemplateRepoListModel.getItems());
         this.modified = false;

@@ -6,11 +6,7 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionProvider;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.codeInsight.completion.InsertHandler;
-import com.intellij.codeInsight.completion.InsertionContext;
-import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
-import com.intellij.openapi.editor.EditorModificationUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -19,7 +15,6 @@ import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
 import org.amdatu.ide.AmdatuIdePlugin;
-import org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository;
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +42,7 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
     }
 
     // For debugging, this method is called just before creating the list of completions and is a nice place to put a break point
+    @SuppressWarnings("EmptyMethod")
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
         super.fillCompletionVariants(parameters, result);
