@@ -59,6 +59,8 @@
         <!--<projectTemplatesFactory implementation="org.amdatu.ide.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
         <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.ide.templating.AmdatuIdeModuleType"/>
 
+        <toolWindow id="Amdatu IDE " icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.ide.toolwindow.AmdatuIdeToolWindowFactory"/>
+
         <!-- Plugin preferences -->
         <applicationService serviceImplementation="org.amdatu.ide.preferences.AmdatuIdePreferences"/>
         <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu IDE"
