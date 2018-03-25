@@ -1,3 +1,11 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.30"
+    }
+}
 plugins {
     id "org.jetbrains.intellij" version "0.2.18"
 }
@@ -17,6 +25,14 @@ allprojects {
     }
 }
 
+// Just for the main project for now
+apply plugin: 'kotlin'
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
 repositories {
     mavenCentral()
 }
