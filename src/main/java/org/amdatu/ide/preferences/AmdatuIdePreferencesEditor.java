@@ -13,6 +13,8 @@ import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 
 public class AmdatuIdePreferencesEditor implements SearchableConfigurable {
     private JList templateRepoList;
@@ -53,6 +55,23 @@ public class AmdatuIdePreferencesEditor implements SearchableConfigurable {
         reset();
         ToolbarDecorator decorator = ToolbarDecorator.createDecorator(templateRepoList);
         templateRepoListPanel.add(decorator.createPanel());
+
+        myTemplateRepoListModel.addListDataListener(new ListDataListener() {
+            @Override
+            public void intervalAdded(ListDataEvent e) {
+                modified = true;
+            }
+
+            @Override
+            public void intervalRemoved(ListDataEvent e) {
+                modified = true;
+            }
+
+            @Override
+            public void contentsChanged(ListDataEvent e) {
+                modified = true;
+            }
+        });
 
         //noinspection unchecked
         templateRepoList.setModel(myTemplateRepoListModel);
