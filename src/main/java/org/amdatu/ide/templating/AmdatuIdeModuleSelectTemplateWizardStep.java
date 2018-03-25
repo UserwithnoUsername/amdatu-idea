@@ -3,7 +3,6 @@ package org.amdatu.ide.templating;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.util.projectWizard.SdkSettingsStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
-import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;

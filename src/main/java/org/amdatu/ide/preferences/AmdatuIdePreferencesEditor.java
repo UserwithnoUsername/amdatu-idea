@@ -1,6 +1,5 @@
 package org.amdatu.ide.preferences;
 
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ToolbarDecorator;

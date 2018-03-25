@@ -78,7 +78,7 @@ class PsiUtil {
             return amdatuIdePlugin
         }
 
-        inline fun Logger.debug(lazyMessage: () -> String) {
+        private inline fun Logger.debug(lazyMessage: () -> String) {
             if (isDebugEnabled) {
                 debug(lazyMessage())
             }

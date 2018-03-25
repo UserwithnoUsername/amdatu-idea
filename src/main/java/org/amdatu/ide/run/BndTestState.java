@@ -60,6 +60,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -392,7 +393,7 @@ public class BndTestState extends JavaCommandLineState {
 
                 if (myFailingTest != null) {
                     String testName = fullTestName(parseTestName(myFailingTest, false), myFailingTest);
-                    boolean testError = myReason != Proto.FAILED;
+                    boolean testError = !Objects.equals(myReason, Proto.FAILED);
                     String expected = pair != null ? pair.first : null;
                     String actual = pair != null ? pair.second : null;
                     myProcessor.onTestFailure(

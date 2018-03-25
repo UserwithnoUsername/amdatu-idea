@@ -34,7 +34,7 @@ class MissingPrivatePackage : LocalInspectionTool() {
             return null
         }
 
-        val (_, module, workspace, _, builder) =
+        val (_, module, _, _, builder) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
         return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
