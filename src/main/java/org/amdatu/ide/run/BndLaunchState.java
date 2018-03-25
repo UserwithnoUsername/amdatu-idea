@@ -32,9 +32,6 @@ import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileAttributes;
@@ -59,11 +56,11 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
     private final BndRunConfigurationBase.Launch myConfiguration;
     private final Project myProject;
     private final NotificationGroup myNotifications;
-    private final ProjectLauncher myLauncher;
-    private final Map<String, Pair<Long, Long>> myBundleStamps;
+    private ProjectLauncher myLauncher;
+    private final Map<String, Pair<Long, Long>> myBundleStamps = ContainerUtil.newHashMap();
 
     public BndLaunchState(@NotNull ExecutionEnvironment environment,
-                    @NotNull BndRunConfigurationBase.Launch configuration) throws ExecutionException {
+                    @NotNull BndRunConfigurationBase.Launch configuration) {
         super(environment);
 
         myConfiguration = configuration;
@@ -77,7 +74,10 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
             ourNotificationGroups.put(toolWindowId, notificationGroup);
         }
         myNotifications = notificationGroup;
+    }
 
+    @Override
+    protected JavaParameters createJavaParameters() throws ExecutionException {
         String bndRunFile = myConfiguration.getOptions().getBndRunFile();
         File runFile = bndRunFile == null ? null : new File(bndRunFile);
         if (runFile == null || !runFile.isFile()) {
@@ -85,39 +85,29 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         }
 
         try {
-            String title = message("bnd.run.configuration.progress");
-            myLauncher = ProgressManager.getInstance()
-                            .run(new Task.WithResult<ProjectLauncher, Exception>(myProject, title, false) {
-                                @Override
-                                protected ProjectLauncher compute(@NotNull ProgressIndicator indicator)
-                                                throws Exception {
-                                    indicator.setIndeterminate(true);
-                                    AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
-                                    Workspace workspace = amdatuIdePlugin.getWorkspace();
+            AmdatuIdePlugin amdatuIdePlugin = myProject.getComponent(AmdatuIdePlugin.class);
+            Workspace workspace = amdatuIdePlugin.getWorkspace();
 
-                                    ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
-                                    launcher.prepare();
+            ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
+            launcher.prepare();
 
-                                    if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
-                                        throw new CantRunException(
-                                                        message("bnd.test.cannot.run", "project has errors"));
-                                    }
+            if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
+                throw new CantRunException(
+                                message("bnd.test.cannot.run", "project has errors"));
+            }
 
-                                    return launcher;
-                                }
-                            });
+            myLauncher = launcher;
         }
-        catch (Throwable t) {
-            LOG.info(t);
-            throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(t)));
+        catch (CantRunException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            LOG.info(e);
+            throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(e)));
         }
 
-        myBundleStamps = ContainerUtil.newHashMap();
         bundlesChanged();
-    }
 
-    @Override
-    protected JavaParameters createJavaParameters() throws ExecutionException {
         return BndLaunchUtil.createJavaParameters(myConfiguration, myLauncher);
     }
 

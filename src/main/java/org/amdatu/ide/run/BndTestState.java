@@ -45,9 +45,6 @@ import com.intellij.execution.testframework.sm.runner.events.TestSuiteStartedEve
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
@@ -75,45 +72,39 @@ public class BndTestState extends JavaCommandLineState {
     private static final Logger LOG = Logger.getInstance(BndTestState.class);
 
     private final BndRunConfigurationBase.Test myConfiguration;
-    private final ProjectTester myTester;
-    private final ServerSocket mySocket;
+    private ProjectTester myTester;
+    private ServerSocket mySocket;
 
-    public BndTestState(@NotNull ExecutionEnvironment environment, @NotNull BndRunConfigurationBase.Test configuration)
-                    throws ExecutionException {
+    public BndTestState(@NotNull ExecutionEnvironment environment,
+                    @NotNull BndRunConfigurationBase.Test configuration) {
         super(environment);
-
         myConfiguration = configuration;
+    }
 
+    @Override
+    protected JavaParameters createJavaParameters() throws ExecutionException {
         try {
-            String title = message("bnd.run.configuration.progress");
-            myTester = ProgressManager.getInstance()
-                            .run(new Task.WithResult<ProjectTester, Exception>(myConfiguration.getProject(), title,
-                                            false) {
-                                @Override
-                                protected ProjectTester compute(@NotNull ProgressIndicator indicator) throws Exception {
-                                    indicator.setIndeterminate(true);
+            AmdatuIdePlugin amdatuIdePlugin = myConfiguration.getProject().getComponent(AmdatuIdePlugin.class);
+            Workspace workspace = amdatuIdePlugin.getWorkspace();
 
-                                    Workspace workspace = environment.getProject().getComponent(AmdatuIdePlugin.class)
-                                                    .getWorkspace();
-                                    BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
-                                    Project project = workspace.getProject(configurationOptions.getModuleName());
+            BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
+            Project project = workspace.getProject(configurationOptions.getModuleName());
 
-                                    AmdatuIdePlugin amdatuIdePlugin =
-                                                    myConfiguration.getProject().getComponent(AmdatuIdePlugin.class);
-                                    if (amdatuIdePlugin.reportErrors(project)) {
-                                        throw new CantRunException(
-                                                        message("bnd.test.cannot.run", "project has errors"));
-                                    }
-                                    // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
+
+            ProjectTester projectTester = project.getProjectTester();
+            if (configurationOptions.getTest() != null) {
+                projectTester.addTest(configurationOptions.getTest());
+            }
+
+            if (amdatuIdePlugin.reportErrors(project)) {
+                throw new CantRunException(
+                                message("bnd.test.cannot.run", "project has errors"));
+            }
+            // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
 //          amdatuIdePlugin.reportWarnings(project);
 
-                                    ProjectTester projectTester = project.getProjectTester();
-                                    if (configurationOptions.getTest() != null) {
-                                        projectTester.addTest(configurationOptions.getTest());
-                                    }
-                                    return projectTester;
-                                }
-                            });
+            myTester = projectTester;
+
         }
         catch (Throwable t) {
             LOG.info(t);
@@ -143,10 +134,7 @@ public class BndTestState extends JavaCommandLineState {
             LOG.info(e);
             throw new CantRunException(message("bnd.test.cannot.run", e.getMessage()));
         }
-    }
 
-    @Override
-    protected JavaParameters createJavaParameters() throws ExecutionException {
         ProjectLauncher launcher = myTester.getProjectLauncher();
         return BndLaunchUtil.createJavaParameters(myConfiguration, launcher);
     }
