@@ -10,7 +10,6 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
@@ -46,22 +45,6 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
         super.fillCompletionVariants(parameters, result);
-    }
-
-    public static String findPrefix(@NotNull CompletionParameters parameters) {
-        final PsiElement position = parameters.getPosition();
-        final int offset = parameters.getOffset();
-        TextRange range = position.getTextRange();
-        assert range.containsOffset(offset) : position + "; " + offset + " not in " + range;
-        //noinspection deprecation
-
-        String substr = position.getText().substring(0, offset - position.getTextRange().getStartOffset());
-        if (substr.length() == 0 || Character.isWhitespace(substr.charAt(substr.length() - 1)))
-            return "";
-
-        substr = substr.trim();
-
-        return substr.trim();
     }
 
     private static class BlueprintFeatureCompletionProvider extends CompletionProvider<CompletionParameters> {

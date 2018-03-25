@@ -34,6 +34,9 @@
         <!-- Project import -->
         <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"/>
 
+        <!-- Inspections -->
+        <inspectionToolProvider implementation="org.amdatu.ide.inspections.AmdatuIdeInspectionToolProvider"/>
+
         <!-- Language -->
         <fileTypeFactory implementation="org.amdatu.ide.lang.bundledescriptor.BundleDescriptorTypeFactory"/>
         <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
@@ -43,6 +46,8 @@
                                  implementationClass="org.amdatu.ide.lang.bundledescriptor.psi.impl.HeaderValuePartManipulator"/>
         <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
         <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BsnCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.PackageCompletionContributor"/>
 
         <applicationService serviceImplementation="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository"/>
 
@@ -74,11 +79,33 @@
         <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
     </extensions>
 
+
     <actions>
+        <group popup="true" text="Amdatu IDE" id="AmdatuIDE" description="Amdatu IDE">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
         <!-- Project re-import (manual) -->
         <action id="amdatu.ide.action.reimport.workspace" icon="OsmorcIdeaIcons.Bnd" text="Reimport Workspace"
                 description="Reimport entire Bnd/Bndtools workspace"
                 class="org.amdatu.ide.imp.ReimportWorkspaceAction">
+            <add-to-group group-id="AmdatuIDE" anchor="last"/>
+
+        </action>
+
+        <!-- Refresh workspace -->
+        <action id="amdatu.ide.action.refresh-workspace" icon="OsmorcIdeaIcons.Bnd"
+                text="Refresh workspace"
+                description="Refresh workspace"
+                class="org.amdatu.ide.actions.RefreshWorkspaceAction">
+            <add-to-group group-id="AmdatuIDE" anchor="last"/>
+        </action>
+
+        <!-- Generate index -->
+        <action id="amdatu.ide.action.generate-index" icon="OsmorcIdeaIcons.Bnd"
+                text="Generate index"
+                description="Generate index"
+                class="org.amdatu.ide.actions.index.GenerateIndexAction">
+            <add-to-group group-id="AmdatuIDE" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>
