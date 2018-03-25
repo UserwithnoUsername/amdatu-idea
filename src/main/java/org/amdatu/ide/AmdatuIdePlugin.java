@@ -13,9 +13,15 @@ public interface AmdatuIdePlugin {
      */
     Workspace getWorkspace();
 
-    void reImportProjects();
+    void refreshWorkspace(boolean refreshExportedContentJars);
 
     boolean reportErrors(aQute.bnd.build.Project project);
 
     boolean reportWarnings(aQute.bnd.build.Project project);
+
+    void info(String message);
+
+    void warning(String message);
+
+    void error(String message);
 }

@@ -84,7 +84,9 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                     reportWorkspaceIssues();
 
                     // TODO: This could slow down startup a bit but we need these.
-                    generateExportedContentsJars();
+                    generateExportedContentsJars(true);
+
+                    reImportProjects();
 
                     MessageBusConnection connection = myProject.getMessageBus().connect();
                     connection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
@@ -99,7 +101,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         }
     }
 
-    public void refreshWorkspace() {
+    @Override
+    public void refreshWorkspace(boolean refreshExportedContentJars) {
         synchronized (workspaceLock) {
             if (workspace == null) {
                 Notifications.Bus.notify(new Notification("amdatu-ide", "Success",
@@ -107,19 +110,29 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 return;
             }
             long start = System.currentTimeMillis();
+            workspace.getCurrentProjects().forEach(aQute.bnd.build.Project::clear);
             workspace.clear();
-            workspace.refresh();
+            workspace.forceRefresh();
+
+            for (aQute.bnd.build.Project project : workspace.getCurrentProjects()) {
+                project.propertiesChanged();
+            }
 
             refreshRepositories();
+
+            reportWorkspaceIssues();
+
+            // TODO: This is not the best place, come up with a good moment to generate these jars.
+            generateExportedContentsJars(refreshExportedContentJars);
+
+            reImportProjects();
 
             Notifications.Bus.notify(new Notification("amdatu-ide", "Success",
                             "Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms",
                             NotificationType.INFORMATION));
-            reportWorkspaceIssues();
         }
     }
 
-    @Override
     public void reImportProjects() {
         /* TODO: Only refresh if the workspace has no errors?!
          * This makes sense but not sure if a project error will bubble up to the workspace as well
@@ -196,23 +209,20 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
      */
     private class BndFileChangedListener implements BulkFileListener {
 
-        private final Set<String> myWorkspaceFileNames = new HashSet<>();
-
         public BndFileChangedListener() {
-            updateWorkspaceFileNames();
+            workspaceFileNames();
         }
 
-        private void updateWorkspaceFileNames() {
+        private Set<String> workspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
             if (workspace.getIncluded() != null) {
                 workspaceFiles.addAll(workspace.getIncluded());
             }
             workspaceFiles.add(workspace.getPropertiesFile());
 
-            myWorkspaceFileNames.clear();
-            myWorkspaceFileNames.addAll(workspaceFiles.stream()
+            return workspaceFiles.stream()
                             .map(File::getAbsolutePath)
-                            .collect(Collectors.toSet()));
+                            .collect(Collectors.toSet());
         }
 
         @Override
@@ -222,7 +232,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             Set<String> modulesToRefresh = ContainerUtil.newHashSet();
             for (VFileEvent event : events) {
                 VirtualFile file = event.getFile();
-                if (myWorkspaceFileNames.contains(file.getCanonicalPath())) {
+                if (workspaceFileNames().contains(file.getPath())) {
                     // A workspace file has changed (.bnd file in cnf folder) refresh the workspace
 
                     // TODO: Do we need to de-bounce this refresh operation??
@@ -250,13 +260,9 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     if (finalRefreshWorkspace) {
-                        refreshWorkspace();
-                        updateWorkspaceFileNames();
-                        // TODO: This is not the best place, come up with a good moment to generate these jars.
-                        generateExportedContentsJars();
+                        refreshWorkspace(false);
                     }
                     if (finalRefreshWorkspace || finalImportProjects) {
-//                generateExportedContentsJars(); // TODO: Moved to do this after workspace refresh only for now
                         if (!finalRefreshWorkspace) {
                             synchronized (workspaceLock) {
                                 for (String moduleName : modulesToRefresh) {
@@ -271,7 +277,6 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                                 }
                             }
                         }
-
                         reImportProjects();
                     }
                 }
@@ -279,7 +284,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         }
     }
 
-    public void generateExportedContentsJars() {
+    public void generateExportedContentsJars(boolean rebuild) {
         try {
             workspace.getAllProjects().forEach(p -> {
                 try {
@@ -305,10 +310,12 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                                 projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
                             }
                             projectBuilder.setBase(base);
-                            Jar build = projectBuilder.build();
-                            File outputFile =
-                                            project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
-                            build.write(outputFile);
+                            File outputFile = project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
+
+                            if (!outputFile.exists() || rebuild) {
+                                Jar build = projectBuilder.build();
+                                build.write(outputFile);
+                            }
                         }
                     }
                 }
@@ -394,13 +401,32 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         if (messages != null && !messages.isEmpty()) {
             for (String message : messages) {
                 LOG.info("Bnd project project: " + project.getName() + " message: " + message);
-                NOTIFICATIONS.createNotification("Amdatu IDE", message, type, null).notify(myProject);
+                message(type, message);
             }
             return true;
         }
         else {
             return false;
         }
+    }
+
+    @Override
+    public void info(String message) {
+        message(NotificationType.INFORMATION, message);
+    }
+
+    @Override
+    public void warning(String message) {
+        message(NotificationType.WARNING, message);
+    }
+
+    @Override
+    public void error(String message) {
+        message(NotificationType.ERROR, message);
+    }
+
+    private void message(NotificationType type, String message) {
+        NOTIFICATIONS.createNotification("Amdatu IDE", message, type, null).notify(myProject);
     }
 
 }
