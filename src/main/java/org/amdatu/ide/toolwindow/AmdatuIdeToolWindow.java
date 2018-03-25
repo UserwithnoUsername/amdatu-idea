@@ -83,7 +83,16 @@ public class AmdatuIdeToolWindow {
         public List<BsnNode> getBsnNodes() {
             if (myBsnNodes == null) {
                 try {
-                    myBsnNodes = myRepositoryPlugin.list(myFilter).stream()
+                    String filter = null;
+                    if (myFilter != null && !"".equals(myFilter.trim())) {
+                        filter = myFilter;
+                        if (!filter.endsWith("*")) {
+                            filter += "*";
+                        }
+                    }
+                    myBsnNodes = myRepositoryPlugin
+                                    .list(filter)
+                                    .stream()
                                     .sorted()
                                     .map(bsn -> new BsnNode(this, bsn))
                                     .collect(Collectors.toList());
