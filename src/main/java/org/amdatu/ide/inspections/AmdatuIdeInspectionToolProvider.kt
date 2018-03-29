@@ -8,7 +8,8 @@ class AmdatuIdeInspectionToolProvider : InspectionToolProvider {
         return arrayOf(
                 ExportedPackageWithoutVersion::class.java as Class<Any>,
                 MissingExportedPackage::class.java as Class<Any>,
-                MissingPrivatePackage::class.java as Class<Any>)
+                MissingPrivatePackage::class.java as Class<Any>,
+                MissingBundleInspection::class.java as Class<Any>)
     }
 
 }

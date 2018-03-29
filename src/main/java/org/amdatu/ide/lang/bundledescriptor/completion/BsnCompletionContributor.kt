@@ -55,6 +55,9 @@ class BsnCompletionContributor : CompletionContributor() {
                     .forEach {
                         result.addElement(LookupElementBuilder.create(it))
                     }
+            RepoUtil.getBundles(parameters.position.project).forEach {
+                result.addElement(LookupElementBuilder.create(it))
+            }
         }
 
         private fun shouldComplete(parameters: CompletionParameters): Boolean {

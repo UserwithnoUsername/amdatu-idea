@@ -40,6 +40,7 @@ repositories {
 dependencies {
     compile "biz.aQute.bnd:biz.aQute.bnd:3.5.0",
             "eu.maxschuster:dataurl:2.0.0",
+            "org.osgi:org.osgi.core:6.0.0",
             project('jps-plugin'),
             fileTree(dir: 'lib', include: ['*.jar'])
 
