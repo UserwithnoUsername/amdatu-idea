@@ -51,6 +51,7 @@
 
         <applicationService serviceImplementation="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository"/>
 
+        <lang.commenter language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.BundleDescriptorCommenter" />
 
         <!-- JPS plugin -->
         <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"/>
