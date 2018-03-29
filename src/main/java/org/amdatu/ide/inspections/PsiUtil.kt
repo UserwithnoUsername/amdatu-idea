@@ -30,7 +30,7 @@ class PsiUtil {
 
             val bndProject = getBndProject(workspace, module) ?: return null
 
-            val builder: Builder? = if (bndProject.get(Constants.SUB) == null) {
+            val builder: Builder? = if (bndProject.get(Constants.SUB) == null || psiFile.name == "bnd.bnd") {
                 bndProject.getBuilder(null)
             } else {
                 bndProject.getSubBuilder(File(psiFile.virtualFile.path))
