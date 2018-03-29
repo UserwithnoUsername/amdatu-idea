@@ -15,8 +15,11 @@ import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -314,7 +317,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                                 projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
                             }
                             projectBuilder.setBase(base);
-                            File outputFile = project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
+                            File outputFile =
+                                            project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
 
                             if (!outputFile.exists() || rebuild) {
                                 Jar build = projectBuilder.build();
@@ -404,8 +408,15 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
         if (messages != null && !messages.isEmpty()) {
             for (String message : messages) {
+                if (message.startsWith("Cannot find /error/")
+                                // TODO: Not really sure why but this is reported twice with a slightly different message
+                                && messages.contains(message.substring("Cannot find /error/".length()))) {
+                    continue;
+                }
+
+                Report.Location location = project.getLocation(message);
                 LOG.info("Bnd project project: " + project.getName() + " message: " + message);
-                message(type, message);
+                message(type, message, project);
             }
             return true;
         }
@@ -430,7 +441,35 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     }
 
     private void message(NotificationType type, String message) {
-        NOTIFICATIONS.createNotification("Amdatu IDE", message, type, null).notify(myProject);
+        message(type, message, null);
+    }
+
+    private void message(NotificationType type, String message, aQute.bnd.build.Project bndProject) {
+
+        String title = "Amdatu IDE";
+        if (bndProject != null) {
+            title = String.format("%s [%s]", title, bndProject.getName());
+        }
+
+        Notification notification = NOTIFICATIONS.createNotification(title, message, type, null);
+        if (bndProject != null) {
+            notification.addAction(new AnAction("Open bundle descriptor") {
+
+                @Override
+                public void actionPerformed(AnActionEvent e) {
+                    if (e == null || e.getProject() == null) {
+                        return;
+                    }
+
+                    VirtualFile virtualFile = VirtualFileManager.getInstance()
+                                    .findFileByUrl("file://" + bndProject.getPropertiesFile().getAbsolutePath());
+                    FileEditorManager fileEditorManager = FileEditorManager.getInstance(e.getProject());
+
+                    fileEditorManager.openFile(virtualFile, true);
+                }
+            });
+        }
+        notification.notify(myProject);
     }
 
 }
