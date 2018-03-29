@@ -195,11 +195,11 @@ public class BndProjectImporter {
             }
             catch (Exception e) {
                 LOG.warn(e);
-                amdatuIdePlugin.reportErrors(project);
                 return false;
+            } finally {
+                amdatuIdePlugin.reportWarnings(project);
+                amdatuIdePlugin.reportErrors(project);
             }
-            amdatuIdePlugin.reportWarnings(project);
-            amdatuIdePlugin.reportErrors(project);
 
             findSources(project);
 
