@@ -4,7 +4,10 @@ import aQute.bnd.build.Workspace;
 
 public interface AmdatuIdePlugin {
 
+
     boolean isBndWorkspace();
+
+    boolean isWorkspaceInitialized();
 
     /**
      * Get the bnd workspace for a project

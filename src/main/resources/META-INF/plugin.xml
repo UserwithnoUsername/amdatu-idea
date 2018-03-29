@@ -71,6 +71,9 @@
         <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu IDE"
                                  instance="org.amdatu.ide.preferences.AmdatuIdePreferencesEditor"/>
 
+        <!-- Project view -->
+        <projectViewNodeDecorator implementation="org.amdatu.ide.AmdatuIdeProjectViewNodeDecorator"/>
+
     </extensions>
 
     <extensions defaultExtensionNs="org.amdatu.ide">

@@ -15,21 +15,36 @@
  */
 package icons;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.ui.LayeredIcon;
+import com.intellij.util.IconUtil;
 
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.SwingConstants;
 
 /**
  * NOTE THIS FILE IS AUTO-GENERATED
  * DO NOT EDIT IT BY HAND, run build/scripts/icons.gant instead
  */
 public class OsmorcIdeaIcons {
-  private static Icon load(String path) {
-    return IconLoader.getIcon(path, OsmorcIdeaIcons.class);
-  }
+    private static Icon load(String path) {
+        return IconLoader.getIcon(path, OsmorcIdeaIcons.class);
+    }
 
-  public static final Icon Bnd = load("/icons/bnd.png"); // 16x16
-  public static final Icon BndLaunch = load("/icons/bndLaunch.png"); // 16x16
-  public static final Icon BndTest = load("/icons/bndTest.png"); // 16x16
-  public static final Icon Osgi = load("/icons/osgi.png"); // 16x16
+    public static final Icon Bnd = load("/icons/bnd.png"); // 16x16
+    public static final Icon BndLaunch = load("/icons/bndLaunch.png"); // 16x16
+    public static final Icon BndTest = load("/icons/bndTest.png"); // 16x16
+    public static final Icon Osgi = load("/icons/osgi.png"); // 16x16
+    public static final Icon ExportedPackage = createLayeredIcon(AllIcons.Nodes.Package, AllIcons.General.Add);
+    public static final Icon PrivatePackage = createLayeredIcon(AllIcons.Nodes.Package, AllIcons.General.Remove);
+    public static final Icon NotIncludedPackage = createLayeredIcon(AllIcons.Nodes.Package, AllIcons.General.Error);
+
+
+    private static Icon createLayeredIcon(Icon base, Icon overlay) {
+        LayeredIcon layeredIcon = new LayeredIcon(2);
+        layeredIcon.setIcon(base, 0);
+        layeredIcon.setIcon(IconUtil.scale(overlay, 0.6), 1, SwingConstants.SOUTH_EAST);
+        return layeredIcon;
+    }
 }

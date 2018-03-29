@@ -66,6 +66,11 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
         return cnfDir.isDirectory();
     }
 
+    @Override
+    public boolean isWorkspaceInitialized() {
+        return this.workspace != null;
+    }
+
     @Nullable
     @Override
     public Workspace getWorkspace() {
