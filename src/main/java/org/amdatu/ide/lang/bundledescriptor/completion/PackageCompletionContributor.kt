@@ -50,10 +50,10 @@ class PackageCompletionContributor : CompletionContributor() {
             val module = projectFileIndex.getModuleForFile(parameters.originalFile.virtualFile) ?: return
 
             val added = Parameters(p[DUMMY_PROPERTY_KEY] as String).keys
-            PackageUtil.getPackagesForModule(module)
-                    .filter { !added.contains(it) } // Remove already added bundles
+            PackageUtil.getPsiPackagesForModule(module)
+                    .filter { !added.contains(it.qualifiedName) } // Remove already added bundles
                     .forEach {
-                        result.addElement(LookupElementBuilder.create(it))
+                        result.addElement(LookupElementBuilder.create(it.qualifiedName))
                     }
         }
 

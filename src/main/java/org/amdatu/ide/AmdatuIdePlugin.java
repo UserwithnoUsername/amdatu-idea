@@ -1,6 +1,9 @@
 package org.amdatu.ide;
 
 import aQute.bnd.build.Workspace;
+import com.intellij.psi.PsiDirectory;
+
+import java.util.Map;
 
 public interface AmdatuIdePlugin {
 
@@ -15,6 +18,8 @@ public interface AmdatuIdePlugin {
      * @return The bnd {@link Workspace} for the project
      */
     Workspace getWorkspace();
+
+    Map<PsiDirectory, String> getPackageStateMap();
 
     void refreshWorkspace(boolean refreshExportedContentJars);
 

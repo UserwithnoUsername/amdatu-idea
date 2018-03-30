@@ -10,7 +10,6 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
-import com.sun.tools.javac.code.Attribute
 import org.amdatu.ide.lang.bundledescriptor.completion.RepoUtil
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType
 import org.amdatu.ide.lang.bundledescriptor.psi.Header

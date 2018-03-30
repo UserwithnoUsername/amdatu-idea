@@ -5,11 +5,13 @@ import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Parameters;
 import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Instructions;
 import aQute.bnd.osgi.Jar;
 import aQute.bnd.repository.maven.provider.MavenBndRepository;
 import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
+import com.intellij.ide.projectView.ProjectView;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
@@ -19,8 +21,10 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.diagnostic.LoggerRt;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -34,15 +38,18 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiPackage;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
 import org.amdatu.ide.imp.BndProjectImporter;
+import org.amdatu.ide.inspections.PackageUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,6 +64,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
     private final Object workspaceLock = new Object();
     private final Project myProject;
     private Workspace workspace;
+    private Map<PsiDirectory, String> myPackageStateMap = ContainerUtil.newHashMap();
 
     public AmdatuIdePluginImpl(Project project) {
         myProject = project;
@@ -95,6 +103,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
                     reImportProjects();
 
+                    updatePackageStateMap();
+
                     MessageBusConnection connection = myProject.getMessageBus().connect();
                     connection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
                 }
@@ -106,6 +116,77 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             }
             return workspace;
         }
+    }
+
+    /**
+     * Update the package state map and refresh the ProjectTree
+     *
+     * This map is used to add the +, - and warning icon on top of the package icon in the tree
+     *
+     * TODO: Would be nice build this map in a dedicated component but for that we need to be able to hook into the workspace refresh.
+     *
+     * @throws Exception
+     */
+    private void updatePackageStateMap() {
+        try {
+            Map<PsiDirectory, String> packageStateMap = ContainerUtil.newHashMap();
+            ModuleManager instance = ModuleManager.getInstance(myProject);
+            for (Module module : instance.getModules()) {
+                Set<PsiPackage> psiPackagesForModule = PackageUtil.Companion.getPsiPackagesForModule(module);
+                if (psiPackagesForModule.isEmpty()) {
+                    // Don't even bother looking for a bnd project
+                    continue;
+                }
+
+                aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
+                if (bndProject == null) {
+                    continue;
+                }
+
+                Instructions exportPackageInstructions = new Instructions();
+                Instructions privatePackageInstructions = new Instructions();
+
+                for (Builder builder : bndProject.getBuilder(null).getSubBuilders()) {
+                    Parameters exportPackage = builder.getExportPackage();
+                    if (exportPackage != null) {
+                        exportPackageInstructions.append(exportPackage);
+                    }
+
+                    Parameters privatePackage = builder.getPrivatePackage();
+                    if (privatePackage != null) {
+                        privatePackageInstructions.append(privatePackage);
+                    }
+                }
+
+                for (PsiPackage psiPackage : psiPackagesForModule) {
+                    GlobalSearchScope moduleSourceScope =
+                                    GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module, false);
+                    PsiDirectory[] directories = psiPackage.getDirectories(moduleSourceScope);
+
+                    if (directories.length == 1) {
+                        boolean exportedPackage = !exportPackageInstructions.isEmpty() && exportPackageInstructions
+                                        .matches(psiPackage.getQualifiedName());
+                        boolean privatePackage = !privatePackageInstructions.isEmpty() && privatePackageInstructions
+                                        .matches(psiPackage.getQualifiedName());
+
+                        packageStateMap.put(directories[0],
+                                        (exportedPackage ? "exported" : privatePackage ? "private" : "not included"));
+                    }
+                }
+            }
+
+            myPackageStateMap.putAll(packageStateMap);
+            myPackageStateMap.keySet().retainAll(packageStateMap.keySet());
+
+            ProjectView.getInstance(myProject).refresh();
+        } catch (Exception e) {
+            LOG.error("Failed to refresh package state map", e);
+        }
+    }
+
+    @Override
+    public Map<PsiDirectory, String> getPackageStateMap() {
+        return myPackageStateMap;
     }
 
     @Override
@@ -133,6 +214,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             generateExportedContentsJars(refreshExportedContentJars);
 
             reImportProjects();
+            updatePackageStateMap();
 
             Notifications.Bus.notify(new Notification("amdatu-ide", "Success",
                             "Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms",
@@ -285,6 +367,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                             }
                         }
                         reImportProjects();
+                        updatePackageStateMap();
+
                     }
                 }
             }.queue();

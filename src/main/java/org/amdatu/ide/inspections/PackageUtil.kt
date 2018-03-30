@@ -34,7 +34,7 @@ class PackageUtil {
 
             val result: MutableList<PackageInfo> = mutableListOf()
 
-            val packagesForModule = getPackagesForModule(module)
+            val packagesForModule = getPsiPackagesForModule(module).map { it.qualifiedName }
 
             for ((instruction, attrs) in Instructions(parameters)) {
                 val pkg = when {
@@ -102,9 +102,9 @@ class PackageUtil {
          *
          * @param module the module to get a list of packages for
          */
-        fun getPackagesForModule(module: Module): Set<String> {
+        fun getPsiPackagesForModule(module: Module): Set<PsiPackage> {
 
-            val packages = mutableSetOf<String>()
+            val packages = mutableSetOf<PsiPackage>()
 
             val moduleScope = AnalysisScope(module)
             val javaPsiFacade = JavaPsiFacade.getInstance(module.project)
@@ -114,7 +114,7 @@ class PackageUtil {
                     if (file is PsiJavaFile) {
                         val psiPackage = javaPsiFacade.findPackage(file.packageName)
                         if (psiPackage != null) {
-                            packages.add(psiPackage.qualifiedName)
+                            packages.add(psiPackage)
                         }
                     }
                 }
