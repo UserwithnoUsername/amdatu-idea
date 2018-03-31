@@ -1,10 +1,8 @@
 package org.amdatu.ide
 
-import aQute.bnd.osgi.Instructions
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.projectView.ProjectViewNode
 import com.intellij.ide.projectView.ProjectViewNodeDecorator
-import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.packageDependencies.ui.PackageDependenciesNode
 import com.intellij.psi.PsiDirectory
 import com.intellij.ui.ColoredTreeCellRenderer
@@ -28,15 +26,12 @@ class AmdatuIdeProjectViewNodeDecorator : ProjectViewNodeDecorator {
 
         val amdatuIdePlugin = project.getComponent(AmdatuIdePlugin::class.java)
 
-        val packageStateMap = amdatuIdePlugin.packageStateMap
-        if (packageStateMap.isEmpty()) return
+        val packageInfoService = amdatuIdePlugin.packageInfoSevice
 
-        val get = packageStateMap[psiDirectory] ?: return
-
-        when (get){
-            "exported" -> data.setIcon(OsmorcIdeaIcons.ExportedPackage)
-            "private" -> data.setIcon(OsmorcIdeaIcons.PrivatePackage)
-            "not included" -> if (psiDirectory.children.firstOrNull { it !is PsiDirectory } != null) {
+        when (packageInfoService.packageStatus(psiDirectory)){
+            PackageStatus.EXPORTED -> data.setIcon(OsmorcIdeaIcons.ExportedPackage)
+            PackageStatus.PRIVATE -> data.setIcon(OsmorcIdeaIcons.PrivatePackage)
+            PackageStatus.NOT_INCLUDED -> if (psiDirectory.children.firstOrNull { it !is PsiDirectory } != null) {
                 // Only mark the package as not included if it contains files to prevent "empty middle packages"
                 // from being annotated in the non flattened view
                 data.setIcon(OsmorcIdeaIcons.NotIncludedPackage)

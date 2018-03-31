@@ -5,9 +5,6 @@ import aQute.bnd.service.RepositoryPlugin
 import com.intellij.openapi.project.Project
 import org.amdatu.ide.AmdatuIdePlugin
 
-
-data class RepoBundle(val repoName: String, val bsn: String)
-
 class RepoUtil {
 
     companion object {
@@ -15,7 +12,7 @@ class RepoUtil {
         fun getBundles(project: Project): Set<String> {
             val amdatuIdePlugin = project.getComponent(AmdatuIdePlugin::class.java) ?: return emptySet()
 
-            val repositories = amdatuIdePlugin?.workspace?.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
+            val repositories = amdatuIdePlugin.workspace?.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
 
             return repositories
                     .flatMap { it.list(null) }
@@ -26,19 +23,17 @@ class RepoUtil {
         fun getBundlesOnlyAvailableInBaselineRepo(project: Project): Set<String> {
             val amdatuIdePlugin = project.getComponent(AmdatuIdePlugin::class.java) ?: return emptySet()
 
-            val workspace = amdatuIdePlugin?.workspace ?: return emptySet()
+            val workspace = amdatuIdePlugin.workspace ?: return emptySet()
 
             val baselineRepoName = workspace.get(Constants.BASELINEREPO) ?: return emptySet() // no baseline repo
 
-            val repositories = workspace?.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
+            val repositories = workspace.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
 
             return repositories
                     .filter { it.name == baselineRepoName }
                     .flatMap { it.list(null) }
                     .filter { workspace.getProject(it) == null }
                     .toSet()
-
-
         }
 
     }

@@ -21,8 +21,6 @@ import aQute.bnd.build.Workspace;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
-import com.intellij.notification.NotificationDisplayType;
-import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -89,9 +87,6 @@ public class BndProjectImporter {
     public static final String CNF_DIR = Workspace.CNFDIR;
     public static final String BND_FILE = Project.BNDFILE;
     public static final String BND_LIB_PREFIX = "bnd:";
-
-    public static final NotificationGroup NOTIFICATIONS =
-                    new NotificationGroup("OSGi Bnd Notifications", NotificationDisplayType.STICKY_BALLOON, true);
 
     private static final Logger LOG = Logger.getInstance(BndProjectImporter.class);
 
@@ -197,8 +192,7 @@ public class BndProjectImporter {
                 LOG.warn(e);
                 return false;
             } finally {
-                amdatuIdePlugin.reportWarnings(project);
-                amdatuIdePlugin.reportErrors(project);
+                amdatuIdePlugin.getNotificationService().report(project, true);
             }
 
             findSources(project);
@@ -508,15 +502,18 @@ public class BndProjectImporter {
         entry.setScope(scope);
     }
 
-    // TODO: This method is not only reporting bnd project issues but also some additional messages in the warnings list. Have a better look at this and get rid of that ..
     private void checkWarnings(Project project, List<String> warnings, boolean error) {
         if (warnings != null && !warnings.isEmpty()) {
             if (!isUnitTestMode()) {
                 LOG.warn(warnings.toString());
+
+                NotificationType type = error ? NotificationType.ERROR : NotificationType.WARNING;
                 String text = message("bnd.import.warn.text", project.getName(),
                                 "<br>" + StringUtil.join(warnings, "<br>"));
-                NotificationType type = error ? NotificationType.ERROR : NotificationType.WARNING;
-                NOTIFICATIONS.createNotification(message("bnd.import.warn.title"), text, type, null).notify(myProject);
+
+                myProject.getComponent(AmdatuIdePlugin.class).getNotificationService()
+                                .notification(type, message("bnd.import.warn.title"), text);
+
             }
             else {
                 throw new AssertionError(warnings.toString());

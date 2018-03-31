@@ -39,7 +39,7 @@ class GenerateIndexAction : AnAction() {
                     val workspace = amdatuIdePlugin?.workspace
 
                     if (workspace == null) {
-                        amdatuIdePlugin.error("Failed to generate repostiory index, bnd workspace not available")
+                        amdatuIdePlugin.notificationService.error("Failed to generate repostiory index, bnd workspace not available")
                         return
                     }
 
@@ -51,7 +51,7 @@ class GenerateIndexAction : AnAction() {
 
                     val resourceIndexer = RepoIndex()
                     resourceIndexer.index(toIndex, FileOutputStream(indexFile), config)
-                    amdatuIdePlugin.info("Generated repository index: " + indexFile.toString())
+                    amdatuIdePlugin.notificationService.info("Generated repository index: " + indexFile.toString())
                 }
             }.queue()
 

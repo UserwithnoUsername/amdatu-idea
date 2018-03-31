@@ -3,15 +3,13 @@ package org.amdatu.ide.lang.bundledescriptor.completion
 import aQute.bnd.header.Parameters
 import aQute.bnd.osgi.Constants
 import aQute.lib.utf8properties.UTF8Properties
-import com.intellij.analysis.AnalysisScope
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.patterns.StandardPatterns
-import com.intellij.psi.*
+import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
 import org.amdatu.ide.inspections.PackageUtil
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType

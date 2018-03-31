@@ -91,7 +91,7 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
             ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
             launcher.prepare();
 
-            if (amdatuIdePlugin.reportErrors(launcher.getProject())) {
+            if (amdatuIdePlugin.getNotificationService().report(launcher.getProject(), false)) {
                 throw new CantRunException(
                                 message("bnd.test.cannot.run", "project has errors"));
             }

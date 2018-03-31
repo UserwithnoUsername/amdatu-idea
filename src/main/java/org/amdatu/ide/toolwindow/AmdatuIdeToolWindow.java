@@ -4,9 +4,12 @@ import aQute.bnd.build.Workspace;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.bnd.version.Version;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.AbstractTreeModel;
 import org.amdatu.ide.AmdatuIdePlugin;
+import org.amdatu.ide.WorkspaceRefreshedNotifier;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JButton;
@@ -60,6 +63,14 @@ public class AmdatuIdeToolWindow {
                 repoTreeModel.filter(searchRepo.getText());
                 repoTree.updateUI();
             });
+
+            MessageBusConnection messageBusConnection = project.getMessageBus().connect();
+            messageBusConnection.subscribe(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED,
+                            () -> ProgressManager.getInstance().runProcess(() -> {
+                                repoTreeModel.filter(searchRepo.getText());
+                                repoTree.updateUI();
+                            }, null));
+
         }
         catch (Exception e) {
             LOG.error("Failed to initialize Amdatu IDE toolwindow", e);

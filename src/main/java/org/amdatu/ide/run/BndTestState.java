@@ -97,7 +97,7 @@ public class BndTestState extends JavaCommandLineState {
                 projectTester.addTest(configurationOptions.getTest());
             }
 
-            if (amdatuIdePlugin.reportErrors(project)) {
+            if (amdatuIdePlugin.getNotificationService().report(project, false)) {
                 throw new CantRunException(
                                 message("bnd.test.cannot.run", "project has errors"));
             }
