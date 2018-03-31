@@ -96,8 +96,5 @@ class PackageInfoService(project: Project, amdatuIdePlugin: AmdatuIdePlugin) {
         } catch (e: Exception) {
 //            LOG.error("Failed to refresh package state map", e)
         }
-
     }
-
-
 }

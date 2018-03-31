@@ -89,7 +89,7 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
         super.fillCompletionVariants(parameters, result);
     }
 
-    public static String findPrefix(@NotNull CompletionParameters parameters) {
+    private static String findPrefix(@NotNull CompletionParameters parameters) {
         final PsiElement position = parameters.getPosition();
         final int offset = parameters.getOffset();
         TextRange range = position.getTextRange();

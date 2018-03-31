@@ -29,7 +29,8 @@ class AmdatuIdeNotificationService(private val myProject: Project) {
     fun warning(message: String) {
         warning(message, null)
     }
-    fun warning(message: String, processor: Processor?) {
+
+    fun warning(message: String, processor: Processor? = null) {
         message(NotificationType.WARNING, message, processor)
     }
 

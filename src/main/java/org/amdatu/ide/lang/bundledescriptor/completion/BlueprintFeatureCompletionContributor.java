@@ -13,6 +13,7 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
+import org.amdatu.ide.AmdatuIdeConstants;
 import org.amdatu.ide.AmdatuIdePlugin;
 import org.amdatu.ide.lang.bundledescriptor.psi.BundleDescriptorTokenType;
 import org.amdatu.ide.lang.bundledescriptor.psi.Header;
@@ -27,12 +28,11 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
 
 public class BlueprintFeatureCompletionContributor extends CompletionContributor {
 
-    public static final String BUILDFEATURES = "-buildfeatures";
-    public static final String RUNFEATURES = "-runfeatures";
-
     public BlueprintFeatureCompletionContributor() {
-        extend(CompletionType.BASIC,  getPlace(BUILDFEATURES), new BlueprintFeatureCompletionProvider(BUILDFEATURES));
-        extend(CompletionType.BASIC,  getPlace(RUNFEATURES), new BlueprintFeatureCompletionProvider(RUNFEATURES));
+        extend(CompletionType.BASIC,  getPlace(AmdatuIdeConstants.BUILDFEATURES), new BlueprintFeatureCompletionProvider(
+                        AmdatuIdeConstants.BUILDFEATURES));
+        extend(CompletionType.BASIC,  getPlace(AmdatuIdeConstants.RUNFEATURES), new BlueprintFeatureCompletionProvider(
+                        AmdatuIdeConstants.RUNFEATURES));
     }
 
     private PsiElementPattern.Capture<PsiElement> getPlace(String name) {
@@ -64,8 +64,10 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
             AmdatuIdePlugin amdatuIdePlugin = project.getComponent(AmdatuIdePlugin.class);
 
             ProjectFileIndex projectFileIndex = ProjectFileIndex.getInstance(project);
-            Module module = projectFileIndex.getModuleForFile(
-                            parameters.getOriginalFile().getVirtualFile());
+            Module module = projectFileIndex.getModuleForFile(parameters.getOriginalFile().getVirtualFile());
+            if (module == null) {
+                return;
+            }
 
 
             // TODO: Get list of installed features from the bnd workspace

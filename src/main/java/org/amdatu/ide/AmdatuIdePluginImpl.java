@@ -100,8 +100,6 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 }
                 catch (Exception e) {
                     LOG.error("Failed to create bnd workspace", e);
-                    throw new RuntimeException(
-                                    e); // TODO: Just logging should do but for now this makes errors show quickly
                 }
             }
             return myWorkspace;

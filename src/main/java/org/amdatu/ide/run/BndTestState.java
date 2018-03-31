@@ -97,15 +97,13 @@ public class BndTestState extends JavaCommandLineState {
                 projectTester.addTest(configurationOptions.getTest());
             }
 
+            // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
             if (amdatuIdePlugin.getNotificationService().report(project, false)) {
                 throw new CantRunException(
                                 message("bnd.test.cannot.run", "project has errors"));
             }
-            // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
-//          amdatuIdePlugin.reportWarnings(project);
 
             myTester = projectTester;
-
         }
         catch (Throwable t) {
             LOG.info(t);
