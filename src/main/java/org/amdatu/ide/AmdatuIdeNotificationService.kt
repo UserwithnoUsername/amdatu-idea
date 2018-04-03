@@ -53,8 +53,8 @@ class AmdatuIdeNotificationService(private val myProject: Project) {
             }
         }
 
-        return processor.errors?.firstOrNull() == null &&
-                (!reportWarnings || processor.warnings?.firstOrNull() == null)
+        return processor.errors?.firstOrNull() != null ||
+                (reportWarnings && processor.warnings?.firstOrNull() != null)
     }
 
     private fun message(type: NotificationType, message: String, processor: Processor?) {
