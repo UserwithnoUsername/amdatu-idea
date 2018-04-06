@@ -25,12 +25,11 @@ class BsnCompletionContributor : CompletionContributor() {
     }
 
     init {
-        val bundleCompletionProvider = BundleCompletionProvider()
-        extend(CompletionType.BASIC, getPlace(Constants.BUILDPATH), bundleCompletionProvider)
-        extend(CompletionType.BASIC, getPlace(Constants.RUNBUNDLES), bundleCompletionProvider)
+        extend(CompletionType.BASIC, getPlace(Constants.BUILDPATH), BundleCompletionProvider(true))
+        extend(CompletionType.BASIC, getPlace(Constants.RUNBUNDLES), BundleCompletionProvider(false))
     }
 
-    class BundleCompletionProvider : CompletionProvider<CompletionParameters>() {
+    class BundleCompletionProvider(private val workspaceBundlesWithExportedPackagesOnly: Boolean) : CompletionProvider<CompletionParameters>() {
 
         override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext?, result: CompletionResultSet) {
             if (shouldComplete(parameters)) return
@@ -47,7 +46,7 @@ class BsnCompletionContributor : CompletionContributor() {
                     .flatMap {
                         it.getBuilder(null)
                                 .subBuilders
-                                .filter { it.exportPackage.isNotEmpty() } // Ignore bundles that don't export anything
+                                .filter { !workspaceBundlesWithExportedPackagesOnly || it.exportPackage.isNotEmpty() } // Ignore bundles that don't export anything
                                 .filter { !added.contains(it.bsn) } // Remove already added bundles
                                 .map { "${it.bsn};version=latest" }
 
