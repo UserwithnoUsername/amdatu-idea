@@ -13,48 +13,50 @@
 // limitations under the License.
 package org.amdatu.ide.run;
 
-import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
-import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
-
 import aQute.bnd.osgi.Constants;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.util.PsiTreeUtil;
-import junit.framework.TestCase;
-import org.amdatu.ide.AmdatuIdePlugin;
-import org.jetbrains.annotations.NotNull;
-
 import com.intellij.execution.Location;
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.ConfigurationFactory;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.util.PsiTreeUtil;
+import junit.framework.TestCase;
+import org.amdatu.ide.AmdatuIdeConstants;
+import org.amdatu.ide.AmdatuIdePlugin;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.runner.RunWith;
+
+import static org.amdatu.ide.AmdatuIdeConstants.BND_EXT;
+import static org.amdatu.ide.AmdatuIdeConstants.BND_RUN_EXT;
 
 public abstract class BndRunConfigurationProducer extends RunConfigurationProducer<BndRunConfigurationBase> {
 
     private static final Logger LOG = Logger.getInstance(BndRunConfigurationProducer.class);
 
-    public static final String BND_BND = "bnd.bnd";
-
-    protected BndRunConfigurationProducer(@NotNull ConfigurationFactory factory) {
+    BndRunConfigurationProducer(@NotNull ConfigurationFactory factory) {
         super(factory);
     }
 
     @Override
     protected boolean setupConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context, Ref<PsiElement> source) {
+        if (context.getLocation() == null || context.getLocation().getVirtualFile() == null) {
+            return false;
+        }
+
         Location location = context.getLocation();
         PsiElement psiLocation = context.getPsiLocation();
-
         VirtualFile file = location.getVirtualFile();
+
         if (configuration instanceof BndRunConfigurationBase.Launch && !isTestModule(context.getModule())) {
             if (isBndPropertiesFile(file)) {
                 configuration.setName(context.getModule().getName());
@@ -65,7 +67,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         }
         else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(context.getModule())) {
 
-            if (isBndPropertiesFile(file) && file.getName().equals(BND_BND)) {
+            if (isBndPropertiesFile(file) && file.getName().equals(AmdatuIdeConstants.BND_BND)) {
                 configuration.setName(context.getModule().getName());
                 configuration.getOptions().setBndRunFile(file.getPath());
                 configuration.getOptions().setModuleName(context.getModule().getName());
@@ -109,7 +111,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
             }
 
             for (PsiAnnotation psiAnnotation : psiMethod.getAnnotations()) {
-                if (psiAnnotation.getQualifiedName().equals(org.junit.Test.class.getName())) {
+                if (org.junit.Test.class.getName().equals(psiAnnotation.getQualifiedName())) {
                     return psiMethod; // JUnit 4
                 }
             }
@@ -128,17 +130,17 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
         if (psiClass != null) {
             for (PsiAnnotation psiAnnotation : psiClass.getAnnotations()) {
-                if (psiAnnotation.getQualifiedName().equals(RunWith.class.getName())) {
+                if (RunWith.class.getName().equals(psiAnnotation.getQualifiedName())) {
                     return psiClass; // JUnit 4
                 }
             }
 
             PsiClass parent = psiClass;
             while ((parent = parent.getSuperClass()) != null) {
-                if (parent.getQualifiedName().equals(Object.class.getName())) {
+                if (Object.class.getName().equals(parent.getQualifiedName())) {
                     return null;
                 }
-                if (parent.getQualifiedName().equals(TestCase.class.getName())) {
+                if (TestCase.class.getName().equals(parent.getQualifiedName())) {
                     return psiClass; // JUnit 3
                 }
             }
@@ -152,6 +154,21 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         if (getConfigurationFactory() == configuration.getFactory()) {
             Location location = context.getLocation();
             if (location != null) {
+                if ((configuration instanceof BndRunConfigurationBase.Test) && configuration.getOptions().getTest() != null) {
+                    PsiClass psiClass = findTestClass(context.getPsiLocation());
+                    if (psiClass != null) {
+                        String test = psiClass.getQualifiedName();
+
+                        PsiMethod psiMethod = findTestMethod(context.getPsiLocation());
+                        if (psiMethod != null) {
+                            test = test + ":" + psiMethod.getName();
+                        }
+
+                        return configuration.getOptions().getTest().equals(test);
+                    }
+                    return false;
+                }
+
                 VirtualFile file = location.getVirtualFile();
                 return file != null && !file.isDirectory() && FileUtil.pathsEqual(file.getPath(), configuration.getOptions().getBndRunFile());
             }
@@ -172,19 +189,18 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         }
     }
 
-    public static boolean isBndPropertiesFile(VirtualFile file) {
+    private static boolean isBndPropertiesFile(VirtualFile file) {
         return file != null && !file.isDirectory() &&
                 (BND_EXT.equals(file.getExtension()) || BND_RUN_EXT.equals(file.getExtension()));
     }
 
-    public static String getPropertiesFilePath(Module module) {
+    private static String getPropertiesFilePath(Module module) {
         Project project = module.getProject();
-        String path = project.getBasePath() + "/" + module.getName() + "/" + BND_BND;
-        return path;
+        return project.getBasePath() + "/" + module.getName() + "/" + AmdatuIdeConstants.BND_BND;
     }
 
-    public static boolean isTestModule(Module module) {
-        if (module == null || module.getProject() == null) {
+    private static boolean isTestModule(Module module) {
+        if (module == null) {
             return false;
         }
 

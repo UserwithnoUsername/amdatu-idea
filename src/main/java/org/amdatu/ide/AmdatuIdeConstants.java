@@ -2,6 +2,7 @@ package org.amdatu.ide;
 
 public class AmdatuIdeConstants {
 
+    public static final String BND_BND = "bnd.bnd";
 
     private AmdatuIdeConstants() {
         // non instantiable
