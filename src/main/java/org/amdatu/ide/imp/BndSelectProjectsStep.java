@@ -57,7 +57,7 @@ class BndSelectProjectsStep extends SelectImportedProjectsStep<Project> {
                                 try {
                                     String directory = getWizardContext().getProjectFileDirectory();
                                     Workspace workspace = Workspace.getWorkspace(new File(directory),
-                                                    BndProjectImporter.CNF_DIR);
+                                                    Workspace.CNFDIR);
                                     builder.setWorkspace(workspace, BndProjectImporter.getWorkspaceProjects(workspace));
                                 }
                                 catch (Exception e) {

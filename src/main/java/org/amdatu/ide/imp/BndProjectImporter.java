@@ -18,6 +18,7 @@ package org.amdatu.ide.imp;
 import aQute.bnd.build.Container;
 import aQute.bnd.build.Project;
 import aQute.bnd.build.Workspace;
+import aQute.bnd.osgi.Constants;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
@@ -84,14 +85,10 @@ import java.util.zip.ZipFile;
 import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 public class BndProjectImporter {
-    public static final String CNF_DIR = Workspace.CNFDIR;
-    public static final String BND_FILE = Project.BNDFILE;
-    public static final String BND_LIB_PREFIX = "bnd:";
 
     private static final Logger LOG = Logger.getInstance(BndProjectImporter.class);
 
-    private static final String JAVAC_SOURCE = "javac.source";
-    private static final String JAVAC_TARGET = "javac.target";
+    private static final String BND_LIB_PREFIX = "bnd:";
     private static final String SRC_ROOT = "OSGI-OPT/src";
     private static final String JDK_DEPENDENCY = "ee.j2se";
 
@@ -137,12 +134,12 @@ public class BndProjectImporter {
     }
 
     public void setupProject() {
-        LanguageLevel sourceLevel = LanguageLevel.parse(myWorkspace.getProperty(JAVAC_SOURCE));
+        LanguageLevel sourceLevel = LanguageLevel.parse(myWorkspace.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel != null) {
             LanguageLevelProjectExtension.getInstance(myProject).setLanguageLevel(sourceLevel);
         }
 
-        String targetLevel = myWorkspace.getProperty(JAVAC_TARGET);
+        String targetLevel = myWorkspace.getProperty(Constants.JAVAC_TARGET);
         CompilerConfiguration.getInstance(myProject).setProjectBytecodeTarget(targetLevel);
 
         // compilation options (see Project#getCommonJavac())
@@ -191,7 +188,8 @@ public class BndProjectImporter {
             catch (Exception e) {
                 LOG.warn(e);
                 return false;
-            } finally {
+            }
+            finally {
                 amdatuIdePlugin.getNotificationService().report(project, true);
             }
 
@@ -305,7 +303,7 @@ public class BndProjectImporter {
         }
         contentEntry.addExcludeFolder(url(project.getTarget()));
 
-        LanguageLevel sourceLevel = LanguageLevel.parse(project.getProperty(JAVAC_SOURCE));
+        LanguageLevel sourceLevel = LanguageLevel.parse(project.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel == projectLevel)
             sourceLevel = null;
         rootModel.getModuleExtension(LanguageLevelModuleExtension.class).setLanguageLevel(sourceLevel);
@@ -316,7 +314,7 @@ public class BndProjectImporter {
         compilerExt.setCompilerOutputPath(url(project.getSrcOutput()));
         compilerExt.setCompilerOutputPathForTests(url(project.getTestOutput()));
 
-        String targetLevel = project.getProperty(JAVAC_TARGET);
+        String targetLevel = project.getProperty(Constants.JAVAC_TARGET);
         CompilerConfiguration.getInstance(myProject).setBytecodeTargetLevel(module, targetLevel);
 
         return rootModel;
@@ -341,11 +339,13 @@ public class BndProjectImporter {
             }
         }
 
-        setDependencies(moduleModel, libraryModel, rootModel, project, project.getBuildpath(), false, bootSet,
-                        warnings);
-        setDependencies(moduleModel, libraryModel, rootModel, project, project.getTestpath(), true, bootSet, warnings);
+        Collection<Container> buildpath = project.getBuildpath();
+        Collection<Container> testpath = project.getTestpath();
 
-        checkWarnings(project, warnings, false);
+        setDependencies(moduleModel, libraryModel, rootModel, project, testpath, true, bootSet, warnings);
+        setDependencies(moduleModel, libraryModel, rootModel, project, buildpath, false, bootSet, warnings);
+
+        checkWarnings(project, warnings);
     }
 
     private void setDependencies(ModifiableModuleModel moduleModel,
@@ -502,12 +502,12 @@ public class BndProjectImporter {
         entry.setScope(scope);
     }
 
-    private void checkWarnings(Project project, List<String> warnings, boolean error) {
+    private void checkWarnings(Project project, List<String> warnings) {
         if (warnings != null && !warnings.isEmpty()) {
             if (!isUnitTestMode()) {
                 LOG.warn(warnings.toString());
 
-                NotificationType type = error ? NotificationType.ERROR : NotificationType.WARNING;
+                NotificationType type = NotificationType.WARNING;
                 String text = message("bnd.import.warn.text", project.getName(),
                                 "<br>" + StringUtil.join(warnings, "<br>"));
 
@@ -539,16 +539,16 @@ public class BndProjectImporter {
             new Task.Backgroundable(project, message("bnd.reimport.task"), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
-                    doReimportWorkspace(project, indicator);
+                    doReimportWorkspace(project);
                 }
             }.queue();
         }
         else {
-            doReimportWorkspace(project, null);
+            doReimportWorkspace(project);
         }
     }
 
-    private static void doReimportWorkspace(com.intellij.openapi.project.Project project, ProgressIndicator indicator) {
+    private static void doReimportWorkspace(com.intellij.openapi.project.Project project) {
         Workspace workspace = project.getComponent(AmdatuIdePlugin.class).getWorkspace();
         assert workspace != null : project;
 

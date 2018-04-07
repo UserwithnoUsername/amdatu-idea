@@ -116,7 +116,7 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
         }
         else {
             File file = new File(getFileToImport());
-            if (BndProjectImporter.BND_FILE.equals(file.getName())) {
+            if (Project.BNDFILE.equals(file.getName())) {
                 file = file.getParentFile();
             }
             BndProjectImporter.reimportProjects(project, Collections.singleton(file.getPath()));

@@ -15,6 +15,7 @@
  */
 package org.amdatu.ide.imp;
 
+import aQute.bnd.build.Workspace;
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.ProjectWizardStepFactory;
 import com.intellij.ide.util.projectWizard.WizardContext;
@@ -32,7 +33,7 @@ public class BndProjectImportProvider extends ProjectImportProvider {
 
     @Override
     public boolean canImport(@NotNull VirtualFile fileOrDir, @Nullable Project project) {
-        return fileOrDir.isDirectory() && fileOrDir.findChild(BndProjectImporter.CNF_DIR) != null;
+        return fileOrDir.isDirectory() && fileOrDir.findChild(Workspace.CNFDIR) != null;
     }
 
     @Override
