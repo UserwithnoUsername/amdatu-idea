@@ -18,7 +18,9 @@ package org.amdatu.ide.imp;
 import aQute.bnd.build.Container;
 import aQute.bnd.build.Project;
 import aQute.bnd.build.Workspace;
+import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Instructions;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
@@ -62,10 +64,12 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
+import com.intellij.psi.PsiPackage;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import org.amdatu.ide.AmdatuIdePlugin;
 import org.amdatu.ide.AmdatuIdePluginImpl;
+import org.amdatu.ide.inspections.PackageUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -79,6 +83,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -426,6 +431,12 @@ public class BndProjectImporter {
                                 e -> e instanceof ModuleOrderEntry && ((ModuleOrderEntry) e).getModule() == module);
                 if (entry == null) {
                     entry = rootModel.addModuleOrderEntry(module);
+
+                    // Check if the module to which the module dependency is added is exporting contents from the
+                    // dependency, in that case mark the dependency as exported.
+                    boolean exportingDependencyModulePackage =
+                                    isExportingDependencyModulePackage(rootModel, dependency, module);
+                    entry.setExported(exportingDependencyModulePackage);
                 }
 
                 /// TEST
@@ -500,6 +511,40 @@ public class BndProjectImporter {
         }
 
         entry.setScope(scope);
+    }
+
+    private boolean isExportingDependencyModulePackage(ModifiableRootModel rootModel, Container dependency,
+                    Module module) {
+        try {
+            Project dependencyProject = dependency.getProject();
+            Workspace workspace = dependencyProject.getWorkspace();
+
+
+            Set<String> dependencyModulePackages = PackageUtil.Companion.getPsiPackagesForModule(module).stream()
+                            .map(PsiPackage::getQualifiedName)
+                            .collect(Collectors.toSet());
+
+            String dependerModuleName = rootModel.getModule().getName();
+            Project dependerBndProject = workspace.getProject(dependerModuleName);
+            List<Builder> subBuilders = dependerBndProject.getBuilder(null).getSubBuilders();
+            for (Builder subBuilder : subBuilders) {
+                Instructions instructions = new Instructions(subBuilder.getExportPackage());
+
+                if (instructions.isEmpty()) {
+                    continue;
+                }
+
+                for (String dependencyModulePackage : dependencyModulePackages) {
+                    if (instructions.matches(dependencyModulePackage)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            LOG.error("Failed to determine exported state", e);
+        }
+        return false;
     }
 
     private void checkWarnings(Project project, List<String> warnings) {
