@@ -17,7 +17,7 @@ allprojects {
     apply plugin: "org.jetbrains.intellij"
 
     intellij {
-        version '181.3741.2'
+        version '2018.1'
     }
 
     runIde {
