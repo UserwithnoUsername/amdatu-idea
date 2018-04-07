@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Collections.singletonList;
 
@@ -70,8 +71,13 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
     public Module commitModule(@NotNull Project project, @Nullable ModifiableModuleModel model) {
         Module module = super.commitModule(project, model);
 
+        if (module == null) {
+            return null;
+        }
+
+
         Template myTemplate = myWizardContext.getUserData(KEY_TEMPLATE);
-        if (module != null && myTemplate != null) {
+        if (myTemplate != null) {
             doGenerate(myTemplate, module);
         }
 
@@ -116,7 +122,7 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
             throw new RuntimeException("Failed to process myTemplate " + template.getName(), e);
         }
 
-        File moduleRootDir = new File(getContentEntryPath());
+        File moduleRootDir = new File(Objects.requireNonNull(getContentEntryPath()));
 
         for (Map.Entry<String, Resource> entry : resourceMap.entries()) {
             String relativePath = entry.getKey();
@@ -126,10 +132,12 @@ public class AmdatuIdeModuleBuilder extends JavaModuleBuilder {
                 case Folder:
                     File folder = new File(moduleRootDir, relativePath);
                     if (!folder.exists()) {
-                        folder.mkdirs();
+                        if (!folder.mkdirs()) {
+                            throw new RuntimeException("Failed to create dir: " + folder);
+                        }
                     }
                     else if (!folder.isDirectory()) {
-                        throw new RuntimeException("File exists but is not a dir" + folder);
+                        throw new RuntimeException("File exists but is not a dir: " + folder);
                     }
                     break;
                 case File:

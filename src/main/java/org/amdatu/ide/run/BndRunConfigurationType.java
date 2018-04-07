@@ -15,24 +15,22 @@
  */
 package org.amdatu.ide.run;
 
-import static org.amdatu.ide.i18n.OsmorcBundle.message;
-
-import javax.swing.*;
-
-import com.intellij.icons.AllIcons;
-import com.intellij.ui.LayeredIcon;
-import com.intellij.util.IconUtil;
-import org.amdatu.ide.AmdatuIdePlugin;
-import org.jetbrains.annotations.NotNull;
-
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.configurations.ConfigurationTypeBase;
 import com.intellij.execution.configurations.ConfigurationTypeUtil;
 import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
-
+import com.intellij.ui.LayeredIcon;
+import com.intellij.util.IconUtil;
 import icons.OsmorcIdeaIcons;
+import org.amdatu.ide.AmdatuIdePlugin;
+import org.jetbrains.annotations.NotNull;
+
+import javax.swing.Icon;
+
+import static org.amdatu.ide.i18n.OsmorcBundle.message;
 
 public class BndRunConfigurationType extends ConfigurationTypeBase {
     private static final String ID = "osgi.bnd.run";
@@ -52,7 +50,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
         private final String myName;
         private final Icon myIcon;
 
-        public FactoryBase(@NotNull ConfigurationType type, @NotNull String name, @NotNull Icon icon) {
+        FactoryBase(@NotNull ConfigurationType type, @NotNull String name, @NotNull Icon icon) {
             super(type);
             myName = name;
             myIcon = icon;
@@ -75,7 +73,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
     }
 
     private static class LaunchFactory extends FactoryBase {
-        public LaunchFactory(@NotNull ConfigurationType type) {
+        LaunchFactory(@NotNull ConfigurationType type) {
             super(type, message("bnd.run.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Application));
         }
 
@@ -94,7 +92,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
     }
 
     private static class TestFactory extends FactoryBase {
-        public TestFactory(@NotNull ConfigurationType type) {
+        TestFactory(@NotNull ConfigurationType type) {
             super(type, message("bnd.test.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Junit));
         }
 

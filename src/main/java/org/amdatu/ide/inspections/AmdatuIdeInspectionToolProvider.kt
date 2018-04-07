@@ -4,6 +4,7 @@ import com.intellij.codeInspection.InspectionToolProvider
 
 class AmdatuIdeInspectionToolProvider : InspectionToolProvider {
 
+    @Suppress("UNCHECKED_CAST")
     override fun getInspectionClasses(): Array<Class<Any>> {
         return arrayOf(
                 ExportedPackageWithoutVersion::class.java as Class<Any>,

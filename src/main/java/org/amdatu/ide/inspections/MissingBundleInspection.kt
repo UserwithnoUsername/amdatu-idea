@@ -40,7 +40,7 @@ class MissingBundleInspection : LocalInspectionTool() {
             return null
         }
 
-        val (_, module, _, bndProject, builder) =
+        val (_, _, _, bndProject, _) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
         val onlyAvailableInBaselineRepo = RepoUtil.getBundlesOnlyAvailableInBaselineRepo(file.project)

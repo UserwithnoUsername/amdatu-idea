@@ -75,13 +75,13 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
     }
 
     public static class Launch extends BndRunConfigurationBase {
-        public Launch(Project project, @NotNull ConfigurationFactory factory, String name) {
+        Launch(Project project, @NotNull ConfigurationFactory factory, String name) {
             super(project, factory, name);
         }
 
         @Nullable
         @Override
-        public BndLaunchState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
+        public BndLaunchState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) {
             return new BndLaunchState(environment, this);
         }
     }
@@ -93,7 +93,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
 
         @Nullable
         @Override
-        public BndTestState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException {
+        public BndTestState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) {
             return new BndTestState(environment, this);
         }
     }

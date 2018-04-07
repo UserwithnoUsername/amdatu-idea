@@ -82,7 +82,8 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
                 }
 
             }
-            attrPanel.setPreferredSize(new Dimension(330, attributeDefinitions.length * 30));
+            int attributeCount = attributeDefinitions != null ? attributeDefinitions.length : 0;
+            attrPanel.setPreferredSize(new Dimension(330, attributeCount * 30));
             Spacer spacer = new Spacer();
             spacer.setPreferredSize(new Dimension(1000, 1000));
             attrPanel.add(spacer);
@@ -119,7 +120,7 @@ class AmdatuIdeModuleTemplateParamsStep extends ModuleWizardStep {
         myContext.putUserData(KEY_ATTRS, getAttributes());
     }
 
-    public Map<String, List<Object>> getAttributes() {
+    private Map<String, List<Object>> getAttributes() {
         Map<String, List<Object>> map = new HashMap<>();
         attrUpdaters.forEach(consumer -> consumer.accept(map));
         return map;
