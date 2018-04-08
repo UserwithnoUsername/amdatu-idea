@@ -108,16 +108,14 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
     @Override
     public void refreshWorkspace(boolean forceRefresh) {
+        long start = System.currentTimeMillis();
         synchronized (workspaceLock) {
             if (myWorkspace == null) {
                 myNotificationService.info("Workspace not initialized, not refresing'");
                 return;
             }
-            long start = System.currentTimeMillis();
             myWorkspace.clear();
             if (myWorkspace.refresh()) {
-//                myWorkspaceErrors = myWorkspace.getErrors() != null ? new ArrayList<>(myWorkspace.getErrors()) : ContainerUtil.emptyList();
-
                 if (myWorkspace.getErrors() != null) {
                     myWorkspaceErrors = myWorkspace.getErrors().stream()
                                     .map(myWorkspace::getLocation)
@@ -139,26 +137,27 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 // not refreshed
                 return;
             }
-
             reportWorkspaceIssues();
-            if (myWorkspaceErrors.isEmpty()) {
-                refreshRepositories();
-
-                // TODO: This is not the best place, come up with a good moment to generate these jars.
-                generateExportedContentsJars(forceRefresh);
-
-                reImportProjects();
-
-                WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                                myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
-                workspaceRefreshedNotifier.workpaceRefreshed();
-
-                myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
-            }
-            else {
-                myNotificationService.warning("Workspace has errors, not re-importing projects.");
-            }
         }
+
+        if (myWorkspaceErrors.isEmpty()) {
+            refreshRepositories();
+
+            // TODO: This is not the best place, come up with a good moment to generate these jars.
+            generateExportedContentsJars(forceRefresh);
+
+            reImportProjects();
+
+            WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
+                            myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+            workspaceRefreshedNotifier.workpaceRefreshed();
+
+            myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
+        }
+        else {
+            myNotificationService.warning("Workspace has errors, not re-importing projects.");
+        }
+
     }
 
     private void reImportProjects() {
@@ -286,7 +285,8 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
 
                             // TODO: Create specific event for changed module might be better
                             WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                                            myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                                            myProject.getMessageBus()
+                                                            .syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
                             workspaceRefreshedNotifier.workpaceRefreshed();
 
                         }
@@ -303,15 +303,15 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
             myWorkspace.getAllProjects().forEach(p -> {
                 try {
                     p.getIncluded();
+                    File properties = p.getPropertiesFile();
+                    File base = new File(properties.getParentFile(), IDEA_TMP_GENERATED);
+
                     ProjectBuilder builder = p.getBuilder(null);
                     for (Builder subBuilder : builder.getSubBuilders()) {
-                        if (isExportingNonModuleClasses(subBuilder)) {
-                            File properties = subBuilder.getPropertiesFile();
-                            if (properties == null) {
-                                properties = p.getPropertiesFile();
-                            }
 
-                            File base = properties.getParentFile();
+                        File outputFile = new File(base, subBuilder.getBsn() + ".jar");
+
+                        if (isExportingNonModuleClasses(subBuilder)) {
                             aQute.bnd.build.Project project = new aQute.bnd.build.Project(myWorkspace, base);
 
                             project.setBase(base);
@@ -323,18 +323,19 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                             if (subBuilder.getPropertiesFile() != null) {
                                 projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
                             }
-                            projectBuilder.setBase(base);
-                            File outputFile =
-                                            project.getOutputFile(projectBuilder.getBsn(), projectBuilder.getVersion());
 
                             if (!outputFile.exists() || rebuildExisting) {
                                 if (outputFile.exists() && !outputFile.delete()) {
-                                    LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
+                                    LOG.warn("Failed to delete exporteds content jar: " + outputFile.getName());
                                 }
 
                                 Jar build = projectBuilder.build();
                                 build.write(outputFile);
                             }
+                        }
+                        else if (outputFile.exists() && !outputFile.delete()) {
+                            LOG.error("Failed to delete no longer required exported contents jar: " +
+                                            outputFile.getName());
                         }
                     }
                 }
