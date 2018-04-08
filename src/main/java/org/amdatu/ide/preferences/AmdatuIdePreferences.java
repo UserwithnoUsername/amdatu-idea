@@ -16,6 +16,11 @@ public class AmdatuIdePreferences implements PersistentStateComponent<AmdatuIdeP
 
     private List<String> myTemplateRepositoryUrls = ContainerUtil.newArrayList();
 
+    public AmdatuIdePreferences() {
+        myTemplateRepositoryUrls.add("http://amdatu-repo.s3.amazonaws.com/amdatu-blueprint/snapshot/repo/index.xml.gz");
+        myTemplateRepositoryUrls.add("https://raw.githubusercontent.com/bndtools/bundle-hub/master/index.xml.gz");
+    }
+
     public static AmdatuIdePreferences getInstance() {
         return ServiceManager.getService(AmdatuIdePreferences.class);
     }
