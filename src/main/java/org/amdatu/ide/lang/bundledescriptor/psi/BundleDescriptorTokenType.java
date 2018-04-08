@@ -73,7 +73,7 @@ public final class BundleDescriptorTokenType extends IElementType implements ILe
 
     @NotNull
     @Override
-    public ASTNode createLeafNode(CharSequence text) {
+    public ASTNode createLeafNode(@NotNull CharSequence text) {
         return new BundleDescriptorTokenImpl(this, text);
     }
 }

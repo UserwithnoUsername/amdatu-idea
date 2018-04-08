@@ -47,7 +47,7 @@ class MissingBundleInspection : LocalInspectionTool() {
 
 
         return listOf(Constants.BUILDPATH, Constants.RUNBUNDLES)
-                .flatMap {  createProblemDescriptors(it, file, bndProject, onlyAvailableInBaselineRepo, manager) }
+                .flatMap { createProblemDescriptors(it, file, bndProject, onlyAvailableInBaselineRepo, manager) }
                 .toTypedArray()
     }
 
@@ -76,8 +76,6 @@ class MissingBundleInspection : LocalInspectionTool() {
                                 emptyArray(),
                                 ProblemHighlightType.ERROR)
                     }
-
-
                 }
     }
 }

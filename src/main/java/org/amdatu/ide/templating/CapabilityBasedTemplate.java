@@ -245,7 +245,7 @@ public class CapabilityBasedTemplate implements Template {
                         Resource resource;
                         if (relativePath.endsWith("/")) {
                             // strip the trailing slash
-                            relativePath.substring(0, relativePath.length());
+                            relativePath = relativePath.substring(0, relativePath.length());
                             resource = new FolderResource();
                         }
                         else {

@@ -25,7 +25,7 @@ public class ReimportWorkspaceAction extends AnAction {
     @Override
     public void update(@NotNull AnActionEvent e) {
         Project project = e.getProject();
-        boolean available = project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
+        boolean available = project != null && project.getComponent(AmdatuIdePlugin.class).isBndWorkspace();
         e.getPresentation().setEnabledAndVisible(available);
     }
 
