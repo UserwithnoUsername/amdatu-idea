@@ -46,7 +46,6 @@ class PackageUtil {
 
                 val rootPackage = javaPsiFacade.findPackage(pkg)
                 if (rootPackage == null) {
-                    println("Package not found: $pkg")
                     result.add(PackageInfo(pkg, null, false, false))
                     continue
                 }
@@ -81,7 +80,6 @@ class PackageUtil {
                     }
 
                     val packageInfo = PackageInfo(it.qualifiedName, strVersion, true, packagesForModule.contains(it.qualifiedName))
-                    println(packageInfo)
                     result += packageInfo
                 }
             }
