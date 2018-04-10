@@ -71,18 +71,13 @@ class RepositoriesPanel(private val myProject: Project) {
 
     data class BsnWithRepoRef(val bsn: String, val repositoryPlugin: RepositoryPlugin)
 
-    class RepositoriesTreeModel(val myProject: Project, private val mySearchField: JTextField) : AbstractTreeModel() {
+    class RepositoriesTreeModel(private val myProject: Project, private val mySearchField: JTextField) : AbstractTreeModel() {
         private val repositoryPlugins: MutableList<RepositoryPlugin> = mutableListOf()
         private val repoBundlesCache = mutableMapOf<RepositoryPlugin, List<BsnWithRepoRef>>()
         private val myRoot = DefaultMutableTreeNode(0)
 
         init {
-//            val workspace = myProject.getComponent(AmdatuIdePlugin::class.java)?.workspace
-//            repositoryPlugins = workspace
-//                    ?.getPlugins(RepositoryPlugin::class.java)
-//                    ?.sortedBy { repo -> repo.name }
-//                    ?.toMutableList() ?: mutableListOf()
-            refreshRepositories();
+            refreshRepositories()
         }
 
         fun refreshRepositories() {
@@ -99,27 +94,12 @@ class RepositoriesPanel(private val myProject: Project) {
             return when {
                 parent === root -> repositoryPlugins.getOrNull(index) as Any
                 parent is RepositoryPlugin -> {
-                    repoBundlesCache.computeIfAbsent(parent, { parent.list(null).map { BsnWithRepoRef(it, parent) } })
-                            .filter { bsnMatchesFilter(it.bsn) }
-                            .getOrNull(index) as Any
+                    getRepoBundlesList(parent).getOrNull(index) as Any
                 }
                 parent is BsnWithRepoRef -> {
                     ArrayList(parent.repositoryPlugin.versions(parent.bsn) ?: emptySet()).getOrNull(index) as Any
                 }
                 else -> Unit
-            }
-        }
-
-        private fun bsnMatchesFilter(bsn: String): Boolean {
-            val text = mySearchField.text
-            if (text == null || text.isBlank()) {
-                return true
-            }
-
-            return if (text.contains('?') || text.contains('*')) {
-                text.toRegex().containsMatchIn(bsn)
-            } else {
-                bsn.startsWith(text)
             }
         }
 
@@ -138,9 +118,7 @@ class RepositoriesPanel(private val myProject: Project) {
             return when {
                 parent === root -> repositoryPlugins.size
                 parent is RepositoryPlugin -> {
-                    repoBundlesCache.computeIfAbsent(parent, { parent.list(null).map { BsnWithRepoRef(it, parent) } })
-                            .filter { bsnMatchesFilter(it.bsn) }
-                            .size
+                    getRepoBundlesList(parent).size
                 }
                 parent is BsnWithRepoRef -> {
                     parent.repositoryPlugin.versions(parent.bsn).size
@@ -156,15 +134,28 @@ class RepositoriesPanel(private val myProject: Project) {
             return when {
                 parent === root -> repositoryPlugins.indexOf(child)
                 parent is RepositoryPlugin -> {
-                    repoBundlesCache.computeIfAbsent(parent, { parent.list(null).map { BsnWithRepoRef(it, parent) } })
-                            .filter { bsnMatchesFilter(it.bsn) }
-                            .indexOf(child)
+                    getRepoBundlesList(parent).indexOf(child)
                 }
                 parent is BsnWithRepoRef -> {
                     parent.repositoryPlugin.versions(parent.bsn).indexOf(child)
                 }
                 else -> -1
             }
+        }
+
+        private fun getRepoBundlesList(parent: RepositoryPlugin): List<BsnWithRepoRef> {
+            return repoBundlesCache.computeIfAbsent(parent, { parent.list(null).map { BsnWithRepoRef(it, parent) } })
+                    .filter { bsnMatchesFilter(it.bsn) }
+                    .sortedWith(compareBy({ it.bsn }))
+        }
+
+        private fun bsnMatchesFilter(bsn: String): Boolean {
+            val text = mySearchField.text
+            if (text == null || text.isBlank()) {
+                return true
+            }
+
+            return text.toRegex().containsMatchIn(bsn)
         }
     }
 }
