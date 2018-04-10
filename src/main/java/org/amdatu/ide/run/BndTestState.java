@@ -410,6 +410,7 @@ public class BndTestState extends JavaCommandLineState {
         private void processDone() {
             if (myCurrentSuite != null) {
                 myProcessor.onSuiteFinished(new TestSuiteFinishedEvent(myCurrentSuite));
+                myProcessor.onFinishTesting();
                 myCurrentSuite = null;
             }
         }
