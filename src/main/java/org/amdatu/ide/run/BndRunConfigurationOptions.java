@@ -16,6 +16,12 @@
 package org.amdatu.ide.run;
 
 import com.intellij.execution.configurations.LocatableRunConfigurationOptions;
+import com.intellij.openapi.project.Project;
+import com.intellij.util.containers.ContainerUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 public class BndRunConfigurationOptions extends LocatableRunConfigurationOptions {
     private String bndRunFile;
@@ -25,6 +31,10 @@ public class BndRunConfigurationOptions extends LocatableRunConfigurationOptions
     private String moduleName;
 
     private String test;
+    private String myProgramParameters;
+    private String myWorkingDirectory;
+    private Map<String, String> myEnvs = ContainerUtil.newHashMap();
+    private boolean myPassParentEnvs;
 
     public String getBndRunFile() {
         return bndRunFile;
@@ -64,5 +74,45 @@ public class BndRunConfigurationOptions extends LocatableRunConfigurationOptions
 
     public void setTest(String tests) {
         this.test = tests;
+    }
+
+    public Project getProject() {
+        return null;
+    }
+
+    public void setProgramParameters(@Nullable String programParameters) {
+        myProgramParameters = programParameters;
+    }
+
+    @Nullable
+    public String getProgramParameters() {
+        return myProgramParameters;
+    }
+
+    public void setWorkingDirectory(@Nullable String workingDirectory) {
+        myWorkingDirectory = workingDirectory;
+    }
+
+    @Nullable
+    public String getWorkingDirectory() {
+        return myWorkingDirectory;
+    }
+
+    public void setEnvs(@NotNull Map<String, String> envs) {
+        myEnvs.clear();
+        myEnvs.putAll(envs);
+    }
+
+    @NotNull
+    public Map<String, String> getEnvs() {
+        return myEnvs;
+    }
+
+    public void setPassParentEnvs(boolean passParentEnvs) {
+        myPassParentEnvs = passParentEnvs;
+    }
+
+    public boolean isPassParentEnvs() {
+        return myPassParentEnvs;
     }
 }

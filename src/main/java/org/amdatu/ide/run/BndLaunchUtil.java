@@ -17,45 +17,47 @@ import aQute.bnd.build.ProjectLauncher;
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.configurations.JavaParameters;
 import com.intellij.execution.util.JavaParametersUtil;
+import com.intellij.execution.util.ProgramParametersUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
 public class BndLaunchUtil {
 
-  @NotNull
-  public static JavaParameters createJavaParameters(@NotNull BndRunConfigurationBase configuration,
-                                                    @NotNull ProjectLauncher launcher) throws CantRunException {
-    Project project = configuration.getProject();
+    @NotNull
+    public static JavaParameters createJavaParameters(@NotNull BndRunConfigurationBase configuration,
+                    @NotNull ProjectLauncher launcher) throws CantRunException {
+        Project project = configuration.getProject();
 
-    JavaParameters parameters = new JavaParameters();
+        JavaParameters parameters = new JavaParameters();
+        ProgramParametersUtil.configureConfiguration(parameters, configuration);
 
-    File launcherDir = launcher.getCwd();
-    parameters.setWorkingDirectory(launcherDir != null ? launcherDir.getPath() : project.getBasePath());
+        String jreHome = configuration.getOptions().isUseAlternativeJre() ?
+                        configuration.getOptions().getAlternativeJrePath() :
+                        null;
+        JavaParametersUtil.configureProject(project, parameters, JavaParameters.JDK_ONLY, jreHome);
 
-    String jreHome = configuration.getOptions().isUseAlternativeJre() ? configuration.getOptions().getAlternativeJrePath() : null;
-    JavaParametersUtil.configureProject(project, parameters, JavaParameters.JDK_ONLY, jreHome);
+        parameters.getEnv().putAll(launcher.getRunEnv());
+        parameters.getVMParametersList().addAll(asList(launcher.getRunVM()));
+        parameters.getClassPath().addAll(asList(launcher.getClasspath()));
+        parameters.setMainClass(launcher.getMainTypeName());
+        parameters.getProgramParametersList().addAll(asList(launcher.getRunProgramArgs()));
 
-    parameters.getEnv().putAll(launcher.getRunEnv());
-    parameters.getVMParametersList().addAll(asList(launcher.getRunVM()));
-    parameters.getClassPath().addAll(asList(launcher.getClasspath()));
-    parameters.setMainClass(launcher.getMainTypeName());
-    parameters.getProgramParametersList().addAll(asList(launcher.getRunProgramArgs()));
+        return parameters;
+    }
 
-    return parameters;
-  }
+    private static List<String> asList(Collection<String> c) {
+        return c instanceof List ? (List<String>) c : ContainerUtil.newArrayList(c);
+    }
 
-  private static List<String> asList(Collection<String> c) {
-    return c instanceof List ? (List<String>)c : ContainerUtil.newArrayList(c);
-  }
-
-  public static String message(Throwable t) {
-    String message = t.getMessage();
-    return StringUtil.isEmptyOrSpaces(message) ? t.getClass().getSimpleName() : t.getClass().getSimpleName() + ": " + message;
-  }
+    public static String message(Throwable t) {
+        String message = t.getMessage();
+        return StringUtil.isEmptyOrSpaces(message) ?
+                        t.getClass().getSimpleName() :
+                        t.getClass().getSimpleName() + ": " + message;
+    }
 }

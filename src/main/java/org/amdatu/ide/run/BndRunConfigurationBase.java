@@ -15,23 +15,29 @@
  */
 package org.amdatu.ide.run;
 
+import com.intellij.execution.CommonProgramRunConfigurationParameters;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
-import com.intellij.execution.configurations.*;
+import com.intellij.execution.configurations.ConfigurationFactory;
+import com.intellij.execution.configurations.LocatableConfigurationBase;
+import com.intellij.execution.configurations.ModuleRunProfile;
+import com.intellij.execution.configurations.RunProfileState;
+import com.intellij.execution.configurations.RuntimeConfigurationException;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.util.JavaParametersUtil;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
-
 import org.amdatu.ide.i18n.OsmorcBundle;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Map;
 
-public abstract class BndRunConfigurationBase extends LocatableConfigurationBase implements ModuleRunProfile, PersistentStateComponent<Element> {
+public abstract class BndRunConfigurationBase extends LocatableConfigurationBase implements ModuleRunProfile,
+                CommonProgramRunConfigurationParameters, PersistentStateComponent<Element> {
     public BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {
         super(project, factory, name);
     }
@@ -62,6 +68,49 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
     @Nullable
     @Override
     public abstract RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws ExecutionException;
+
+    @Override
+    public void setProgramParameters(@Nullable String programParameters) {
+        getOptions().setProgramParameters(programParameters);
+    }
+
+    @Nullable
+    @Override
+    public String getProgramParameters() {
+        return getOptions().getProgramParameters();
+    }
+
+    @Override
+    public void setWorkingDirectory(@Nullable String workingDirectory) {
+        getOptions().setWorkingDirectory(workingDirectory);
+    }
+
+    @Nullable
+    @Override
+    public String getWorkingDirectory() {
+        return getOptions().getWorkingDirectory();
+    }
+
+    @Override
+    public void setEnvs(@NotNull Map<String, String> envs) {
+        getOptions().setEnvs(envs);
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getEnvs() {
+        return getOptions().getEnvs();
+    }
+
+    @Override
+    public void setPassParentEnvs(boolean passParentEnvs) {
+        getOptions().setPassParentEnvs(passParentEnvs);
+    }
+
+    @Override
+    public boolean isPassParentEnvs() {
+        return getOptions().isPassParentEnvs();
+    }
 
     @Override
     public void checkConfiguration() throws RuntimeConfigurationException {

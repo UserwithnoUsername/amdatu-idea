@@ -56,6 +56,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         Location location = context.getLocation();
         PsiElement psiLocation = context.getPsiLocation();
         VirtualFile file = location.getVirtualFile();
+        configuration.getOptions().setWorkingDirectory(file.getParent().getPath());
 
         if (configuration instanceof BndRunConfigurationBase.Launch && !isTestModule(context.getModule())) {
             if (isBndPropertiesFile(file)) {
