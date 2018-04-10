@@ -246,14 +246,11 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 }
 
                 if (file.getName().endsWith(".bnd")) {
-                    // Bnd file not part set of workspace configuration files has changed
-                    importProjects = true;
                     Module module = ProjectFileIndex.getInstance(myProject).getModuleForFile(file);
                     if (module != null) {
+                        // Bnd file not part set of workspace configuration files has changed
+                        importProjects = true;
                         modulesToRefresh.add(module.getName());
-                    }
-                    else {
-                        LOG.warn("Module unknown for file " + file.getPath());
                     }
                 }
             }
@@ -304,12 +301,13 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                 try {
                     p.getIncluded();
                     File properties = p.getPropertiesFile();
-                    File base = new File(properties.getParentFile(), IDEA_TMP_GENERATED);
+                    File base = properties.getParentFile();
+                    File target = new File(base, IDEA_TMP_GENERATED);
 
                     ProjectBuilder builder = p.getBuilder(null);
                     for (Builder subBuilder : builder.getSubBuilders()) {
 
-                        File outputFile = new File(base, subBuilder.getBsn() + ".jar");
+                        File outputFile = new File(target, subBuilder.getBsn() + ".jar");
 
                         if (isExportingNonModuleClasses(subBuilder)) {
                             aQute.bnd.build.Project project = new aQute.bnd.build.Project(myWorkspace, base);
@@ -323,6 +321,7 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
                             if (subBuilder.getPropertiesFile() != null) {
                                 projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
                             }
+                            projectBuilder.setBase(base);
 
                             if (!outputFile.exists() || rebuildExisting) {
                                 if (outputFile.exists() && !outputFile.delete()) {
