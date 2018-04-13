@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>org.amdatu.ide</id>
+    <id>org.amdatu.idea</id>
     <name>Amdatu IDE</name>
     <version>1.0.0</version>
     <description></description>
@@ -15,84 +15,84 @@
 
     <project-components>
         <component>
-            <interface-class>org.amdatu.ide.AmdatuIdePlugin</interface-class>
-            <implementation-class>org.amdatu.ide.AmdatuIdePluginImpl</implementation-class>
+            <interface-class>org.amdatu.idea.AmdatuIdeaPlugin</interface-class>
+            <implementation-class>org.amdatu.idea.AmdatuIdeaPluginImpl</implementation-class>
         </component>
     </project-components>
 
 
     <extensionPoints>
-        <extensionPoint name="lang.bundledescriptor.parser.provider" interface="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserProvider"/>
+        <extensionPoint name="lang.bundledescriptor.parser.provider" interface="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider"/>
     </extensionPoints>
 
 
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Initialize AmdatuIde plugin -->
-        <postStartupActivity implementation="org.amdatu.ide.AmdatuIdePluginStartup"/>
+        <postStartupActivity implementation="org.amdatu.idea.AmdatuIdeaPluginStartup"/>
 
         <!-- Project import -->
-        <projectImportProvider implementation="org.amdatu.ide.imp.BndProjectImportProvider"/>
+        <projectImportProvider implementation="org.amdatu.idea.imp.BndProjectImportProvider"/>
 
         <!-- Inspections -->
-        <inspectionToolProvider implementation="org.amdatu.ide.inspections.AmdatuIdeInspectionToolProvider"/>
+        <inspectionToolProvider implementation="org.amdatu.idea.inspections.AmdatuIdeaInspectionToolProvider"/>
 
         <!-- Language -->
-        <fileTypeFactory implementation="org.amdatu.ide.lang.bundledescriptor.BundleDescriptorTypeFactory"/>
-        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
-        <lang.syntaxHighlighterFactory language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.highlighting.BundleDescriptorSyntaxHighlighterFactory"/>
-        <annotator language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.highlighting.HeaderAnnotator"/>
-        <lang.elementManipulator forClass="org.amdatu.ide.lang.bundledescriptor.psi.HeaderValuePart"
-                                 implementationClass="org.amdatu.ide.lang.bundledescriptor.psi.impl.HeaderValuePartManipulator"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.BsnCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.completion.PackageCompletionContributor"/>
+        <fileTypeFactory implementation="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorTypeFactory"/>
+        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.BundleDescriptorSyntaxHighlighterFactory"/>
+        <annotator language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.HeaderAnnotator"/>
+        <lang.elementManipulator forClass="org.amdatu.idea.lang.bundledescriptor.psi.HeaderValuePart"
+                                 implementationClass="org.amdatu.idea.lang.bundledescriptor.psi.impl.HeaderValuePartManipulator"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BsnCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.PackageCompletionContributor"/>
 
-        <applicationService serviceImplementation="org.amdatu.ide.lang.bundledescriptor.header.HeaderParserRepository"/>
+        <applicationService serviceImplementation="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserRepository"/>
 
-        <lang.commenter language="BundleDescriptor" implementationClass="org.amdatu.ide.lang.bundledescriptor.BundleDescriptorCommenter" />
+        <lang.commenter language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter" />
 
         <!-- JPS plugin -->
         <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-3.5.0.jar"/>
 
         <!--  Run -->
-        <configurationType implementation="org.amdatu.ide.run.BndRunConfigurationType"/>
-        <runConfigurationProducer implementation="org.amdatu.ide.run.BndRunConfigurationProducer$Launch"/>
-        <runConfigurationProducer implementation="org.amdatu.ide.run.BndRunConfigurationProducer$Test"/>
+        <configurationType implementation="org.amdatu.idea.run.BndRunConfigurationType"/>
+        <runConfigurationProducer implementation="org.amdatu.idea.run.BndRunConfigurationProducer$Launch"/>
+        <runConfigurationProducer implementation="org.amdatu.idea.run.BndRunConfigurationProducer$Test"/>
 
         <!-- Custom module type supporting bndtools templates-->
-        <!--<projectTemplatesFactory implementation="org.amdatu.ide.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
-        <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.ide.templating.AmdatuIdeModuleType"/>
+        <!--<projectTemplatesFactory implementation="org.amdatu.ideaa.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
+        <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.idea.templating.AmdatuIdeaModuleType"/>
 
-        <toolWindow id="Amdatu IDE " icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.ide.toolwindow.AmdatuIdeToolWindowFactory"/>
+        <toolWindow id="Amdatu IDE " icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.idea.toolwindow.AmdatuIdeaToolWindowFactory"/>
 
         <!-- Plugin preferences -->
-        <applicationService serviceImplementation="org.amdatu.ide.preferences.AmdatuIdePreferences"/>
-        <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu IDE"
-                                 instance="org.amdatu.ide.preferences.AmdatuIdePreferencesEditor"/>
+        <applicationService serviceImplementation="org.amdatu.idea.preferences.AmdatuIdeaPreferences"/>
+        <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu"
+                                 instance="org.amdatu.idea.preferences.AmdatuIdeaPreferencesEditor"/>
 
         <!-- Project view -->
-        <projectViewNodeDecorator implementation="org.amdatu.ide.AmdatuIdeProjectViewNodeDecorator"/>
+        <projectViewNodeDecorator implementation="org.amdatu.idea.AmdatuIdeaProjectViewNodeDecorator"/>
 
     </extensions>
 
-    <extensions defaultExtensionNs="org.amdatu.ide">
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.StandardManifestHeaderParsers"/>
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.BndHeaderParsers"/>
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.ide.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
+    <extensions defaultExtensionNs="org.amdatu.idea">
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.StandardManifestHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.BndHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
     </extensions>
 
 
     <actions>
-        <group popup="true" text="Amdatu IDE" id="AmdatuIDE" description="Amdatu IDE">
+        <group popup="true" text="Amdatu" id="amdatu-idea" description="Amdatu">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
         <!-- Project re-import (manual) -->
         <action id="amdatu.ide.action.reimport.workspace" icon="OsmorcIdeaIcons.Bnd" text="Reimport Workspace"
                 description="Reimport entire Bnd/Bndtools workspace"
-                class="org.amdatu.ide.imp.ReimportWorkspaceAction">
-            <add-to-group group-id="AmdatuIDE" anchor="last"/>
+                class="org.amdatu.idea.imp.ReimportWorkspaceAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
 
         </action>
 
@@ -100,16 +100,16 @@
         <action id="amdatu.ide.action.refresh-workspace" icon="OsmorcIdeaIcons.Bnd"
                 text="Refresh workspace"
                 description="Refresh workspace"
-                class="org.amdatu.ide.actions.RefreshWorkspaceAction">
-            <add-to-group group-id="AmdatuIDE" anchor="last"/>
+                class="org.amdatu.idea.actions.RefreshWorkspaceAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
         </action>
 
         <!-- Generate index -->
         <action id="amdatu.ide.action.generate-index" icon="OsmorcIdeaIcons.Bnd"
                 text="Generate index"
                 description="Generate index"
-                class="org.amdatu.ide.actions.index.GenerateIndexAction">
-            <add-to-group group-id="AmdatuIDE" anchor="last"/>
+                class="org.amdatu.idea.actions.index.GenerateIndexAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>

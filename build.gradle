@@ -10,7 +10,7 @@ plugins {
     id "org.jetbrains.intellij" version "0.2.18"
 }
 
-group 'org.amdatu.ide'
+group 'org.amdatu.idea'
 version '1.0-SNAPSHOT'
 
 allprojects {

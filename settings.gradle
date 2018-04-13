@@ -1,4 +1,4 @@
-rootProject.name = 'amdatu-ide'
+rootProject.name = 'amdatu-idea'
 include 'jps-plugin'
-rootProject.name = 'amdatu-ide'
+rootProject.name = 'amdatu-idea'
 
