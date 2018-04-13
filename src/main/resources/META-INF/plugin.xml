@@ -14,7 +14,7 @@
 
 <idea-plugin>
     <id>org.amdatu.idea</id>
-    <name>Amdatu IDE</name>
+    <name>Amdatu</name>
     <version>1.0.0</version>
     <description></description>
     <category></category>
