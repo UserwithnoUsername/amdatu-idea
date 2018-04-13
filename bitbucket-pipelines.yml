@@ -1,0 +1,9 @@
+image: amdatu/build-jdk8-alpine
+pipelines:
+  default:
+    - step:
+        caches:
+          - maven
+          - gradle
+        script:
+          - bash ./gradlew buildPlugin
