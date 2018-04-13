@@ -20,7 +20,6 @@ import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -49,29 +48,35 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
     @Override
     protected boolean setupConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context, Ref<PsiElement> source) {
-        if (context.getLocation() == null || context.getLocation().getVirtualFile() == null) {
+        if ((context.getLocation() == null) || (context.getLocation().getVirtualFile() == null)) {
             return false;
         }
 
-        Location location = context.getLocation();
+        Location<?> location = context.getLocation();
         PsiElement psiLocation = context.getPsiLocation();
         VirtualFile file = location.getVirtualFile();
-        configuration.getOptions().setWorkingDirectory(file.getParent().getPath());
+        Module module = context.getModule();
+        String moduleName = module.getName();
 
-        if (configuration instanceof BndRunConfigurationBase.Launch && !isTestModule(context.getModule())) {
+        VirtualFile moduleDir = context.getProject().getBaseDir().findChild(moduleName);
+        if (moduleDir == null) {
+            return false;
+        }
+        String modulePath = moduleDir.getPath();
+        configuration.getOptions().setWorkingDirectory(modulePath);
+
+        if ((configuration instanceof BndRunConfigurationBase.Launch) && !isTestModule(module)) {
             if (isBndPropertiesFile(file)) {
-                configuration.setName(context.getModule().getName());
+                configuration.setName(moduleName);
                 configuration.getOptions().setBndRunFile(file.getPath());
-
                 return true;
             }
         }
-        else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(context.getModule())) {
-
+        else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(module)) {
             if (isBndPropertiesFile(file) && file.getName().equals(AmdatuIdeConstants.BND_BND)) {
-                configuration.setName(context.getModule().getName());
+                configuration.setName(moduleName);
                 configuration.getOptions().setBndRunFile(file.getPath());
-                configuration.getOptions().setModuleName(context.getModule().getName());
+                configuration.getOptions().setModuleName(moduleName);
                 return true;
             }
 
@@ -86,8 +91,11 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                     test = test + ":" + psiMethod.getName();
                 }
                 configuration.setName(name);
-                configuration.getOptions().setBndRunFile(getPropertiesFilePath(context.getModule()));
-                configuration.getOptions().setModuleName(context.getModule().getName());
+
+                VirtualFile bndPropertiesFile = moduleDir.findChild(AmdatuIdeConstants.BND_BND);
+                String bndPropertiesFilePath = bndPropertiesFile != null ? bndPropertiesFile.getPath() : null;
+                configuration.getOptions().setBndRunFile(bndPropertiesFilePath);
+                configuration.getOptions().setModuleName(moduleName);
                 configuration.getOptions().setTest(test);
                 return true;
             }
@@ -95,7 +103,6 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
         return false;
     }
-
 
     @Nullable
     private static PsiMethod findTestMethod(PsiElement psiLocation) {
@@ -137,13 +144,11 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
             }
 
             PsiClass parent = psiClass;
-            while ((parent = parent.getSuperClass()) != null) {
-                if (Object.class.getName().equals(parent.getQualifiedName())) {
-                    return null;
-                }
+            while (parent != null && !Object.class.getName().equals(parent.getQualifiedName())) {
                 if (TestCase.class.getName().equals(parent.getQualifiedName())) {
                     return psiClass; // JUnit 3
                 }
+                parent = parent.getSuperClass();
             }
         }
 
@@ -153,9 +158,10 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
     @Override
     public boolean isConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context) {
         if (getConfigurationFactory() == configuration.getFactory()) {
-            Location location = context.getLocation();
+            Location<?> location = context.getLocation();
             if (location != null) {
-                if ((configuration instanceof BndRunConfigurationBase.Test) && configuration.getOptions().getTest() != null) {
+                BndRunConfigurationOptions configurationOptions = configuration.getOptions();
+                if ((configuration instanceof BndRunConfigurationBase.Test) && configurationOptions.getTest() != null) {
                     PsiClass psiClass = findTestClass(context.getPsiLocation());
                     if (psiClass != null) {
                         String test = psiClass.getQualifiedName();
@@ -165,13 +171,13 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                             test = test + ":" + psiMethod.getName();
                         }
 
-                        return configuration.getOptions().getTest().equals(test);
+                        return configurationOptions.getTest().equals(test);
                     }
                     return false;
                 }
 
                 VirtualFile file = location.getVirtualFile();
-                return file != null && !file.isDirectory() && FileUtil.pathsEqual(file.getPath(), configuration.getOptions().getBndRunFile());
+                return file != null && !file.isDirectory() && FileUtil.pathsEqual(file.getPath(), configurationOptions.getBndRunFile());
             }
         }
 
@@ -193,11 +199,6 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
     private static boolean isBndPropertiesFile(VirtualFile file) {
         return file != null && !file.isDirectory() &&
                 (BND_EXT.equals(file.getExtension()) || BND_RUN_EXT.equals(file.getExtension()));
-    }
-
-    private static String getPropertiesFilePath(Module module) {
-        Project project = module.getProject();
-        return project.getBasePath() + "/" + module.getName() + "/" + AmdatuIdeConstants.BND_BND;
     }
 
     private static boolean isTestModule(Module module) {
