@@ -212,10 +212,6 @@ public class AmdatuIdePluginImpl implements AmdatuIdePlugin {
      */
     private class BndFileChangedListener implements BulkFileListener {
 
-        BndFileChangedListener() {
-            workspaceFileNames();
-        }
-
         private Set<String> workspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
             if (myWorkspace.getIncluded() != null) {
