@@ -48,7 +48,9 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
     @Override
     protected boolean setupConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context, Ref<PsiElement> source) {
-        if ((context.getLocation() == null) || (context.getLocation().getVirtualFile() == null)) {
+        if (context.getLocation() == null
+                || context.getLocation().getVirtualFile() == null
+                || context.getModule() == null) {
             return false;
         }
 
