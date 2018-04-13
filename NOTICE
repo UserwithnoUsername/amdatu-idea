@@ -21,3 +21,35 @@ The following components are included with modification:
 Information: https://plugins.jetbrains.com/plugin/1816-osmorc
 Sources: https://github.com/JetBrains/intellij-plugins/tree/master/osmorc
 License: http://www.apache.org/licenses/LICENSE-2.0
+
+
+The following components are included without  modification:
+
+- OSGi Core Release 6, Interfaces and Classes for use in compiling bundles. -
+Information: The OSGi Alliance (http://www.osgi.org/).
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+- Apache Felix Metatype Service -
+Information: Apache Felix project http://felix.apache.org/
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+- DataUrl -
+Information: https://github.com/maxschuster/DataUrl
+Sources: https://github.com/maxschuster/DataUrl
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+- biz.aQute.bnd -
+Information: http://bnd.bndtools.org/
+Sources: https://github.com/bndtools/bnd
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+----------------------------------------------------------
+Components under the Eclipse Public License, Version 1.0
+----------------------------------------------------------
+
+The following components are included without  modification:
+
+- org.bndtools.templating -
+Information: http://bndtools.org/
+Sources: https://github.com/bndtools/bndtools
+License: http://www.eclipse.org/legal/epl-v10.html

@@ -1,3 +1,5 @@
+// Copyright (c) Neil Bartlett (2009, 2017) and others.
+// All Rights Reserved.
 package org.amdatu.idea.templating;
 
 import aQute.bnd.osgi.resource.ResourceUtils;
