@@ -5,7 +5,6 @@ package org.amdatu.idea.templating;
 import aQute.bnd.osgi.resource.ResourceUtils;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.lib.io.IO;
-import org.apache.felix.metatype.AD;
 import org.apache.felix.metatype.MetaData;
 import org.apache.felix.metatype.MetaDataReader;
 import org.apache.felix.metatype.OCD;
@@ -30,13 +29,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -344,172 +340,6 @@ public class CapabilityBasedTemplate implements Template {
 
     private static void log(int level, String message, Throwable e) {
 //        Plugin.getDefault().getLog().log(new Status(level, Plugin.PLUGIN_ID, 0, message, e));
-    }
-
-    private static class FelixADAdapter implements AttributeDefinition {
-
-        private final AD ad;
-
-        public FelixADAdapter(AD ad) {
-            this.ad = ad;
-        }
-
-        @Override
-        public String getName() {
-            return ad.getName();
-        }
-
-        @Override
-        public String getID() {
-            return ad.getID();
-        }
-
-        @Override
-        public String getDescription() {
-            return ad.getDescription();
-        }
-
-        @Override
-        public int getCardinality() {
-            return ad.getCardinality();
-        }
-
-        @Override
-        public int getType() {
-            return ad.getType();
-        }
-
-        @Override
-        public String[] getOptionValues() {
-            return ad.getOptionValues();
-        }
-
-        @Override
-        public String[] getOptionLabels() {
-            return ad.getOptionLabels();
-        }
-
-        @Override
-        public String validate(String value) {
-            return ad.validate(value);
-        }
-
-        @Override
-        public String[] getDefaultValue() {
-            return ad.getDefaultValue();
-        }
-    }
-
-    private static class FelixOCDAdapter implements ObjectClassDefinition {
-
-        private final OCD ocd;
-
-        public FelixOCDAdapter(OCD ocd) {
-            if (ocd == null)
-                throw new NullPointerException();
-            this.ocd = ocd;
-        }
-
-        @Override
-        public String getName() {
-            return ocd.getName();
-        }
-
-        @Override
-        public String getID() {
-            return ocd.getID();
-        }
-
-        @Override
-        public String getDescription() {
-            return ocd.getDescription();
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public AttributeDefinition[] getAttributeDefinitions(int filter) {
-            if (ocd.getAttributeDefinitions() == null)
-                return null;
-
-            Iterator<AD> iter = ocd.getAttributeDefinitions().values().iterator();
-            if (filter == ObjectClassDefinition.OPTIONAL || filter == ObjectClassDefinition.REQUIRED) {
-                boolean required = (filter == ObjectClassDefinition.REQUIRED);
-                iter = new RequiredFilterIterator(iter, required);
-            }
-            else if (filter != ObjectClassDefinition.ALL) {
-                return null;
-            }
-
-            if (!iter.hasNext())
-                return null;
-
-            List<AttributeDefinition> result = new ArrayList<>();
-            while (iter.hasNext()) {
-                result.add(new FelixADAdapter(iter.next()));
-            }
-            return result.toArray(new AttributeDefinition[0]);
-        }
-
-        @Override
-        public InputStream getIcon(int size) throws IOException {
-            // TODO
-            return null;
-        }
-
-        @SuppressWarnings("rawtypes")
-        private static class RequiredFilterIterator implements Iterator {
-
-            private final Iterator base;
-
-            private final boolean required;
-
-            private AD next;
-
-            private RequiredFilterIterator(Iterator base, boolean required) {
-                this.base = base;
-                this.required = required;
-                this.next = seek();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            public Object next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-
-                AD toReturn = next;
-                next = seek();
-                return toReturn;
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException("remove");
-            }
-
-            private AD seek() {
-                if (base.hasNext()) {
-                    AD next;
-                    do {
-                        next = (AD) base.next();
-                    }
-                    while (next.isRequired() != required && base.hasNext());
-
-                    if (next.isRequired() == required) {
-                        return next;
-                    }
-                }
-
-                // nothing found any more
-                return null;
-            }
-
-        }
     }
 
 }
