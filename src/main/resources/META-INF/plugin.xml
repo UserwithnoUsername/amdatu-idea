@@ -126,5 +126,14 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
+
+        <!-- Update workspace -->
+        <action id="amdatu.ide.action.update-workspace" icon="OsmorcIdeaIcons.Bnd"
+                text="Update configuration project"
+                description="Update configuration project from template"
+                class="org.amdatu.idea.actions.UpdateConfigurationProjectAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>
