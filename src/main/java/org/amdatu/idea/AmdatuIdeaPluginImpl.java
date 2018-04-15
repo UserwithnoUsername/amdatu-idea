@@ -282,8 +282,10 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                             for (String moduleName : modulesToRefresh) {
                                 try {
                                     aQute.bnd.build.Project project = myWorkspace.getProject(moduleName);
-                                    project.clear();
-                                    project.refresh();
+                                    if (project != null) {
+                                        project.clear();
+                                        project.refresh();
+                                    }
                                 }
                                 catch (Exception e) {
                                     LOG.error("Failed to refresh project for module " + moduleName, e);
