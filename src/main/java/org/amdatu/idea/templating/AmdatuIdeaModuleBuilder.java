@@ -11,21 +11,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.amdatu.idea.templating;
 
 import aQute.bnd.build.Workspace;
@@ -42,38 +27,26 @@ import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.util.Key;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.imp.BndProjectImporter;
-import org.apache.commons.io.IOUtils;
-import org.bndtools.templating.Resource;
-import org.bndtools.templating.ResourceMap;
-import org.bndtools.templating.ResourceType;
 import org.bndtools.templating.Template;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-
-import static java.util.Collections.singletonList;
 
 public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
 
-    public static final Key<Template> KEY_TEMPLATE = Key.create("template");
-    public static final Key<Map<String, List<Object>>> KEY_ATTRS = Key.create("attrs");
+    static final Key<Template> KEY_TEMPLATE = Key.create("template");
+    static final Key<Map<String, List<Object>>> KEY_ATTRS = Key.create("attrs");
 
     private WizardContext myWizardContext;
 
-    public AmdatuIdeaModuleBuilder() {
+    AmdatuIdeaModuleBuilder() {
     }
 
-    public AmdatuIdeaModuleBuilder(WizardContext wizardContext) {
+    AmdatuIdeaModuleBuilder(WizardContext wizardContext) {
         myWizardContext = wizardContext;
     }
 
@@ -106,7 +79,16 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
 
         Template myTemplate = myWizardContext.getUserData(KEY_TEMPLATE);
         if (myTemplate != null) {
-            doGenerate(myTemplate, module);
+            if (myWizardContext.isCreatingNewProject()) {
+                TemplateHelperKt.applyWorkspaceTemplate(module.getProject(), myTemplate);
+            } else {
+                Map<String, List<Object>> map = new HashMap<>();
+                Map<String, List<Object>> userData = myWizardContext.getUserData(KEY_ATTRS);
+                if (userData != null) {
+                    map.putAll(userData);
+                }
+                TemplateHelperKt.applyModuleTemplate(module, myTemplate, map);
+            }
         }
 
         if (myWizardContext.isCreatingNewProject()) {
@@ -130,65 +112,4 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
         return module;
     }
 
-    private void doGenerate(Template template, Module module) {
-        Map<String, List<Object>> map = new HashMap<>();
-        Map<String, List<Object>> userData = myWizardContext.getUserData(KEY_ATTRS);
-        if (userData != null) {
-            map.putAll(userData);
-        }
-
-        map.put("srcDir", singletonList("src"));
-        String name = module.getName();
-        map.put("basePackageDir", singletonList(name.replaceAll("\\.", "/")));
-        map.put("basePackageName", singletonList(name));
-
-        ResourceMap resourceMap;
-        try {
-            resourceMap = template.generateOutputs(map);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Failed to process myTemplate " + template.getName(), e);
-        }
-
-        File moduleRootDir = new File(Objects.requireNonNull(getContentEntryPath()));
-
-        for (Map.Entry<String, Resource> entry : resourceMap.entries()) {
-            String relativePath = entry.getKey();
-            Resource resource = entry.getValue();
-            ResourceType type = resource.getType();
-            switch (type) {
-                case Folder:
-                    File folder = new File(moduleRootDir, relativePath);
-                    if (!folder.exists()) {
-                        if (!folder.mkdirs()) {
-                            throw new RuntimeException("Failed to create dir: " + folder);
-                        }
-                    }
-                    else if (!folder.isDirectory()) {
-                        throw new RuntimeException("File exists but is not a dir: " + folder);
-                    }
-                    break;
-                case File:
-                    File file = new File(moduleRootDir, relativePath);
-                    if (!file.exists()) {
-                        try (InputStream is = new BufferedInputStream(resource.getContent());
-                             FileOutputStream outputStream = new FileOutputStream(file)) {
-
-                            IOUtils.copy(is, outputStream);
-
-                        }
-                        catch (IOException e) {
-                            throw new RuntimeException("Failed to write " + file, e);
-                        }
-                    }
-                    else {
-                        // TODO Just overwrite?
-                        throw new RuntimeException("File exists." + file);
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("Unsupported resource type" + type);
-            }
-        }
-    }
 }
