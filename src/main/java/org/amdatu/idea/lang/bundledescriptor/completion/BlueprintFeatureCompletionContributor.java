@@ -15,12 +15,9 @@
 package org.amdatu.idea.lang.bundledescriptor.completion;
 
 import aQute.bnd.build.Workspace;
-import com.intellij.codeInsight.completion.CompletionContributor;
-import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionProvider;
-import com.intellij.codeInsight.completion.CompletionResultSet;
-import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -34,13 +31,17 @@ import org.amdatu.idea.lang.bundledescriptor.psi.Header;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
+import static org.amdatu.idea.AmdatuIdeaConstants.BLUEPRINT_FEATURE;
 
 public class BlueprintFeatureCompletionContributor extends CompletionContributor {
+
+    private static final Logger LOG = Logger.getInstance(BlueprintFeatureCompletionContributor.class);
+    private static final Pattern COMMA_PATTERN = Pattern.compile(",");
 
     public BlueprintFeatureCompletionContributor() {
         extend(CompletionType.BASIC,  getPlace(AmdatuIdeaConstants.BUILDFEATURES), new BlueprintFeatureCompletionProvider(
@@ -83,40 +84,32 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
                 return;
             }
 
-
-            // TODO: Get list of installed features from the bnd workspace
-            List<String> installed = Arrays.asList("base", "blobstores", "config", "email", "mongodb", "scheduling", "security", "shell", "template", "testing", "validator", "web");
-            List<String> availableToAdd = new ArrayList<>(installed);
-
             try {
-                // Remove features that are already added from completion options
+                // Get list of features from the current header that's being completed
+                // (the bnd model doesn't know about unsaved added features)
+                List<String> addedCurrentHeader = new ArrayList<>();
+                PsiElement prevSibling = parameters.getPosition().getPrevSibling();
+                while (prevSibling != null) {
+                    if (BundleDescriptorTokenType.HEADER_VALUE_PART.equals(prevSibling.getNode().getElementType())) {
+                        addedCurrentHeader.add(prevSibling.getText().trim());
+                    }
+                    prevSibling = prevSibling.getPrevSibling();
+                }
+
                 Workspace workspace = amdatuIdeaPlugin.getWorkspace();
                 aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
+                List<String> addedBndModel = COMMA_PATTERN.splitAsStream(bndProject.get(instruction + ".*", ""))
+                        .map(String::trim)
+                        .collect(Collectors.toList());
 
-                List<String> added = Arrays.stream(bndProject.get(instruction + ".*", "")
-                                .split(","))
-                                .map(String::trim)
-                                .collect(Collectors.toList());
-                availableToAdd.removeAll(added);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            PsiElement prevSibling = parameters.getPosition().getPrevSibling();
-
-
-            // Remove features that are added to the header we're completing, these are potentially
-            // not yet saved so not yet known in the bnd project.
-            while (prevSibling != null) {
-                if (BundleDescriptorTokenType.HEADER_VALUE_PART.equals(prevSibling.getNode().getElementType())) {
-                    availableToAdd.remove(prevSibling.getText().trim());
-                }
-                prevSibling = prevSibling.getPrevSibling();
-            }
-
-            for (String header : availableToAdd) {
-                resultSet.addElement(LookupElementBuilder.create(header));
+                //
+                COMMA_PATTERN.splitAsStream(bndProject.getProperty(BLUEPRINT_FEATURE + ".*", ""))
+                        .map(String::trim)
+                        .filter(feature -> !addedBndModel.contains(feature))
+                        .filter(feature -> !addedCurrentHeader.contains(feature))
+                        .forEach(feature -> resultSet.addElement(LookupElementBuilder.create(feature)));
+            } catch (Exception e) {
+                LOG.warn("Blueprint feature completion failed", e);
             }
         }
     }

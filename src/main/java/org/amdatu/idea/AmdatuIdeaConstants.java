@@ -27,4 +27,5 @@ public class AmdatuIdeaConstants {
 
     public static final String RUNFEATURES = "-runfeatures";
     public static final String BUILDFEATURES = "-buildfeatures";
+    public static final String BLUEPRINT_FEATURE = "blueprint-feature";
 }
