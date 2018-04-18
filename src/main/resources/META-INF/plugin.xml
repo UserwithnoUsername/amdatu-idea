@@ -16,13 +16,12 @@
     <id>org.amdatu.idea</id>
     <name>Amdatu</name>
     <version>1.0.0</version>
-    <description></description>
-    <category></category>
-    <vendor>Amdatu</vendor>
+    <description>The Amdatu IntelliJ plugin adds support for OSGi workspaces using the bnd workspace model.</description>
+    <category>Framework integration</category>
+    <vendor>The Amdatu Foundation</vendor>
     <idea-version since-build="163.0"/>
 
     <change-notes>
-
     </change-notes>
 
     <depends>com.intellij.modules.java</depends>
@@ -34,12 +33,9 @@
         </component>
     </project-components>
 
-
     <extensionPoints>
         <extensionPoint name="lang.bundledescriptor.parser.provider" interface="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider"/>
     </extensionPoints>
-
-
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Initialize AmdatuIde plugin -->
