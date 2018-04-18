@@ -130,5 +130,14 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
+
+        <!-- Update workspace -->
+        <action id="amdatu.ide.action.create-configuration" icon="OsmorcIdeaIcons.Bnd"
+                text="Create configuration"
+                description="Create configuration"
+                class="org.amdatu.idea.actions.CreateConfigurationAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

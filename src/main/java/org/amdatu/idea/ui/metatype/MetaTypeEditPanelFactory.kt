@@ -39,7 +39,8 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
 
         return panel(LCFlags.fillX) {
             for (attributeDefinition in attributeDefinitions) {
-                row(attributeDefinition.name) {
+                val name = attributeDefinition.name ?: attributeDefinition.id
+                row(name) {
                     input(attributeDefinition, propertyChangeListener)(CCFlags.growX, CCFlags.pushX)
                 }
 
@@ -87,8 +88,8 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
     private fun textField(attributeDefinition: AttributeDefinition, propertyChangeListener: PropertyChangeListener): JComponent {
         val jTextField = JTextField()
 
-        val defaultValue = attributeDefinition.defaultValue
-        if (defaultValue !== null && defaultValue.isNotEmpty()) {
+        val defaultValue = attributeDefinition.defaultValue ?: emptyArray()
+        if (defaultValue.isNotEmpty()) {
             propertyChangeListener(attributeDefinition.id, listOf<Any>(defaultValue.first()))
         }
 
