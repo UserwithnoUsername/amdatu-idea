@@ -76,10 +76,9 @@
         <runConfigurationProducer implementation="org.amdatu.idea.run.BndRunConfigurationProducer$Test"/>
 
         <!-- Custom module type supporting bndtools templates-->
-        <!--<projectTemplatesFactory implementation="org.amdatu.ideaa.templating.BndtoolsProjectTemplatesFactory"></projectTemplatesFactory>-->
         <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.idea.templating.AmdatuIdeaModuleType"/>
 
-        <toolWindow id="Amdatu IDE " icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.idea.toolwindow.AmdatuIdeaToolWindowFactory"/>
+        <toolWindow id="Amdatu" icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.idea.toolwindow.AmdatuIdeaToolWindowFactory"/>
 
         <!-- Plugin preferences -->
         <applicationService serviceImplementation="org.amdatu.idea.preferences.AmdatuIdeaPreferences"/>

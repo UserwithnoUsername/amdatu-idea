@@ -81,7 +81,7 @@ public class RepoTemplateLoader {
             osGiRepository.setRegistry(workspace);
             osGiRepository.setReporter(workspace);
             Map<String, String> map = new HashMap<>();
-            map.put("name", "Amdatu IDE preferences template repos");
+            map.put("name", "Amdatu preferences template repos");
 
 
             String locations = templateRepositoryUrls.stream().collect(Collectors.joining(","));
