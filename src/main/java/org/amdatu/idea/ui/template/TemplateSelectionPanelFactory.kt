@@ -149,7 +149,9 @@ class TemplateSelectionPanelFactory {
                     IOUtils.toByteArray(iconUri.toURL().openStream())
                 }
                 val image = ImageIO.read(ByteArrayInputStream(data))
-                icon = IconUtil.createImageIcon(image as Image)
+                if (image is Image) {
+                    icon = IconUtil.createImageIcon(image as Image)
+                }
             } catch (e: IOException) {
                 LOG.warn("Failed to load icon for template: $template", e)
             }
