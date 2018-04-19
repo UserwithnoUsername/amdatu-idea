@@ -14,12 +14,10 @@
 
 package org.amdatu.idea.jps;
 
-import static java.lang.String.format;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.osgi.Processor;
+import aQute.service.reporter.Report;
+import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.BuildRootDescriptor;
@@ -32,19 +30,17 @@ import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.incremental.messages.DoneSomethingNotification;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 
-import com.intellij.openapi.util.io.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
-import aQute.bnd.osgi.Builder;
-import aQute.bnd.osgi.Jar;
-import aQute.service.reporter.Report;
+import static java.lang.String.format;
 
 public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, AmdatuIdeaModuleBasedBuildTarget> {
 
-    public static final String ID = "AmdatuIdea";
+    private static final String ID = "AmdatuIdea";
 
-    public AmdatuIdeaTargetBuilder() {
+    AmdatuIdeaTargetBuilder() {
         super(Collections.singletonList(AmdatuIdeaModuleBasedTargetType.INSTANCE));
     }
 
@@ -65,7 +61,7 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
         }
     }
 
-    public void doBuild(@NotNull AmdatuIdeaModuleBasedBuildTarget target, @NotNull CompileContext context) {
+    private void doBuild(@NotNull AmdatuIdeaModuleBasedBuildTarget target, @NotNull CompileContext context) {
 
         context.processMessage(new ProgressMessage("Running bnd build for: " + target.getModule().getName()));
 
@@ -76,24 +72,18 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
                 }
             }
 
-            Project project = target.getBndWorkspace().getProject(target.getModule().getName());
-            try (ProjectBuilder projectBuilder = project.getBuilder(null)) {
-                for (Builder builder : projectBuilder.getSubBuilders()) {
-                    String bsn = builder.getBsn();
-                    String version = builder.getVersion();
-                    context.processMessage(new ProgressMessage(format("Building bundle: %s [%s]", bsn, version)));
 
-                    Jar build = builder.build();
-                    build.write(project.getOutputFile(bsn, version));
+            try (Project project = target.getBndWorkspace().getProject(target.getModule().getName())) {
+                project.build();
 
-                    builder.getWarnings().stream()
-                            .map(message -> toCompilerMessage(BuildMessage.Kind.WARNING, message, builder))
-                            .forEach(context::processMessage);
+                context.processMessage(new ProgressMessage(format("Building project: %s", project.getName())));
+                project.getWarnings().stream()
+                        .map(message -> toCompilerMessage(BuildMessage.Kind.WARNING, message, project))
+                        .forEach(context::processMessage);
 
-                    builder.getErrors().stream()
-                            .map(message -> toCompilerMessage(BuildMessage.Kind.ERROR, message, builder))
-                            .forEach(context::processMessage);
-                }
+                project.getErrors().stream()
+                        .map(message -> toCompilerMessage(BuildMessage.Kind.ERROR, message, project))
+                        .forEach(context::processMessage);
             }
 
         } catch (Exception e) {
@@ -104,8 +94,8 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
         context.processMessage(DoneSomethingNotification.INSTANCE);
     }
 
-    private CompilerMessage toCompilerMessage(BuildMessage.Kind kind, String message, Builder builder) {
-        Report.Location location = builder.getLocation(message);
+    private CompilerMessage toCompilerMessage(BuildMessage.Kind kind, String message, Processor processor) {
+        Report.Location location = processor.getLocation(message);
         String path = null;
         int line = -1;
 
