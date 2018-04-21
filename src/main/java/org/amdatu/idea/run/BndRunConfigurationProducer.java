@@ -66,6 +66,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         }
         String modulePath = moduleDir.getPath();
         configuration.getOptions().setWorkingDirectory(modulePath);
+        configuration.getOptions().setPassParentEnvs(true);
 
         if ((configuration instanceof BndRunConfigurationBase.Launch) && !isTestModule(module)) {
             if (isBndPropertiesFile(file)) {
