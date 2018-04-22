@@ -101,7 +101,7 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
 
         if (location != null) {
             path = location.file;
-            line = location.line;
+            line = location.line + 1; // Line numbers in bnd are 0 based
         }
         return new CompilerMessage(AmdatuIdeaTargetBuilder.ID, kind, message, path, -1, -1, -1, line, -1);
     }
