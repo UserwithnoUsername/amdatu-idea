@@ -16,6 +16,7 @@ package org.amdatu.idea;
 
 import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Attrs;
 import aQute.bnd.header.Parameters;
 import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
@@ -64,6 +65,11 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
     private List<Report.Location> myWorkspaceErrors;
     private final AmdatuIdeaNotificationService myNotificationService;
     private PackageInfoService myPackageInfoService;
+
+    static {
+        Workspace.setDriver(Constants.BNDDRIVER_INTELLIJ);
+        Workspace.addGestalt(Constants.GESTALT_INTERACTIVE, new Attrs());
+    }
 
     public AmdatuIdeaPluginImpl(Project project) {
         myProject = project;

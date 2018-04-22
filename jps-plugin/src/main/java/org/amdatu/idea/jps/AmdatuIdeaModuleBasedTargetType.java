@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import aQute.bnd.header.Attrs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildTargetLoader;
@@ -45,6 +46,11 @@ public class AmdatuIdeaModuleBasedTargetType extends ModuleBasedBuildTargetType<
     }
 
     private final Map<String, AmdatuIdeaModuleBasedBuildTarget> targets = new HashMap<>();
+
+    static {
+        Workspace.setDriver(Constants.BNDDRIVER_INTELLIJ);
+        Workspace.addGestalt(Constants.GESTALT_INTERACTIVE, new Attrs());
+    }
 
     @NotNull
     @Override
