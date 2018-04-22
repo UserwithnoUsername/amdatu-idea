@@ -14,20 +14,16 @@
 
 package org.amdatu.idea.jps;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.builders.BuildRootDescriptor;
-import org.jetbrains.jps.builders.BuildRootIndex;
-import org.jetbrains.jps.builders.BuildTarget;
-import org.jetbrains.jps.builders.BuildTargetRegistry;
-import org.jetbrains.jps.builders.ModuleBasedTarget;
-import org.jetbrains.jps.builders.TargetOutputIndex;
+import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
 import org.jetbrains.jps.builders.storage.BuildDataPaths;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -37,26 +33,25 @@ import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.util.containers.ContainerUtil;
-
-import aQute.bnd.build.Project;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.osgi.Constants;
-import aQute.bnd.osgi.Instruction;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRootDescriptor> {
 
     private static final Logger LOGGER = Logger.getInstance(AmdatuIdeaModuleBasedBuildTarget.class);
+    private static final Pattern INCLUDE_RESOURCE_SOURCE_DEST_SPLIT = Pattern.compile("\\s*=\\s*");
 
     private final Workspace bndWorkspace;
 
-    public AmdatuIdeaModuleBasedBuildTarget(Workspace bndWorkspace, JpsModule module) {
+    AmdatuIdeaModuleBasedBuildTarget(Workspace bndWorkspace, JpsModule module) {
         super(AmdatuIdeaModuleBasedTargetType.INSTANCE, module);
         this.bndWorkspace = bndWorkspace;
     }
 
-    public Workspace getBndWorkspace() {
+    Workspace getBndWorkspace() {
         return bndWorkspace;
     }
 
@@ -77,17 +72,35 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
                                                             IgnoredFileIndex ignoredFileIndex, BuildDataPaths dataPaths) {
         List<BuildRootDescriptor> rootDescriptors = ContainerUtil.newArrayList();
 
-        try {
-            Project project = bndWorkspace.getProject(getModule().getName());
-
+        try (Project project = bndWorkspace.getProject(getModule().getName())){
             rootDescriptors.add(new BuildRootDescriptorImpl(this, project.getPropertiesFile()));
 
-            String sub = project.get(Constants.SUB);
-            if (sub != null) {
-                List<File> files = new ArrayList<>();
-                tree(files, project.getPropertiesFile().getParentFile(), new Instruction(sub));
-                files.forEach(file -> rootDescriptors.add(new BuildRootDescriptorImpl(this, file)));
+            ProjectBuilder builder = project.getBuilder(null);
+            for (Builder subBuilder : builder.getSubBuilders()) {
+                // When there is just a single builder the properties file will be null, ok to ignore as this would be the
+                // project properties file which we already added
+                if (subBuilder.getPropertiesFile() != null) {
+                    rootDescriptors.add(new BuildRootDescriptorImpl(this, subBuilder.getPropertiesFile()));
+                }
 
+                // Add included resources so the bundle will rebuild when an included resource has changed.
+                Parameters includeResource = subBuilder.getIncludeResource();
+                for (String name : includeResource.keySet()) {
+                    if (name.startsWith("{") && name.endsWith("}")) {
+                        name = name.substring(1, name.length() - 1).trim();
+                    }
+
+                    String parts[] = INCLUDE_RESOURCE_SOURCE_DEST_SPLIT.split(name);
+                    String source = parts[0];
+                    if (parts.length == 2)
+                        source = parts[1];
+
+                    if (source.startsWith("-")) {
+                        source = source.substring(1);
+                    }
+                    File file = builder.getFile(source);
+                    rootDescriptors.add(new BuildRootDescriptorImpl(this, file));
+                }
             }
 
             File root = JpsJavaExtensionService.getInstance().getOutputDirectory(myModule, false);
@@ -100,21 +113,6 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
         }
 
         return rootDescriptors;
-    }
-
-    void tree(List<File> list, File current, Instruction instr) {
-
-        String subs[] = current.list();
-        if (subs != null) {
-            for (String sub : subs) {
-                File f = new File(current, sub);
-                if (f.isFile()) {
-                    if (instr.matches(sub) && !instr.isNegated())
-                        list.add(f);
-                } else
-                    tree(list, f, instr);
-            }
-        }
     }
 
     @Nullable
