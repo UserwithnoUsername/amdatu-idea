@@ -285,18 +285,22 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     }
                     else if (finalImportProjects) {
                         synchronized (workspaceLock) {
+                            List<String> bndProjectPaths = ContainerUtil.newArrayList();
                             for (String moduleName : modulesToRefresh) {
                                 try {
                                     aQute.bnd.build.Project project = myWorkspace.getProject(moduleName);
                                     if (project != null) {
                                         project.clear();
                                         project.refresh();
+                                        bndProjectPaths.add(project.getPropertiesFile().getParentFile().getAbsolutePath());
                                     }
                                 }
                                 catch (Exception e) {
                                     LOG.error("Failed to refresh project for module " + moduleName, e);
                                 }
                             }
+
+                            BndProjectImporter.reimportProjects(myProject, bndProjectPaths);
 
                             // TODO: Create specific event for changed module might be better
                             WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
@@ -305,8 +309,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                             workspaceRefreshedNotifier.workpaceRefreshed();
 
                         }
-
-                        reImportProjects();
                     }
                 }
             }.queue();
