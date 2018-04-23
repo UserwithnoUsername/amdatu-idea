@@ -26,7 +26,7 @@ public class BundleDescriptorBundle extends AbstractBundle {
         return BUNDLE.getMessage(key, params);
     }
 
-    public static final String PATH_TO_BUNDLE = "org.amdatu.ide.lang.bundledescriptor.BundleDescriptorBundle";
+    public static final String PATH_TO_BUNDLE = "org.amdatu.idea.lang.bundledescriptor.BundleDescriptorBundle";
     private static final BundleDescriptorBundle
                     BUNDLE = new BundleDescriptorBundle();
 
