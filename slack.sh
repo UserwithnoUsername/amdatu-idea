@@ -1,2 +1,2 @@
 #!/bin/bash
-curl -X POST --data-urlencode "payload={\"text\": \"New Amdatu IntelliJ plugin snapshot available at <https://bitbucket.org/amdatu/amdatu-idea/downloads/|Bitbucket> \"}" https://hooks.slack.com/services/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
+curl -X POST --data-urlencode "payload={\"text\": \"New Amdatu IntelliJ plugin snapshot available at <https://bitbucket.org/amdatu/amdatu-idea/downloads/|Bitbucket> \"}" $1
