@@ -38,9 +38,7 @@ class AmdatuIdeaProjectViewNodeDecorator : ProjectViewNodeDecorator {
         val psiDirectory = node.value as PsiDirectory
         val project = node.project ?: return
 
-        val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java)
-
-        val packageInfoService = amdatuIdePlugin.packageInfoSevice
+        val packageInfoService = project.getComponent(AmdatuIdeaPlugin::class.java)?.packageInfoSevice ?: return
 
         when (packageInfoService.packageStatus(psiDirectory)){
             PackageStatus.EXPORTED -> data.setIcon(OsmorcIdeaIcons.ExportedPackage)
