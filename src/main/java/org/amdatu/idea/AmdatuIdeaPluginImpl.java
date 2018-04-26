@@ -110,6 +110,8 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                     reportWorkspaceIssues();
 
+                    RepoUtilKt.validateRepoLocations(this);
+
                     // TODO: This could slow down startup a bit but we need these.
                     generateExportedContentsJars(true);
 
@@ -131,7 +133,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         long start = System.currentTimeMillis();
         synchronized (workspaceLock) {
             if (myWorkspace == null) {
-                myNotificationService.info("Workspace not initialized, not refresing'");
+                myNotificationService.info("Workspace not initialized, not refreshing'");
                 return;
             }
             myWorkspace.clear();
@@ -151,7 +153,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                     .map(myWorkspace::getLocation)
                                     .collect(Collectors.toList());
                 }
-
             }
             else {
                 // not refreshed
@@ -162,6 +163,8 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
         if (myWorkspaceErrors.isEmpty()) {
             refreshRepositories();
+
+            RepoUtilKt.validateRepoLocations(this);
 
             // TODO: This is not the best place, come up with a good moment to generate these jars.
             generateExportedContentsJars(forceRefresh);

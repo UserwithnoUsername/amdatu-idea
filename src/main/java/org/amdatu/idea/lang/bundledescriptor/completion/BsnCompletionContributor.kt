@@ -25,6 +25,7 @@ import com.intellij.patterns.StandardPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.util.ProcessingContext
 import org.amdatu.idea.AmdatuIdeaPlugin
+import org.amdatu.idea.getBundles
 import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType
 import org.amdatu.idea.lang.bundledescriptor.psi.Header
 
@@ -68,7 +69,7 @@ class BsnCompletionContributor : CompletionContributor() {
                     .forEach {
                         result.addElement(LookupElementBuilder.create(it))
                     }
-            RepoUtil.getBundles(parameters.position.project).forEach {
+            getBundles(parameters.position.project).forEach {
                 result.addElement(LookupElementBuilder.create(it))
             }
         }

@@ -24,7 +24,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
-import org.amdatu.idea.lang.bundledescriptor.completion.RepoUtil
+import org.amdatu.idea.getBundlesOnlyAvailableInBaselineRepo
 import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType
 import org.amdatu.idea.lang.bundledescriptor.psi.Header
 
@@ -57,7 +57,7 @@ class MissingBundleInspection : LocalInspectionTool() {
         val (_, _, _, bndProject, _) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
-        val onlyAvailableInBaselineRepo = RepoUtil.getBundlesOnlyAvailableInBaselineRepo(file.project)
+        val onlyAvailableInBaselineRepo = getBundlesOnlyAvailableInBaselineRepo(file.project)
 
 
         return listOf(Constants.BUILDPATH, Constants.RUNBUNDLES)
