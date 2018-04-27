@@ -37,21 +37,7 @@ import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModificator;
-import com.intellij.openapi.roots.CompilerModuleExtension;
-import com.intellij.openapi.roots.ContentEntry;
-import com.intellij.openapi.roots.DependencyScope;
-import com.intellij.openapi.roots.ExportableOrderEntry;
-import com.intellij.openapi.roots.JdkOrderEntry;
-import com.intellij.openapi.roots.LanguageLevelModuleExtension;
-import com.intellij.openapi.roots.LanguageLevelProjectExtension;
-import com.intellij.openapi.roots.ModifiableRootModel;
-import com.intellij.openapi.roots.ModuleJdkOrderEntry;
-import com.intellij.openapi.roots.ModuleOrderEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ModuleRootModificationUtil;
-import com.intellij.openapi.roots.ModuleSourceOrderEntry;
-import com.intellij.openapi.roots.OrderEntry;
-import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.impl.ModifiableModelCommitter;
 import com.intellij.openapi.roots.impl.libraries.ProjectLibraryTable;
 import com.intellij.openapi.roots.libraries.Library;
@@ -76,13 +62,7 @@ import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -270,6 +250,8 @@ public class BndProjectImporter {
                         LOG.error(e);  // should not happen, since project.prepare() is already called
                     }
                 }
+
+                cleanupUnusedLibraries(moduleModel, libraryModel);
             }
             finally {
                 libraryModel.commit();
@@ -323,6 +305,23 @@ public class BndProjectImporter {
         CompilerConfiguration.getInstance(myProject).setBytecodeTargetLevel(module, targetLevel);
 
         return rootModel;
+    }
+
+    private void cleanupUnusedLibraries(ModifiableModuleModel moduleModel, LibraryTable.ModifiableModel libraryModel) {
+        Set<String> usedLibraryNames = Arrays.stream(moduleModel.getModules())
+                .map(module -> ModuleRootManager.getInstance(module).getModifiableModel())
+                .flatMap(modifiableModuleModel -> Arrays.stream(modifiableModuleModel.getOrderEntries())
+                        .filter(LibraryOrderEntry.class::isInstance)
+                        .map(LibraryOrderEntry.class::cast)
+                        .map(LibraryOrderEntry::getLibrary)
+                        .filter(Objects::nonNull)
+                        .map(Library::getName))
+                .collect(Collectors.toSet());
+
+        Arrays.stream(libraryModel.getLibraries())
+                .filter(library -> !usedLibraryNames.contains(library.getName()))
+                .filter(library -> library.getName() != null && library.getName().startsWith(BND_LIB_PREFIX))
+                .forEach(libraryModel::removeLibrary);
     }
 
     private void setDependencies(ModifiableModuleModel moduleModel,
