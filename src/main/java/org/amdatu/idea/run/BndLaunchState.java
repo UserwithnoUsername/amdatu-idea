@@ -22,6 +22,7 @@ import com.intellij.execution.CantRunException;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.JavaCommandLineState;
 import com.intellij.execution.configurations.JavaParameters;
+import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.OSProcessHandler;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
@@ -59,8 +60,8 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
     private ProjectLauncher myLauncher;
     private final Map<String, Pair<Long, Long>> myBundleStamps = ContainerUtil.newHashMap();
 
-    public BndLaunchState(@NotNull ExecutionEnvironment environment,
-                    @NotNull BndRunConfigurationBase.Launch configuration) {
+    BndLaunchState(@NotNull ExecutionEnvironment environment,
+                   @NotNull BndRunConfigurationBase.Launch configuration) {
         super(environment);
 
         myConfiguration = configuration;
@@ -88,7 +89,12 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
             AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getComponent(AmdatuIdeaPlugin.class);
             Workspace workspace = amdatuIdeaPlugin.getWorkspace();
 
-            ProjectLauncher launcher = Run.createRun(workspace, runFile).getProjectLauncher();
+            Run run = Run.createRun(workspace, runFile);
+            if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
+                BndLaunchUtil.addBootDelegation(run, "com.intellij.rt.debugger.agent");
+            }
+
+            ProjectLauncher launcher = run.getProjectLauncher();
             launcher.prepare();
 
             if (amdatuIdeaPlugin.getNotificationService().report(launcher.getProject(), false)) {

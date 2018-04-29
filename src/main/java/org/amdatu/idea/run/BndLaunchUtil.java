@@ -21,16 +21,21 @@ import com.intellij.execution.util.ProgramParametersUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jetbrains.annotations.NotNull;
+import org.osgi.framework.Constants;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
 public class BndLaunchUtil {
 
     @NotNull
-    public static JavaParameters createJavaParameters(@NotNull BndRunConfigurationBase configuration,
-                    @NotNull ProjectLauncher launcher) throws CantRunException {
+    static JavaParameters createJavaParameters(@NotNull BndRunConfigurationBase configuration,
+                                               @NotNull ProjectLauncher launcher) throws CantRunException {
         Project project = configuration.getProject();
 
         JavaParameters parameters = new JavaParameters();
@@ -59,5 +64,19 @@ public class BndLaunchUtil {
         return StringUtil.isEmptyOrSpaces(message) ?
                         t.getClass().getSimpleName() :
                         t.getClass().getSimpleName() + ": " + message;
+    }
+
+    static void addBootDelegation(aQute.bnd.build.Project project, String packages) throws CantRunException {
+        Map<String, String> runProperties = project.getRunProperties();
+        if (runProperties != null && runProperties.containsKey(Constants.FRAMEWORK_BOOTDELEGATION) &&
+            !runProperties.get(Constants.FRAMEWORK_BOOTDELEGATION).contains(packages)) {
+
+            throw new CantRunException(OsmorcBundle.message("bnd.test.cannot.run",
+                    String.format("-runproperties contains '%s' property that does not include '%s'",
+                            Constants.FRAMEWORK_BOOTDELEGATION, packages)));
+        } else {
+            project.setProperty("-runproperties.intellij-bootdelegation",
+                String.format("%s=%s", Constants.FRAMEWORK_BOOTDELEGATION, packages));
+        }
     }
 }
