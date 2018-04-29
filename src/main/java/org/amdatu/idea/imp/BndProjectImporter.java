@@ -37,7 +37,23 @@ import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModificator;
-import com.intellij.openapi.roots.*;
+import com.intellij.openapi.roots.CompilerModuleExtension;
+import com.intellij.openapi.roots.ContentEntry;
+import com.intellij.openapi.roots.DependencyScope;
+import com.intellij.openapi.roots.ExportableOrderEntry;
+import com.intellij.openapi.roots.JdkOrderEntry;
+import com.intellij.openapi.roots.LanguageLevelModuleExtension;
+import com.intellij.openapi.roots.LanguageLevelProjectExtension;
+import com.intellij.openapi.roots.LibraryOrderEntry;
+import com.intellij.openapi.roots.ModifiableRootModel;
+import com.intellij.openapi.roots.ModuleJdkOrderEntry;
+import com.intellij.openapi.roots.ModuleOrderEntry;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ModuleRootModel;
+import com.intellij.openapi.roots.ModuleRootModificationUtil;
+import com.intellij.openapi.roots.ModuleSourceOrderEntry;
+import com.intellij.openapi.roots.OrderEntry;
+import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.impl.ModifiableModelCommitter;
 import com.intellij.openapi.roots.impl.libraries.ProjectLibraryTable;
 import com.intellij.openapi.roots.libraries.Library;
@@ -62,7 +78,14 @@ import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -85,8 +108,8 @@ public class BndProjectImporter {
 
         private int weight(OrderEntry e) {
             return e instanceof JdkOrderEntry ? 2 :
-                            e instanceof ModuleSourceOrderEntry ? 0 :
-                                            1;
+                    e instanceof ModuleSourceOrderEntry ? 0 :
+                            1;
         }
     };
 
@@ -100,15 +123,15 @@ public class BndProjectImporter {
     private final Map<String, String> mySourcesMap = ContainerUtil.newTroveMap(FileUtil.PATH_HASHING_STRATEGY);
 
     public BndProjectImporter(@NotNull com.intellij.openapi.project.Project project,
-                    @NotNull Workspace workspace,
-                    @NotNull Collection<Project> toImport) {
+                              @NotNull Workspace workspace,
+                              @NotNull Collection<Project> toImport) {
         myProject = project;
         myWorkspace = workspace;
         myProjects = toImport;
     }
 
     @NotNull
-    public Module createRootModule(@NotNull ModifiableModuleModel model) {
+    Module createRootModule(@NotNull ModifiableModuleModel model) {
         String rootDir = myProject.getBasePath();
         assert rootDir != null : myProject;
         String imlPath = rootDir + File.separator + myProject.getName() + ModuleFileType.DOT_DEFAULT_EXTENSION;
@@ -118,7 +141,7 @@ public class BndProjectImporter {
         return module;
     }
 
-    public void setupProject() {
+    void setupProject() {
         LanguageLevel sourceLevel = LanguageLevel.parse(myWorkspace.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel != null) {
             LanguageLevelProjectExtension.getInstance(myProject).setLanguageLevel(sourceLevel);
@@ -149,8 +172,7 @@ public class BndProjectImporter {
                     }
                 }
             }.queue();
-        }
-        else {
+        } else {
             resolve(null);
             createProjectStructure();
         }
@@ -169,12 +191,10 @@ public class BndProjectImporter {
             AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getComponent(AmdatuIdeaPlugin.class);
             try {
                 project.prepare();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 LOG.warn(e);
                 return false;
-            }
-            finally {
+            } finally {
                 amdatuIdeaPlugin.getNotificationService().report(project, true);
             }
 
@@ -193,8 +213,7 @@ public class BndProjectImporter {
             findSources(project.getBootclasspath());
             findSources(project.getBuildpath());
             findSources(project.getTestpath());
-        }
-        catch (Exception ignored) {
+        } catch (Exception ignored) {
         }
     }
 
@@ -213,8 +232,7 @@ public class BndProjectImporter {
                                     mySourcesMap.put(path, SRC_ROOT);
                                 }
                             }
-                        }
-                        catch (IOException e) {
+                        } catch (IOException e) {
                             mySourcesMap.put(path, null);
                         }
                     }
@@ -237,23 +255,20 @@ public class BndProjectImporter {
                 for (Project project : myProjects) {
                     try {
                         rootModels.put(project, createModule(moduleModel, project, projectLevel));
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         LOG.error(e);  // should not happen, since project.prepare() is already called
                     }
                 }
                 for (Project project : myProjects) {
                     try {
                         setDependencies(moduleModel, libraryModel, rootModels.get(project), project);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         LOG.error(e);  // should not happen, since project.prepare() is already called
                     }
                 }
 
-                cleanupUnusedLibraries(moduleModel, libraryModel);
-            }
-            finally {
+                cleanupUnusedLibraries(moduleModel, rootModels, libraryModel);
+            } finally {
                 libraryModel.commit();
                 ModifiableModelCommitter.multiCommit(rootModels.values(), moduleModel);
             }
@@ -261,7 +276,7 @@ public class BndProjectImporter {
     }
 
     private ModifiableRootModel createModule(ModifiableModuleModel moduleModel, Project project,
-                    LanguageLevel projectLevel) throws Exception {
+                                             LanguageLevel projectLevel) throws Exception {
         String name = project.getName();
         Module module = moduleModel.findModuleByName(name);
         if (module == null) {
@@ -307,9 +322,14 @@ public class BndProjectImporter {
         return rootModel;
     }
 
-    private void cleanupUnusedLibraries(ModifiableModuleModel moduleModel, LibraryTable.ModifiableModel libraryModel) {
+    private void cleanupUnusedLibraries(ModifiableModuleModel moduleModel, Map<Project, ModifiableRootModel> rootModels, LibraryTable.ModifiableModel libraryModel) {
+        // Use the updated ones as changes are not yet committed so newly added libraries won't be visible if a new model is created
+        Map<Module, ModifiableRootModel> updatedModuleModels = rootModels.values().stream()
+                .collect(Collectors.toMap(ModuleRootModel::getModule, modifiableRootModel -> modifiableRootModel));
+
         Set<String> usedLibraryNames = Arrays.stream(moduleModel.getModules())
-                .map(module -> ModuleRootManager.getInstance(module).getModifiableModel())
+                .map(module -> updatedModuleModels
+                        .computeIfAbsent(module, m -> ModuleRootManager.getInstance(module).getModifiableModel()))
                 .flatMap(modifiableModuleModel -> Arrays.stream(modifiableModuleModel.getOrderEntries())
                         .filter(LibraryOrderEntry.class::isInstance)
                         .map(LibraryOrderEntry.class::cast)
@@ -325,9 +345,9 @@ public class BndProjectImporter {
     }
 
     private void setDependencies(ModifiableModuleModel moduleModel,
-                    LibraryTable.ModifiableModel libraryModel,
-                    ModifiableRootModel rootModel,
-                    Project project) throws Exception {
+                                 LibraryTable.ModifiableModel libraryModel,
+                                 ModifiableRootModel rootModel,
+                                 Project project) throws Exception {
         List<String> warnings = ContainerUtil.newArrayList();
 
         Collection<Container> boot = project.getBootclasspath();
@@ -353,13 +373,13 @@ public class BndProjectImporter {
     }
 
     private void setDependencies(ModifiableModuleModel moduleModel,
-                    LibraryTable.ModifiableModel libraryModel,
-                    ModifiableRootModel rootModel,
-                    Project project,
-                    Collection<Container> classpath,
-                    boolean tests,
-                    Set<Container> excluded,
-                    List<String> warnings) {
+                                 LibraryTable.ModifiableModel libraryModel,
+                                 ModifiableRootModel rootModel,
+                                 Project project,
+                                 Collection<Container> classpath,
+                                 boolean tests,
+                                 Set<Container> excluded,
+                                 List<String> warnings) {
         DependencyScope scope = tests ? DependencyScope.TEST : DependencyScope.COMPILE;
         for (Container dependency : classpath) {
             if (excluded.contains(dependency)) {
@@ -370,18 +390,17 @@ public class BndProjectImporter {
             }
             try {
                 addEntry(moduleModel, libraryModel, rootModel, dependency, scope);
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 warnings.add(e.getMessage());
             }
         }
     }
 
     private void addEntry(ModifiableModuleModel moduleModel,
-                    LibraryTable.ModifiableModel libraryModel,
-                    ModifiableRootModel rootModel,
-                    Container dependency,
-                    DependencyScope scope) throws IllegalArgumentException {
+                          LibraryTable.ModifiableModel libraryModel,
+                          ModifiableRootModel rootModel,
+                          Container dependency,
+                          DependencyScope scope) throws IllegalArgumentException {
         File file = dependency.getFile();
         String bsn = dependency.getBundleSymbolicName();
         String version = dependency.getVersion();
@@ -426,15 +445,15 @@ public class BndProjectImporter {
                     throw new IllegalArgumentException("Unknown module '" + name + "'");
                 }
                 entry = (ModuleOrderEntry) ContainerUtil.find(
-                                rootModel.getOrderEntries(),
-                                e -> e instanceof ModuleOrderEntry && ((ModuleOrderEntry) e).getModule() == module);
+                        rootModel.getOrderEntries(),
+                        e -> e instanceof ModuleOrderEntry && ((ModuleOrderEntry) e).getModule() == module);
                 if (entry == null) {
                     entry = rootModel.addModuleOrderEntry(module);
 
                     // Check if the module to which the module dependency is added is exporting contents from the
                     // dependency, in that case mark the dependency as exported.
                     boolean exportingDependencyModulePackage =
-                                    isExportingDependencyModulePackage(rootModel, dependency, module);
+                            isExportingDependencyModulePackage(rootModel, dependency, module);
                     entry.setExported(exportingDependencyModulePackage);
                 }
 
@@ -506,22 +525,22 @@ public class BndProjectImporter {
 
             default:
                 throw new IllegalArgumentException(
-                                "Unknown dependency '" + dependency + "' of type " + dependency.getType());
+                        "Unknown dependency '" + dependency + "' of type " + dependency.getType());
         }
 
         entry.setScope(scope);
     }
 
     private boolean isExportingDependencyModulePackage(ModifiableRootModel rootModel, Container dependency,
-                    Module module) {
+                                                       Module module) {
         try {
             Project dependencyProject = dependency.getProject();
             Workspace workspace = dependencyProject.getWorkspace();
 
 
             Set<String> dependencyModulePackages = PackageUtil.Companion.getPsiPackagesForModule(module).stream()
-                            .map(PsiPackage::getQualifiedName)
-                            .collect(Collectors.toSet());
+                    .map(PsiPackage::getQualifiedName)
+                    .collect(Collectors.toSet());
 
             String dependerModuleName = rootModel.getModule().getName();
             Project dependerBndProject = workspace.getProject(dependerModuleName);
@@ -539,8 +558,7 @@ public class BndProjectImporter {
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("Failed to determine exported state", e);
         }
         return false;
@@ -553,13 +571,12 @@ public class BndProjectImporter {
 
                 NotificationType type = NotificationType.WARNING;
                 String text = message("bnd.import.warn.text", project.getName(),
-                                "<br>" + StringUtil.join(warnings, "<br>"));
+                        "<br>" + StringUtil.join(warnings, "<br>"));
 
                 myProject.getComponent(AmdatuIdeaPlugin.class).getNotificationService()
-                                .notification(type, message("bnd.import.warn.title"), text);
+                        .notification(type, message("bnd.import.warn.title"), text);
 
-            }
-            else {
+            } else {
                 throw new AssertionError(warnings.toString());
             }
         }
@@ -574,7 +591,7 @@ public class BndProjectImporter {
     }
 
     @NotNull
-    public static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
+    static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
         return ContainerUtil.filter(workspace.getAllProjects(), Condition.NOT_NULL);
     }
 
@@ -586,8 +603,7 @@ public class BndProjectImporter {
                     doReimportWorkspace(project);
                 }
             }.queue();
-        }
-        else {
+        } else {
             doReimportWorkspace(project);
         }
     }
@@ -599,8 +615,7 @@ public class BndProjectImporter {
         Collection<Project> projects;
         try {
             projects = getWorkspaceProjects(workspace);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("ws=" + workspace.getBase(), e);
             return;
         }
@@ -612,14 +627,13 @@ public class BndProjectImporter {
         };
         if (!isUnitTestMode()) {
             ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
-        }
-        else {
+        } else {
             task.run();
         }
     }
 
     public static void reimportProjects(@NotNull com.intellij.openapi.project.Project project,
-                    @NotNull Collection<String> projectDirs) {
+                                        @NotNull Collection<String> projectDirs) {
         if (!isUnitTestMode()) {
             new Task.Backgroundable(project, message("bnd.reimport.task"), true) {
                 @Override
@@ -627,15 +641,14 @@ public class BndProjectImporter {
                     doReimportProjects(project, projectDirs, indicator);
                 }
             }.queue();
-        }
-        else {
+        } else {
             doReimportProjects(project, projectDirs, null);
         }
     }
 
     private static void doReimportProjects(com.intellij.openapi.project.Project project,
-                    Collection<String> projectDirs,
-                    ProgressIndicator indicator) {
+                                           Collection<String> projectDirs,
+                                           ProgressIndicator indicator) {
         Workspace workspace = project.getComponent(AmdatuIdeaPlugin.class).getWorkspace();
         assert workspace != null : project;
 
@@ -650,8 +663,7 @@ public class BndProjectImporter {
                     projects.add(p);
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("ws=" + workspace.getBase() + " pr=" + projectDirs, e);
             return;
         }
@@ -659,8 +671,7 @@ public class BndProjectImporter {
         Runnable task = () -> new BndProjectImporter(project, workspace, projects).resolve(true);
         if (!isUnitTestMode()) {
             ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
-        }
-        else {
+        } else {
             task.run();
         }
     }
