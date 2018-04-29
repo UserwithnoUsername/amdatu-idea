@@ -32,9 +32,12 @@ import com.intellij.psi.util.PsiTreeUtil;
 import junit.framework.TestCase;
 import org.amdatu.idea.AmdatuIdeaConstants;
 import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
 
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_EXT;
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_RUN_EXT;
@@ -50,15 +53,29 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
     @Override
     protected boolean setupConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context, Ref<PsiElement> source) {
         if (context.getLocation() == null
-                || context.getLocation().getVirtualFile() == null
                 || context.getModule() == null) {
             return false;
         }
 
         Location<?> location = context.getLocation();
         PsiElement psiLocation = context.getPsiLocation();
-        VirtualFile file = location.getVirtualFile();
         Module module = context.getModule();
+        VirtualFile file = null;
+        if (location.getVirtualFile() != null) {
+            file = location.getVirtualFile();
+        } else if (isTestModule(module)) {
+            Collection<BundleDescriptorFile> bundleDescriptorFiles = PsiTreeUtil.findChildrenOfType(location.getPsiElement(), BundleDescriptorFile.class);
+            file = bundleDescriptorFiles.stream()
+                    .filter(bd -> bd.getName().equals("bnd.bnd"))
+                    .findFirst()
+                    .map(BundleDescriptorFile::getVirtualFile)
+                    .orElse(null);
+        }
+
+        if (file == null) {
+            return false;
+        }
+
         String moduleName = module.getName();
 
         VirtualFile moduleDir = context.getProject().getBaseDir().findChild(moduleName);
