@@ -18,11 +18,15 @@ import aQute.bnd.build.ProjectLauncher;
 import aQute.bnd.build.ProjectTester;
 import aQute.bnd.build.Workspace;
 import aQute.bnd.service.EclipseJUnitTester;
+import com.intellij.coverage.CoverageExecutor;
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
+import com.intellij.execution.JavaRunConfigurationExtensionManager;
+import com.intellij.execution.RunConfigurationExtension;
 import com.intellij.execution.configurations.JavaCommandLineState;
 import com.intellij.execution.configurations.JavaParameters;
+import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.process.OSProcessHandler;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
@@ -91,6 +95,11 @@ public class BndTestState extends JavaCommandLineState {
             BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
             Project project = workspace.getProject(configurationOptions.getModuleName());
 
+            if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
+                BndLaunchUtil.addBootDelegation(project, "com.intellij.rt.debugger.agent");
+            } else if (CoverageExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
+                BndLaunchUtil.addBootDelegation(project, "com.intellij.rt.coverage.data");
+            }
 
             ProjectTester projectTester = project.getProjectTester();
             if (configurationOptions.getTest() != null) {
@@ -135,7 +144,13 @@ public class BndTestState extends JavaCommandLineState {
         }
 
         ProjectLauncher launcher = myTester.getProjectLauncher();
-        return BndLaunchUtil.createJavaParameters(myConfiguration, launcher);
+
+
+        JavaParameters javaParameters = BndLaunchUtil.createJavaParameters(myConfiguration, launcher);
+        for (RunConfigurationExtension ext : RunConfigurationExtension.EP_NAME.getExtensions()) {
+            ext.updateJavaParameters(myConfiguration, javaParameters, getRunnerSettings());
+        }
+        return javaParameters;
     }
 
     @Nullable
@@ -149,6 +164,7 @@ public class BndTestState extends JavaCommandLineState {
     @Override
     protected OSProcessHandler startProcess() throws ExecutionException {
         OSProcessHandler processHandler = super.startProcess();
+        JavaRunConfigurationExtensionManager.getInstance().attachExtensionsToProcess(myConfiguration, processHandler, getRunnerSettings());
         processHandler.addProcessListener(new ProcessAdapter() {
             @Override
             public void processTerminated(@NotNull ProcessEvent event) {

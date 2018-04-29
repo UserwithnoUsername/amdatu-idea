@@ -15,18 +15,12 @@
  */
 package org.amdatu.idea.run;
 
-import com.intellij.execution.CommonProgramRunConfigurationParameters;
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.Executor;
-import com.intellij.execution.configurations.ConfigurationFactory;
-import com.intellij.execution.configurations.LocatableConfigurationBase;
-import com.intellij.execution.configurations.ModuleRunProfile;
-import com.intellij.execution.configurations.RunProfileState;
-import com.intellij.execution.configurations.RuntimeConfigurationException;
+import com.intellij.execution.*;
+import com.intellij.execution.configurations.*;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.util.JavaParametersUtil;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.options.SettingsEditor;
+import com.intellij.openapi.options.SettingsEditorGroup;
 import com.intellij.openapi.project.Project;
 import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jdom.Element;
@@ -38,7 +32,8 @@ import java.util.Map;
 
 public abstract class BndRunConfigurationBase extends LocatableConfigurationBase implements ModuleRunProfile,
                 CommonProgramRunConfigurationParameters, PersistentStateComponent<Element> {
-    public BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {
+
+    BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {
         super(project, factory, name);
     }
 
@@ -52,6 +47,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
         return (BndRunConfigurationOptions) super.getOptions();
     }
 
+    @NotNull
     @Override
     public Element getState() {
         Element element = new Element("state");
@@ -61,8 +57,10 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
 
     @NotNull
     @Override
-    public SettingsEditor<? extends BndRunConfigurationBase> getConfigurationEditor() {
-        return new BndRunConfigurationEditor(getProject());
+    public SettingsEditorGroup<? extends BndRunConfigurationBase> getConfigurationEditor() {
+        SettingsEditorGroup<BndRunConfigurationBase> group = new SettingsEditorGroup<>();
+        group.addEditor(ExecutionBundle.message("run.configuration.configuration.tab.title"), new BndRunConfigurationEditor(getProject()));
+        return group;
     }
 
     @Nullable
@@ -135,7 +133,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
         }
     }
 
-    public static class Test extends BndRunConfigurationBase {
+    public static class Test extends BndRunConfigurationBase implements CommonJavaRunConfigurationParameters {
         public Test(Project project, @NotNull ConfigurationFactory factory, String name) {
             super(project, factory, name);
         }
@@ -144,6 +142,77 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
         @Override
         public BndTestState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) {
             return new BndTestState(environment, this);
+        }
+
+        @NotNull
+        @Override
+        public SettingsEditorGroup<? extends BndRunConfigurationBase> getConfigurationEditor() {
+            SettingsEditorGroup<? extends BndRunConfigurationBase> configurationEditor = super.getConfigurationEditor();
+            JavaRunConfigurationExtensionManager.getInstance().appendEditors(this, configurationEditor);
+            return configurationEditor;
+        }
+
+        @NotNull
+        @Override
+        public Element getState() {
+            Element state = super.getState();
+            JavaRunConfigurationExtensionManager.getInstance().writeExternal(this, state);
+            return state;
+        }
+
+        @Override
+        public void loadState(@NotNull Element element) {
+            super.loadState(element);
+            JavaRunConfigurationExtensionManager.getInstance().readExternal(this, element);
+        }
+
+        @Override
+        public void checkConfiguration() throws RuntimeConfigurationException {
+            super.checkConfiguration();
+            JavaRunConfigurationExtensionManager.checkConfigurationIsValid(this);
+        }
+
+        @Override
+        public void setVMParameters(@Nullable String value) {
+
+        }
+
+        @Override
+        public String getVMParameters() {
+            return null;
+        }
+
+        @Override
+        public boolean isAlternativeJrePathEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setAlternativeJrePathEnabled(boolean enabled) {
+
+        }
+
+        @Nullable
+        @Override
+        public String getAlternativeJrePath() {
+            return null;
+        }
+
+        @Override
+        public void setAlternativeJrePath(@Nullable String path) {
+
+        }
+
+        @Nullable
+        @Override
+        public String getRunClass() {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public String getPackage() {
+            return null;
         }
     }
 }

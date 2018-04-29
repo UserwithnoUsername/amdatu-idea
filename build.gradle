@@ -17,6 +17,7 @@ allprojects {
     apply plugin: "org.jetbrains.intellij"
 
     intellij {
+        plugins 'coverage'
         version '2018.1'
     }
 

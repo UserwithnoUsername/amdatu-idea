@@ -15,11 +15,9 @@
  */
 package org.amdatu.idea.run;
 
-import com.intellij.execution.configurations.ConfigurationFactory;
-import com.intellij.execution.configurations.ConfigurationType;
-import com.intellij.execution.configurations.ConfigurationTypeBase;
-import com.intellij.execution.configurations.ConfigurationTypeUtil;
-import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.execution.JavaRunConfigurationExtensionManager;
+import com.intellij.execution.configurations.*;
+import com.intellij.execution.configurations.coverage.CoverageEnabledConfiguration;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.LayeredIcon;
@@ -99,7 +97,9 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
         @NotNull
         @Override
         public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
-            return new BndRunConfigurationBase.Test(project, this, "");
+            BndRunConfigurationBase.Test configuration = new BndRunConfigurationBase.Test(project, this, "");
+            JavaRunConfigurationExtensionManager.getInstance().extendTemplateConfiguration(configuration);
+            return configuration;
         }
     }
 }

@@ -14,6 +14,7 @@
 package org.amdatu.idea.run;
 
 import aQute.bnd.osgi.Constants;
+import com.intellij.execution.JavaRunConfigurationExtensionManager;
 import com.intellij.execution.Location;
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.execution.actions.RunConfigurationProducer;
@@ -100,6 +101,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                 configuration.getOptions().setBndRunFile(bndPropertiesFilePath);
                 configuration.getOptions().setModuleName(moduleName);
                 configuration.getOptions().setTest(test);
+                JavaRunConfigurationExtensionManager.getInstance().extendCreatedConfiguration(configuration, location);
                 return true;
             }
         }
