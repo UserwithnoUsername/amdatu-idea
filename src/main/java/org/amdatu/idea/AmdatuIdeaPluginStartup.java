@@ -15,6 +15,7 @@
 package org.amdatu.idea;
 
 import com.intellij.diagnostic.errordialog.PluginConflictDialog;
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
@@ -22,6 +23,9 @@ import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
+
+import static com.intellij.openapi.extensions.PluginId.getId;
 
 public class AmdatuIdeaPluginStartup implements StartupActivity {
 
@@ -35,13 +39,13 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
 
     // Using this plugin with Osmorc enabled leads to unpredictable results let the user decide which one should be active
     private void checkOsmorcNotActive() {
-        PluginId osmorcPluginId = PluginId.findId("Osmorc");
-        PluginId amdatuPluginId = PluginId.findId("org.amdatu.idea");
+        IdeaPluginDescriptor osmorcPlugin = PluginManager.getPlugin(getId("Osmorc"));
+        IdeaPluginDescriptor amdatuPlugin = PluginManager.getPlugin(getId("org.amdatu.idea"));
+        if (osmorcPlugin != null && osmorcPlugin.isEnabled()
+                && amdatuPlugin != null && amdatuPlugin.isEnabled()) {
 
-        if (osmorcPluginId != null && PluginManager.getPlugin(osmorcPluginId).isEnabled()
-                && PluginManager.getPlugin(amdatuPluginId).isEnabled()) {
-
-            new PluginConflictDialog(Arrays.asList(amdatuPluginId, osmorcPluginId), false).show();
+            List<PluginId> conflictingPlugins = Arrays.asList(amdatuPlugin.getPluginId(), osmorcPlugin.getPluginId());
+            new PluginConflictDialog(conflictingPlugins, false).show();
         }
     }
 
