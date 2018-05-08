@@ -88,12 +88,18 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
         if ((configuration instanceof BndRunConfigurationBase.Launch) && !isTestModule(module)) {
             if (isBndPropertiesFile(file)) {
-                configuration.setName(moduleName);
+                String name;
+                if (BND_RUN_EXT.equals(file.getExtension())) {
+                    name = file.getNameWithoutExtension() + " (" + moduleName + ")";
+                } else {
+                    name = moduleName;
+                }
+
+                configuration.setName(name);
                 configuration.getOptions().setBndRunFile(file.getPath());
                 return true;
             }
-        }
-        else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(module)) {
+        } else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(module)) {
             if (isBndPropertiesFile(file) && file.getName().equals(AmdatuIdeaConstants.BND_BND)) {
                 configuration.setName(moduleName);
                 configuration.getOptions().setBndRunFile(file.getPath());
