@@ -95,34 +95,48 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         }
 
         synchronized (workspaceLock) {
-            if (myWorkspace == null) {
-                try {
-                    myWorkspace = new Workspace(new File(myProject.getBasePath()));
-                    if (myWorkspace.getErrors() != null) {
-                        myWorkspaceErrors = myWorkspace.getErrors().stream()
-                                        .map(myWorkspace::getLocation)
-                                        .collect(Collectors.toList());
+            if (myWorkspace == null) try {
+                Task.WithResult<Workspace, Exception> createdBndWorkspace =
+                        new Task.WithResult<Workspace, Exception>(myProject, "Creating Workspace", false) {
+
+                    @Override
+                    protected Workspace compute(@NotNull ProgressIndicator indicator) throws Exception {
+                        //noinspection ConstantConditions - checked above
+                        Workspace workspace = new Workspace(new File(getProject().getBasePath()));
+                        if (workspace.getErrors() != null) {
+                            myWorkspaceErrors = workspace.getErrors().stream()
+                                    .map(workspace::getLocation)
+                                    .collect(Collectors.toList());
+                        }
+
+                        myNotificationService.info("Created bnd workspace");
+                        return workspace;
                     }
+                };
+                createdBndWorkspace.queue();
+                myWorkspace = createdBndWorkspace.getResult();
+                myPackageInfoService = new PackageInfoService(myProject, this);
 
-                    myNotificationService.info("Created bnd workspace");
+                reportWorkspaceIssues();
 
-                    myPackageInfoService = new PackageInfoService(myProject, this);
+                RepoUtilKt.validateRepoLocations(this);
 
-                    reportWorkspaceIssues();
 
-                    RepoUtilKt.validateRepoLocations(this);
+                new Task.Modal(myProject, "Generate Exported Content Jar", false) {
 
-                    // TODO: This could slow down startup a bit but we need these.
-                    generateExportedContentsJars(true);
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        // TODO: This could slow down startup a bit but we need these.
+                        generateExportedContentsJars(true, indicator);
+                    }
+                }.queue();
 
-                    reImportProjects();
+                reImportProjects();
 
-                    MessageBusConnection messageBusConnection = myProject.getMessageBus().connect();
-                    messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
-                }
-                catch (Exception e) {
-                    LOG.error("Failed to create bnd workspace", e);
-                }
+                MessageBusConnection messageBusConnection = myProject.getMessageBus().connect();
+                messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
+            } catch (Exception e) {
+                LOG.error("Failed to create bnd workspace", e);
             }
             return myWorkspace;
         }
@@ -136,51 +150,73 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 myNotificationService.info("Workspace not initialized, not refreshing'");
                 return;
             }
-            myWorkspace.clear();
-            if (myWorkspace.refresh()) {
-                if (myWorkspace.getErrors() != null) {
-                    myWorkspaceErrors = myWorkspace.getErrors().stream()
-                                    .map(myWorkspace::getLocation)
-                                    .collect(Collectors.toList());
-                }
 
-            }
-            else if (forceRefresh) {
-                LOG.info("Forced workspace refresh");
-                myWorkspace.forceRefresh();
-                if (myWorkspace.getErrors() != null) {
-                    myWorkspaceErrors = myWorkspace.getErrors().stream()
+            Task.WithResult<Boolean, RuntimeException> workspaceRefresh =
+                    new Task.WithResult<Boolean, RuntimeException>(myProject, "Refreshing Bnd Workspace", false) {
+
+                @Override
+                protected Boolean compute(@NotNull ProgressIndicator indicator) {
+                    myWorkspace.clear();
+                    if (myWorkspace.refresh()) {
+                        if (myWorkspace.getErrors() != null) {
+                            myWorkspaceErrors = myWorkspace.getErrors().stream()
                                     .map(myWorkspace::getLocation)
                                     .collect(Collectors.toList());
+                        }
+
+                    } else if (forceRefresh) {
+                        LOG.info("Forced workspace refresh");
+                        myWorkspace.forceRefresh();
+                    } else {
+                        // not refreshed
+                        return false;
+                    }
+
+                    if (myWorkspace.getErrors() != null) {
+                        myWorkspaceErrors = myWorkspace.getErrors().stream()
+                                .map(myWorkspace::getLocation)
+                                .collect(Collectors.toList());
+                    }
+
+                    reportWorkspaceIssues();
+                    return true;
                 }
-            }
-            else {
-                // not refreshed
+            };
+            workspaceRefresh.queue();
+            if (!workspaceRefresh.getResult()) {
                 return;
+
             }
-            reportWorkspaceIssues();
+            if (myWorkspaceErrors.isEmpty()) {
+                new Task.Modal(myProject, "Refreshing Repositories", false) {
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        refreshRepositories(indicator);
+                    }
+                }.queue();
+
+                RepoUtilKt.validateRepoLocations(this);
+
+                new Task.Modal(myProject, "Generate Exported Content Jar", false) {
+
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        // TODO: This is not the best place, come up with a good moment to generate these jars.
+                        generateExportedContentsJars(forceRefresh, indicator);
+                    }
+                }.queue();
+
+                reImportProjects();
+
+                WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
+                        myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                workspaceRefreshedNotifier.workpaceRefreshed();
+
+                myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
+            } else {
+                myNotificationService.warning("Workspace has errors, not re-importing projects.");
+            }
         }
-
-        if (myWorkspaceErrors.isEmpty()) {
-            refreshRepositories();
-
-            RepoUtilKt.validateRepoLocations(this);
-
-            // TODO: This is not the best place, come up with a good moment to generate these jars.
-            generateExportedContentsJars(forceRefresh);
-
-            reImportProjects();
-
-            WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                            myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
-            workspaceRefreshedNotifier.workpaceRefreshed();
-
-            myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
-        }
-        else {
-            myNotificationService.warning("Workspace has errors, not re-importing projects.");
-        }
-
     }
 
     private void reImportProjects() {
@@ -195,24 +231,25 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         myNotificationService.info("Projects re-imported");
     }
 
-    private void refreshRepositories() {
+    private void refreshRepositories(ProgressIndicator indicator) {
         List<RepositoryPlugin> plugins = myWorkspace.getPlugins(RepositoryPlugin.class);
-        for (RepositoryPlugin plugin : plugins) {
+        for (int i = 0; i < plugins.size(); i++) {
+            RepositoryPlugin plugin = plugins.get(i);
             if (plugin instanceof Refreshable) {
                 try {
+                    indicator.setText("Refreshing repo " + plugin.getName());
                     ((Refreshable) plugin).refresh();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (plugin instanceof MavenBndRepository && e instanceof NullPointerException) {
                         // This repo doesn't init until it's used and throws an NPE on refresh
                         // TODO: Report as BND issue (if not already fixed in next)
                         LOG.info("Failed to refresh repository, '" + plugin.getName() + "'", e);
-                    }
-                    else {
+                    } else {
                         LOG.error("Failed to refresh repository, '" + plugin.getName() + "'", e);
                     }
                 }
             }
+            indicator.setFraction((double) i / (double) plugins.size());
         }
     }
 
@@ -224,12 +261,12 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
     /**
      * {@link BulkFileListener} handling changes in bnd files.
-     * <p>
+     *
      * <ul>
      * <li>Refreshes the workspace if on changes in workspace configuration files (cnf/build.bnd and all other files
      * that are part that are part of the workspace configuration either included using -include statements or by
      * placing them in cnf/ext)</li>
-     * <p>
+     *
      * <li>Re-Imports projects on changes in other bnd files</li>
      * </ul>
      */
@@ -243,8 +280,8 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
             workspaceFiles.add(myWorkspace.getPropertiesFile());
 
             return workspaceFiles.stream()
-                            .map(File::getAbsolutePath)
-                            .collect(Collectors.toSet());
+                    .map(File::getAbsolutePath)
+                    .collect(Collectors.toSet());
         }
 
         @Override
@@ -282,11 +319,9 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 public void run(@NotNull ProgressIndicator indicator) {
                     if (finalRefreshWorkspace) {
                         refreshWorkspace(false);
-                    }
-                    else if (finalImportProjects && !myWorkspaceErrors.isEmpty()) {
+                    } else if (finalImportProjects && !myWorkspaceErrors.isEmpty()) {
                         refreshWorkspace(false);
-                    }
-                    else if (finalImportProjects) {
+                    } else if (finalImportProjects) {
                         synchronized (workspaceLock) {
                             List<String> bndProjectPaths = ContainerUtil.newArrayList();
                             for (String moduleName : modulesToRefresh) {
@@ -297,8 +332,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                         project.refresh();
                                         bndProjectPaths.add(project.getPropertiesFile().getParentFile().getAbsolutePath());
                                     }
-                                }
-                                catch (Exception e) {
+                                } catch (Exception e) {
                                     LOG.error("Failed to refresh project for module " + moduleName, e);
                                 }
                             }
@@ -307,8 +341,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                             // TODO: Create specific event for changed module might be better
                             WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                                            myProject.getMessageBus()
-                                                            .syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                                    myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
                             workspaceRefreshedNotifier.workpaceRefreshed();
 
                         }
@@ -318,9 +351,11 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         }
     }
 
-    private void generateExportedContentsJars(boolean rebuildExisting) {
+    private void generateExportedContentsJars(boolean rebuildExisting, ProgressIndicator indicator) {
         try {
-            myWorkspace.getAllProjects().forEach(p -> {
+            List<aQute.bnd.build.Project> allProjects = new ArrayList<>(myWorkspace.getAllProjects());
+            for (int i = 0; i < allProjects.size(); i++) {
+                aQute.bnd.build.Project p = allProjects.get(i);
                 try {
                     p.getIncluded();
                     File properties = p.getPropertiesFile();
@@ -329,7 +364,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                     ProjectBuilder builder = p.getBuilder(null);
                     for (Builder subBuilder : builder.getSubBuilders()) {
-
+                        indicator.setText("Generating exported content jar for " + subBuilder.getBsn());
                         File outputFile = new File(target, subBuilder.getBsn() + ".jar");
 
                         if (isExportingNonModuleClasses(subBuilder)) {
@@ -354,22 +389,20 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                 Jar build = projectBuilder.build();
                                 build.write(outputFile);
                             }
-                        }
-                        else if (outputFile.exists() && !outputFile.delete()) {
+                        } else if (outputFile.exists() && !outputFile.delete()) {
                             LOG.error("Failed to delete no longer required exported contents jar: " +
-                                            outputFile.getName());
+                                    outputFile.getName());
                         }
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     LOG.error("Failed to generate magic buildpath jar for project: " + p, e);
                 }
-            });
-        }
-        catch (Exception e) {
+
+                indicator.setFraction((double) i / (double) allProjects.size());
+            }
+        } catch (Exception e) {
             LOG.error("Failed to generate magic buildpath jar", e);
         }
-
     }
 
     private boolean isExportingNonModuleClasses(Builder builder) {
@@ -403,8 +436,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         }
                     }
 
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
                 }
             }
