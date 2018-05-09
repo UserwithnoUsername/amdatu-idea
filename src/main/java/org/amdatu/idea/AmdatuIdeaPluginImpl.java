@@ -14,33 +14,23 @@
 
 package org.amdatu.idea;
 
-import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Attrs;
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
-import aQute.bnd.osgi.Jar;
 import aQute.bnd.repository.maven.provider.MavenBndRepository;
 import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiPackage;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
 import org.amdatu.idea.imp.BndProjectImporter;
@@ -54,8 +44,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
-
-    public static final String IDEA_TMP_GENERATED = ".idea-tmp-generated";
 
     private static final Logger LOG = Logger.getInstance(AmdatuIdeaPluginImpl.class);
 
@@ -95,48 +83,40 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         }
 
         synchronized (workspaceLock) {
-            if (myWorkspace == null) try {
-                Task.WithResult<Workspace, Exception> createdBndWorkspace =
-                        new Task.WithResult<Workspace, Exception>(myProject, "Creating Workspace", false) {
+            if (myWorkspace == null) {
+                try {
+                    Task.WithResult<Workspace, Exception> createdBndWorkspace =
+                            new Task.WithResult<Workspace, Exception>(myProject, "Creating Workspace", false) {
 
-                    @Override
-                    protected Workspace compute(@NotNull ProgressIndicator indicator) throws Exception {
-                        //noinspection ConstantConditions - checked above
-                        Workspace workspace = new Workspace(new File(getProject().getBasePath()));
-                        if (workspace.getErrors() != null) {
-                            myWorkspaceErrors = workspace.getErrors().stream()
-                                    .map(workspace::getLocation)
-                                    .collect(Collectors.toList());
-                        }
+                                @Override
+                                protected Workspace compute(@NotNull ProgressIndicator indicator) throws Exception {
+                                    //noinspection ConstantConditions - checked above
+                                    Workspace workspace = new Workspace(new File(getProject().getBasePath()));
+                                    if (workspace.getErrors() != null) {
+                                        myWorkspaceErrors = workspace.getErrors().stream()
+                                                .map(workspace::getLocation)
+                                                .collect(Collectors.toList());
+                                    }
 
-                        myNotificationService.info("Created bnd workspace");
-                        return workspace;
-                    }
-                };
-                createdBndWorkspace.queue();
-                myWorkspace = createdBndWorkspace.getResult();
-                myPackageInfoService = new PackageInfoService(myProject, this);
+                                    myNotificationService.info("Created bnd workspace");
+                                    return workspace;
+                                }
+                            };
+                    createdBndWorkspace.queue();
+                    myWorkspace = createdBndWorkspace.getResult();
+                    myPackageInfoService = new PackageInfoService(myProject, this);
 
-                reportWorkspaceIssues();
+                    reportWorkspaceIssues();
 
-                RepoUtilKt.validateRepoLocations(this);
+                    RepoUtilKt.validateRepoLocations(this);
 
+                    reImportProjects();
 
-                new Task.Modal(myProject, "Generate Exported Content Jar", false) {
-
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) {
-                        // TODO: This could slow down startup a bit but we need these.
-                        generateExportedContentsJars(true, indicator);
-                    }
-                }.queue();
-
-                reImportProjects();
-
-                MessageBusConnection messageBusConnection = myProject.getMessageBus().connect();
-                messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
-            } catch (Exception e) {
-                LOG.error("Failed to create bnd workspace", e);
+                    MessageBusConnection messageBusConnection = myProject.getMessageBus().connect();
+                    messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
+                } catch (Exception e) {
+                    LOG.error("Failed to create bnd workspace", e);
+                }
             }
             return myWorkspace;
         }
@@ -150,85 +130,62 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 myNotificationService.info("Workspace not initialized, not refreshing'");
                 return;
             }
+        }
 
-            Task.WithResult<Boolean, RuntimeException> workspaceRefresh =
-                    new Task.WithResult<Boolean, RuntimeException>(myProject, "Refreshing Bnd Workspace", false) {
+        new Task.Backgroundable(myProject, "Refreshing Bnd Workspace", false) {
 
-                @Override
-                protected Boolean compute(@NotNull ProgressIndicator indicator) {
-                    myWorkspace.clear();
-                    if (myWorkspace.refresh()) {
-                        if (myWorkspace.getErrors() != null) {
-                            myWorkspaceErrors = myWorkspace.getErrors().stream()
-                                    .map(myWorkspace::getLocation)
-                                    .collect(Collectors.toList());
-                        }
-
-                    } else if (forceRefresh) {
-                        LOG.info("Forced workspace refresh");
-                        myWorkspace.forceRefresh();
-                    } else {
-                        // not refreshed
-                        return false;
-                    }
-
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                myWorkspace.clear();
+                if (myWorkspace.refresh()) {
                     if (myWorkspace.getErrors() != null) {
                         myWorkspaceErrors = myWorkspace.getErrors().stream()
                                 .map(myWorkspace::getLocation)
                                 .collect(Collectors.toList());
                     }
 
-                    reportWorkspaceIssues();
-                    return true;
+                } else if (forceRefresh) {
+                    LOG.info("Forced workspace refresh");
+                    myWorkspace.forceRefresh();
+                } else {
+                    // not refreshed
+                    return;
                 }
-            };
-            workspaceRefresh.queue();
-            if (!workspaceRefresh.getResult()) {
-                return;
 
+                if (myWorkspace.getErrors() != null) {
+                    myWorkspaceErrors = myWorkspace.getErrors().stream()
+                            .map(myWorkspace::getLocation)
+                            .collect(Collectors.toList());
+                }
+
+                reportWorkspaceIssues();
+
+                if (myWorkspaceErrors.isEmpty()) {
+                    new Task.Modal(myProject, "Refreshing Repositories", false) {
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            refreshRepositories(indicator);
+                        }
+                    }.queue();
+
+                    RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
+
+                    reImportProjects();
+
+                    WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
+                            myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                    workspaceRefreshedNotifier.workpaceRefreshed();
+
+                    myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
+                } else {
+                    myNotificationService.warning("Workspace has errors, not re-importing projects.");
+                }
             }
-            if (myWorkspaceErrors.isEmpty()) {
-                new Task.Modal(myProject, "Refreshing Repositories", false) {
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) {
-                        refreshRepositories(indicator);
-                    }
-                }.queue();
-
-                RepoUtilKt.validateRepoLocations(this);
-
-                new Task.Modal(myProject, "Generate Exported Content Jar", false) {
-
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) {
-                        // TODO: This is not the best place, come up with a good moment to generate these jars.
-                        generateExportedContentsJars(forceRefresh, indicator);
-                    }
-                }.queue();
-
-                reImportProjects();
-
-                WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                        myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
-                workspaceRefreshedNotifier.workpaceRefreshed();
-
-                myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
-            } else {
-                myNotificationService.warning("Workspace has errors, not re-importing projects.");
-            }
-        }
+        }.queue();
     }
 
     private void reImportProjects() {
-        for (aQute.bnd.build.Project project : myWorkspace.getCurrentProjects()) {
-            project.clear();
-            if (!project.refresh()) {
-                project.forceRefresh();
-            }
-        }
-
         BndProjectImporter.reimportWorkspace(myProject);
-        myNotificationService.info("Projects re-imported");
     }
 
     private void refreshRepositories(ProgressIndicator indicator) {
@@ -349,99 +306,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 }
             }.queue();
         }
-    }
-
-    private void generateExportedContentsJars(boolean rebuildExisting, ProgressIndicator indicator) {
-        try {
-            List<aQute.bnd.build.Project> allProjects = new ArrayList<>(myWorkspace.getAllProjects());
-            for (int i = 0; i < allProjects.size(); i++) {
-                aQute.bnd.build.Project p = allProjects.get(i);
-                try {
-                    p.getIncluded();
-                    File properties = p.getPropertiesFile();
-                    File base = properties.getParentFile();
-                    File target = new File(base, IDEA_TMP_GENERATED);
-
-                    ProjectBuilder builder = p.getBuilder(null);
-                    for (Builder subBuilder : builder.getSubBuilders()) {
-                        indicator.setText("Generating exported content jar for " + subBuilder.getBsn());
-                        File outputFile = new File(target, subBuilder.getBsn() + ".jar");
-
-                        if (isExportingNonModuleClasses(subBuilder)) {
-                            aQute.bnd.build.Project project = new aQute.bnd.build.Project(myWorkspace, base);
-
-                            project.setBase(base);
-                            project.set(Constants.DEFAULT_PROP_BIN_DIR, "bin_dummy");
-                            project.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
-                            project.prepare();
-
-                            Builder projectBuilder = new ProjectBuilder(project);
-                            if (subBuilder.getPropertiesFile() != null) {
-                                projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
-                            }
-                            projectBuilder.setBase(base);
-
-                            if (!outputFile.exists() || rebuildExisting) {
-                                if (outputFile.exists() && !outputFile.delete()) {
-                                    LOG.warn("Failed to delete exporteds content jar: " + outputFile.getName());
-                                }
-
-                                Jar build = projectBuilder.build();
-                                build.write(outputFile);
-                            }
-                        } else if (outputFile.exists() && !outputFile.delete()) {
-                            LOG.error("Failed to delete no longer required exported contents jar: " +
-                                    outputFile.getName());
-                        }
-                    }
-                } catch (Exception e) {
-                    LOG.error("Failed to generate magic buildpath jar for project: " + p, e);
-                }
-
-                indicator.setFraction((double) i / (double) allProjects.size());
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to generate magic buildpath jar", e);
-        }
-    }
-
-    private boolean isExportingNonModuleClasses(Builder builder) {
-        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
-            JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(myProject);
-            ProjectFileIndex index = ProjectRootManager.getInstance(myProject).getFileIndex();
-
-            Parameters exportPackage = builder.getExportPackage();
-            for (String pkg : exportPackage.keySet()) {
-                if (pkg.endsWith("*")) {
-                    pkg = pkg.substring(0, pkg.length() - 1);
-                }
-                if (pkg.endsWith(".")) {
-                    pkg = pkg.substring(0, pkg.length() - 1);
-                }
-
-                try {
-                    PsiPackage psiPackage = javaPsiFacade.findPackage(pkg);
-                    if (psiPackage == null) {
-                        continue;
-                    }
-
-                    //noinspection ConstantConditions Check twice the first call somehow returns null sometimes where the second call doesn't
-                    if (psiPackage.getDirectories() == null && psiPackage.getDirectories() == null) {
-                        LOG.info("No dirs for package: " + pkg);
-                    }
-
-                    for (PsiDirectory psiDirectory : psiPackage.getDirectories()) {
-                        if (index.getModuleForFile(psiDirectory.getVirtualFile()) == null) {
-                            return true;
-                        }
-                    }
-
-                } catch (Exception e) {
-                    LOG.error("Failed to determine if package '" + pkg + "' is part of a module", e);
-                }
-            }
-            return false;
-        });
     }
 
     @Override

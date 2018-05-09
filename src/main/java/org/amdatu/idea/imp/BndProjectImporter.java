@@ -17,10 +17,13 @@ package org.amdatu.idea.imp;
 
 import aQute.bnd.build.Container;
 import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
 import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
 import aQute.bnd.osgi.Instructions;
+import aQute.bnd.osgi.Jar;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
@@ -66,12 +69,9 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.psi.PsiPackage;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.AmdatuIdeaPluginImpl;
-import org.amdatu.idea.inspections.PackageUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
@@ -82,10 +82,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -96,7 +98,9 @@ public class BndProjectImporter {
 
     private static final Logger LOG = Logger.getInstance(BndProjectImporter.class);
 
+    private static final String IDEA_TMP_GENERATED = ".idea-tmp-generated";
     private static final String BND_LIB_PREFIX = "bnd:";
+    private static final String BND_EXPORTED_CONTENTS_PREFIX = "bnd-exported:";
     private static final String SRC_ROOT = "OSGI-OPT/src";
     private static final String JDK_DEPENDENCY = "ee.j2se";
 
@@ -118,15 +122,12 @@ public class BndProjectImporter {
     }
 
     private final com.intellij.openapi.project.Project myProject;
-    private final Workspace myWorkspace;
     private final Collection<Project> myProjects;
     private final Map<String, String> mySourcesMap = ContainerUtil.newTroveMap(FileUtil.PATH_HASHING_STRATEGY);
 
     public BndProjectImporter(@NotNull com.intellij.openapi.project.Project project,
-                              @NotNull Workspace workspace,
                               @NotNull Collection<Project> toImport) {
         myProject = project;
-        myWorkspace = workspace;
         myProjects = toImport;
     }
 
@@ -142,19 +143,23 @@ public class BndProjectImporter {
     }
 
     void setupProject() {
-        LanguageLevel sourceLevel = LanguageLevel.parse(myWorkspace.getProperty(Constants.JAVAC_SOURCE));
+        AmdatuIdeaPlugin amdatuIdeaPlugin= myProject.getComponent(AmdatuIdeaPlugin.class);
+        Workspace workspace = amdatuIdeaPlugin.getWorkspace();
+
+        LanguageLevel sourceLevel = LanguageLevel.parse(workspace.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel != null) {
             LanguageLevelProjectExtension.getInstance(myProject).setLanguageLevel(sourceLevel);
         }
 
-        String targetLevel = myWorkspace.getProperty(Constants.JAVAC_TARGET);
+        String targetLevel = workspace.getProperty(Constants.JAVAC_TARGET);
         CompilerConfiguration.getInstance(myProject).setProjectBytecodeTarget(targetLevel);
 
         // compilation options (see Project#getCommonJavac())
         JpsJavaCompilerOptions javacOptions = JavacConfiguration.getOptions(myProject, JavacConfiguration.class);
-        javacOptions.DEBUGGING_INFO = booleanProperty(myWorkspace.getProperty("javac.debug", "true"));
-        javacOptions.DEPRECATION = booleanProperty(myWorkspace.getProperty("java.deprecation"));
-        javacOptions.ADDITIONAL_OPTIONS_STRING = myWorkspace.getProperty("java.options", "");
+
+        javacOptions.DEBUGGING_INFO = booleanProperty(workspace.getProperty("javac.debug", "true"));
+        javacOptions.DEPRECATION = booleanProperty(workspace.getProperty("java.deprecation"));
+        javacOptions.ADDITIONAL_OPTIONS_STRING = workspace.getProperty("java.options", "");
     }
 
     public void resolve(boolean refresh) {
@@ -255,6 +260,7 @@ public class BndProjectImporter {
                 for (Project project : myProjects) {
                     try {
                         rootModels.put(project, createModule(moduleModel, project, projectLevel));
+                        createExportedContentLibraries(project, libraryModel);
                     } catch (Exception e) {
                         LOG.error(e);  // should not happen, since project.prepare() is already called
                     }
@@ -320,6 +326,103 @@ public class BndProjectImporter {
         CompilerConfiguration.getInstance(myProject).setBytecodeTargetLevel(module, targetLevel);
 
         return rootModel;
+    }
+
+    private void createExportedContentLibraries(Project project, LibraryTable.ModifiableModel libraryModel) {
+        try {
+            ProjectBuilder builder = project.getBuilder(null);
+            for (Builder subBuilder : builder.getSubBuilders()) {
+
+                String libName = BND_EXPORTED_CONTENTS_PREFIX + builder.getBsn();
+
+                if (isExportingBuildpathContent(project, subBuilder)) {
+                    File outputFile = generateExportedContentJar(project, subBuilder);
+
+                    Library library = libraryModel.getLibraryByName(libName);
+                    if (library == null) {
+                        library = libraryModel.createLibrary(libName);
+                    }
+                    Library.ModifiableModel model = library.getModifiableModel();
+                    String[] urls = model.getUrls(OrderRootType.CLASSES);
+                    for (String url : urls) {
+                        model.removeRoot(url, OrderRootType.CLASSES);
+                    }
+
+                    model.addRoot(url(outputFile), OrderRootType.CLASSES);
+
+                    model.commit();
+                } else {
+                    Library library = libraryModel.getLibraryByName(libName);
+                    if (library != null) {
+                        libraryModel.removeLibrary(library);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to create exported content libraries", e);
+        }
+    }
+
+    private boolean isExportingBuildpathContent(Project project, Builder builder) throws Exception {
+        Parameters exportPackage = builder.getExportPackage();
+        if (exportPackage == null || exportPackage.isEmpty()) {
+            return false;
+        }
+
+        Collection<Container> buildpath = project.getBuildpath();
+        for (Container container : buildpath) {
+            if (container.getType() == Container.TYPE.REPO || container.getType() == Container.TYPE.EXTERNAL) {
+                try (Jar jar = new Jar(container.getFile())) {
+                    Instructions instructions = new Instructions(exportPackage);
+
+                    for (String packageName : jar.getPackages()) {
+                        if (packageName.trim().isEmpty()) {
+                            continue;
+                        }
+                        if (instructions.matches(packageName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @NotNull
+    private File generateExportedContentJar(Project project, Builder subBuilder) throws Exception {
+        File properties = project.getPropertiesFile();
+        File base = properties.getParentFile();
+        File target = new File(base, IDEA_TMP_GENERATED);
+        File outputFile = new File(target, subBuilder.getBsn() + ".jar");
+
+        Project tmpProject = new Project(project.getWorkspace(), base);
+
+        tmpProject.setBase(base);
+        tmpProject.set(Constants.DEFAULT_PROP_BIN_DIR, "bin_dummy");
+        tmpProject.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
+        tmpProject.prepare();
+
+        Builder projectBuilder = new ProjectBuilder(tmpProject) {
+            @Override
+            public Manifest calcManifest() {
+                return new Manifest();
+            }
+        };
+        if (subBuilder.getPropertiesFile() != null) {
+            projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
+        }
+        projectBuilder.setBase(base);
+
+        if (!outputFile.exists()) {
+            if (outputFile.exists() && !outputFile.delete()) {
+                LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
+            }
+
+            Jar build = projectBuilder.build();
+            build.write(outputFile);
+        }
+        return outputFile;
     }
 
     private void cleanupUnusedLibraries(ModifiableModuleModel moduleModel, Map<Project, ModifiableRootModel> rootModels, LibraryTable.ModifiableModel libraryModel) {
@@ -412,7 +515,7 @@ public class BndProjectImporter {
 
         if (JDK_DEPENDENCY.equals(bsn)) {
             String name = BND_LIB_PREFIX + bsn + ":" + version;
-            if (FileUtil.isAncestor(myWorkspace.getBase(), file, true)) {
+            if (myProject.getBasePath() != null && FileUtil.isAncestor(new File(myProject.getBasePath()), file, true)) {
                 name += "-" + myProject.getName();
             }
             ProjectJdkTable jdkTable = ProjectJdkTable.getInstance();
@@ -447,41 +550,22 @@ public class BndProjectImporter {
                 entry = (ModuleOrderEntry) ContainerUtil.find(
                         rootModel.getOrderEntries(),
                         e -> e instanceof ModuleOrderEntry && ((ModuleOrderEntry) e).getModule() == module);
+
                 if (entry == null) {
                     entry = rootModel.addModuleOrderEntry(module);
 
                     // Check if the module to which the module dependency is added is exporting contents from the
                     // dependency, in that case mark the dependency as exported.
                     boolean exportingDependencyModulePackage =
-                            isExportingDependencyModulePackage(rootModel, dependency, module);
+                            isExportingDependencyModulePackage(rootModel, dependency);
                     entry.setExported(exportingDependencyModulePackage);
                 }
 
-                /// TEST
-
-                File base = new File(module.getModuleFilePath()).getParentFile();
-                File nonSourceDepsBundle = new File(base, AmdatuIdeaPluginImpl.IDEA_TMP_GENERATED + "/" + bsn);
-                if (nonSourceDepsBundle.exists()) {
-                    String libName = "idea-" + BND_LIB_PREFIX + bsn + ":" + version;
-                    Library library = libraryModel.getLibraryByName(libName);
-                    if (library == null) {
-                        library = libraryModel.createLibrary(libName);
-                    }
-
-                    Library.ModifiableModel model = library.getModifiableModel();
-                    for (String url : model.getUrls(OrderRootType.CLASSES))
-                        model.removeRoot(url, OrderRootType.CLASSES);
-                    for (String url : model.getUrls(OrderRootType.SOURCES))
-                        model.removeRoot(url, OrderRootType.SOURCES);
-                    model.addRoot(url(nonSourceDepsBundle), OrderRootType.CLASSES);
-
-                    model.commit();
-
+                String fixedBsn = dependency.getBundleSymbolicName().replaceAll("\\.jar$", "");
+                Library library = libraryModel.getLibraryByName(BND_EXPORTED_CONTENTS_PREFIX + fixedBsn);
+                if (library != null) {
                     entry = rootModel.addLibraryEntry(library);
-
                 }
-
-                ///
 
                 break;
             }
@@ -531,16 +615,15 @@ public class BndProjectImporter {
         entry.setScope(scope);
     }
 
-    private boolean isExportingDependencyModulePackage(ModifiableRootModel rootModel, Container dependency,
-                                                       Module module) {
+    private boolean isExportingDependencyModulePackage(ModifiableRootModel rootModel, Container dependency) {
         try {
             Project dependencyProject = dependency.getProject();
             Workspace workspace = dependencyProject.getWorkspace();
 
-
-            Set<String> dependencyModulePackages = PackageUtil.Companion.getPsiPackagesForModule(module).stream()
-                    .map(PsiPackage::getQualifiedName)
-                    .collect(Collectors.toSet());
+            HashSet<String> dependencyModulePackages = new HashSet<>();
+            for (File sourceRoot : dependencyProject.getSourcePath()) {
+                collectPackages(sourceRoot, "", dependencyModulePackages);
+            }
 
             String dependerModuleName = rootModel.getModule().getName();
             Project dependerBndProject = workspace.getProject(dependerModuleName);
@@ -562,6 +645,26 @@ public class BndProjectImporter {
             LOG.error("Failed to determine exported state", e);
         }
         return false;
+    }
+
+    private void collectPackages(File sourceRoot, String baseName, Set<String> packages) {
+        File[] children = sourceRoot.listFiles();
+        if (children == null) {
+            return;
+        }
+        for (File child : children) {
+            if (child.isDirectory()) {
+                String base = baseName + (baseName.length() > 0 ? "." : "") + child.getName();
+                collectPackages(child, base, packages);
+            } else if ("java".equals(getExtension(child))) {
+                packages.add(baseName);
+            }
+        }
+    }
+
+    @NotNull
+    private String getExtension(File child) {
+        return child.getName().substring(child.getName().lastIndexOf('.') + 1);
     }
 
     private void checkWarnings(Project project, List<String> warnings) {
@@ -591,7 +694,7 @@ public class BndProjectImporter {
     }
 
     @NotNull
-    static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
+    private static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
         return ContainerUtil.filter(workspace.getAllProjects(), Condition.NOT_NULL);
     }
 
@@ -621,7 +724,7 @@ public class BndProjectImporter {
         }
 
         Runnable task = () -> {
-            BndProjectImporter importer = new BndProjectImporter(project, workspace, projects);
+            BndProjectImporter importer = new BndProjectImporter(project, projects);
             importer.setupProject();
             importer.resolve(true);
         };
@@ -668,7 +771,7 @@ public class BndProjectImporter {
             return;
         }
 
-        Runnable task = () -> new BndProjectImporter(project, workspace, projects).resolve(true);
+        Runnable task = () -> new BndProjectImporter(project, projects).resolve(true);
         if (!isUnitTestMode()) {
             ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
         } else {

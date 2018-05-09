@@ -44,7 +44,6 @@ public class BndProjectImportProvider extends ProjectImportProvider {
     @Override
     public ModuleWizardStep[] createSteps(WizardContext context) {
         return new ModuleWizardStep[] {
-                        new BndSelectProjectsStep(context),
                         ProjectWizardStepFactory.getInstance().createProjectJdkStep(context)
         };
     }

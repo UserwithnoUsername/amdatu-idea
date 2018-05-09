@@ -29,8 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.amdatu.idea.i18n.OsmorcBundle.message;
-
 public class BndLaunchUtil {
 
     @NotNull

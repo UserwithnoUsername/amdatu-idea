@@ -16,7 +16,6 @@
 package org.amdatu.idea.imp;
 
 import aQute.bnd.build.Project;
-import aQute.bnd.build.Workspace;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.ModifiableModuleModel;
 import com.intellij.openapi.module.Module;
@@ -25,21 +24,14 @@ import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.startup.StartupManager;
 import com.intellij.packaging.artifacts.ModifiableArtifactModel;
 import com.intellij.projectImport.ProjectImportBuilder;
-import com.intellij.util.containers.ContainerUtil;
 import icons.OsmorcIdeaIcons;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.Icon;
-import java.io.File;
-import java.util.Collection;
+import javax.swing.*;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
-    private Workspace myWorkspace = null;
-    private List<Project> myProjects = null;
-    private Set<Project> myChosenProjects = null;
     private boolean myOpenProjectSettings = false;
 
     @NotNull
@@ -53,28 +45,20 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
         return OsmorcIdeaIcons.Bnd;
     }
 
-    public Workspace getWorkspace() {
-        return myWorkspace;
-    }
-
-    public void setWorkspace(Workspace workspace, Collection<Project> projects) {
-        myWorkspace = workspace;
-        myProjects = ContainerUtil.newArrayList(projects);
-    }
 
     @Override
     public List<Project> getList() {
-        return myProjects;
+        return Collections.emptyList();
     }
 
     @Override
     public void setList(List<Project> list) {
-        myChosenProjects = ContainerUtil.newHashSet(list);
+
     }
 
     @Override
     public boolean isMarked(Project project) {
-        return myChosenProjects == null || myChosenProjects.contains(project);
+        return false;
     }
 
     @Override
@@ -101,34 +85,20 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
                 return result;
             }
             catch (RuntimeException | Error e) {
-                model.dispose();
+                WriteAction.run(model::dispose);
                 throw e;
             }
         }
 
-        if (myWorkspace != null) {
-            List<Project> toImport = ContainerUtil.filter(myProjects, this::isMarked);
-            final BndProjectImporter importer = new BndProjectImporter(project, myWorkspace, toImport);
-            Module rootModule = importer.createRootModule(model);
-            importer.setupProject();
-            StartupManager.getInstance(project).registerPostStartupActivity(() -> importer.resolve(false));
-            return Collections.singletonList(rootModule);
-        }
-        else {
-            File file = new File(getFileToImport());
-            if (Project.BNDFILE.equals(file.getName())) {
-                file = file.getParentFile();
-            }
-            BndProjectImporter.reimportProjects(project, Collections.singleton(file.getPath()));
-            return Collections.emptyList();
-        }
+        final BndProjectImporter importer = new BndProjectImporter(project, Collections.emptyList());
+        Module rootModule = importer.createRootModule(model);
+        importer.setupProject();
+        StartupManager.getInstance(project).registerPostStartupActivity(() -> importer.resolve(false));
+        return Collections.singletonList(rootModule);
     }
 
     @Override
     public void cleanup() {
-        myWorkspace = null;
-        myProjects = null;
-        myChosenProjects = null;
         super.cleanup();
     }
 }
