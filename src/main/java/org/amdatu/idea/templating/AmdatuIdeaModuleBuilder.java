@@ -21,7 +21,9 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.module.ModifiableModuleModel;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
+import com.intellij.openapi.module.StdModuleTypes;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.util.Key;
@@ -44,9 +46,16 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
     private WizardContext myWizardContext;
 
     AmdatuIdeaModuleBuilder() {
+        addModuleConfigurationUpdater(new ModuleConfigurationUpdater() {
+            @Override
+            public void update(@NotNull Module module, @NotNull ModifiableRootModel rootModel) {
+                module.setModuleType(StdModuleTypes.JAVA.getId());
+            }
+        });
     }
 
     AmdatuIdeaModuleBuilder(WizardContext wizardContext) {
+        this();
         myWizardContext = wizardContext;
     }
 
