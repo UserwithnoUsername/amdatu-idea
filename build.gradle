@@ -3,11 +3,11 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.31"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.30"
     }
 }
 plugins {
-    id "org.jetbrains.intellij" version "0.2.18"
+    id "org.jetbrains.intellij" version "0.3.1"
 }
 
 group 'org.amdatu.idea'
