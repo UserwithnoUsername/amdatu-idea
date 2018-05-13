@@ -97,13 +97,6 @@
         <group popup="true" text="Amdatu" id="amdatu-idea" description="Amdatu">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </group>
-        <!-- Project re-import (manual) -->
-        <action id="amdatu.ide.action.reimport.workspace" icon="OsmorcIdeaIcons.Bnd" text="Reimport Workspace"
-                description="Reimport entire Bnd/Bndtools workspace"
-                class="org.amdatu.idea.imp.ReimportWorkspaceAction">
-            <add-to-group group-id="amdatu-idea" anchor="last"/>
-
-        </action>
 
         <!-- Refresh workspace -->
         <action id="amdatu.ide.action.refresh-workspace" icon="OsmorcIdeaIcons.Bnd"
