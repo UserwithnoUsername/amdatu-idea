@@ -14,6 +14,13 @@
 
 package org.amdatu.idea;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
+import org.amdatu.idea.toolwindow.BundleInfoToolWindow;
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.diagnostic.errordialog.PluginConflictDialog;
 import com.intellij.ide.highlighter.ModuleFileType;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
@@ -21,12 +28,8 @@ import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
+import aQute.bnd.build.Workspace;
 import static com.intellij.openapi.extensions.PluginId.getId;
 
 public class AmdatuIdeaPluginStartup implements StartupActivity {
@@ -41,7 +44,8 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
         String imlPath = rootDir + File.separator + project.getName() + ModuleFileType.DOT_DEFAULT_EXTENSION;
 
         if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
-            amdatuIdeaPlugin.getWorkspace();
+            Workspace workspace = amdatuIdeaPlugin.getWorkspace();
+            new BundleInfoToolWindow(project, workspace);
         } else {
             // TODO: Import action link
             amdatuIdeaPlugin.getNotificationService().info("Bnd workspace detected, use 'Import Project' to import");
