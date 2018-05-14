@@ -329,8 +329,7 @@ public class BndProjectImporter {
     }
 
     private void createExportedContentLibraries(Project project, LibraryTable.ModifiableModel libraryModel) {
-        try {
-            ProjectBuilder builder = project.getBuilder(null);
+        try (ProjectBuilder builder = project.getBuilder(null)) {
             for (Builder subBuilder : builder.getSubBuilders()) {
 
                 String libName = BND_EXPORTED_CONTENTS_PREFIX + builder.getBsn();
@@ -403,26 +402,29 @@ public class BndProjectImporter {
         tmpProject.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
         tmpProject.prepare();
 
-        Builder projectBuilder = new ProjectBuilder(tmpProject) {
+        try (Builder projectBuilder = new ProjectBuilder(tmpProject) {
             @Override
             public Manifest calcManifest() {
                 return new Manifest();
             }
-        };
-        if (subBuilder.getPropertiesFile() != null) {
-            projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
-        }
-        projectBuilder.setBase(base);
-
-        if (!outputFile.exists()) {
-            if (outputFile.exists() && !outputFile.delete()) {
-                LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
+        }) {
+            Builder builder = projectBuilder;
+            if (subBuilder.getPropertiesFile() != null) {
+                builder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
             }
+            builder.setBase(base);
+            builder.set(Constants.BASELINE, Boolean.FALSE.toString());
 
-            Jar build = projectBuilder.build();
-            build.write(outputFile);
+            if (!outputFile.exists()) {
+                if (outputFile.exists() && !outputFile.delete()) {
+                    LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
+                }
+
+                Jar build = builder.build();
+                build.write(outputFile);
+            }
+            return outputFile;
         }
-        return outputFile;
     }
 
     private void cleanupUnusedLibraries(ModifiableModuleModel moduleModel, Map<Project, ModifiableRootModel> rootModels, LibraryTable.ModifiableModel libraryModel) {
