@@ -132,5 +132,13 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
+        <!-- Export bndrun -->
+        <action id="amdatu.ide.action.export-executable-jar" icon="OsmorcIdeaIcons.Bnd"
+                text="Export executable jar"
+                description="Export executable jar"
+                class="org.amdatu.idea.actions.ExportExecutableJar">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>
