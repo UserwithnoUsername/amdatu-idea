@@ -19,6 +19,7 @@ allprojects {
     intellij {
         plugins 'coverage'
         version '2018.1'
+        updateSinceUntilBuild false
     }
 
     runIde {
