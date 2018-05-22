@@ -14,6 +14,7 @@
 
 package org.amdatu.idea.actions.index
 
+import aQute.bnd.osgi.repository.SimpleIndexer
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -21,10 +22,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import org.amdatu.idea.AmdatuIdeaPlugin
-import org.osgi.service.indexer.ResourceIndexer
-import org.osgi.service.indexer.impl.RepoIndex
 import java.io.File
-import java.io.FileOutputStream
 
 
 class GenerateIndexAction : AnAction() {
@@ -33,7 +31,6 @@ class GenerateIndexAction : AnAction() {
         val isDir = e.getData(CommonDataKeys.VIRTUAL_FILE)?.isDirectory ?: false
 
         e.presentation.isEnabled = isDir
-//        e.presentation.isVisible = isDir
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -57,14 +54,12 @@ class GenerateIndexAction : AnAction() {
                         return
                     }
 
-    //                val resourceIndexer = workspace.getPlugin(ResourceIndexer::class.java)
-                    val config = HashMap<String, String>()
-                    config[ResourceIndexer.PRETTY] = (!compressed).toString()
-                    config[ResourceIndexer.COMPRESSED] = compressed.toString()
-                    config[ResourceIndexer.ROOT_URL] = indexFile.parentFile.toURI().toASCIIString()
+                    SimpleIndexer()
+                            .files(toIndex)
+                            .base(indexFile.parentFile.toURI())
+                            .compress(compressed)
+                            .index(indexFile)
 
-                    val resourceIndexer = RepoIndex()
-                    resourceIndexer.index(toIndex, FileOutputStream(indexFile), config)
                     amdatuIdePlugin.notificationService.info("Generated repository index: " + indexFile.toString())
                 }
             }.queue()

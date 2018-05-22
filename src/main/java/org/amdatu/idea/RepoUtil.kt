@@ -14,8 +14,6 @@
 
 package org.amdatu.idea
 
-import aQute.bnd.deployer.repository.FixedIndexedRepo
-import aQute.bnd.deployer.repository.LocalIndexedRepo
 import aQute.bnd.http.HttpClient
 import aQute.bnd.osgi.Constants
 import aQute.bnd.osgi.repository.XMLResourceParser
@@ -76,8 +74,7 @@ fun validateRepoLocations(amdatuIdeaPlugin: AmdatuIdeaPlugin) {
     val client = workspace.getPlugin(HttpClient::class.java)
 
     workspace.getPlugins(RepositoryPlugin::class.java)
-            .filter { it is OSGiRepository || it is FixedIndexedRepo }
-            .filter { it !is LocalIndexedRepo }
+            .filter { it is OSGiRepository }
             .filter { "Build" != it.name } // Skip this repo that's added by bnd
             .forEach { repositoryPlugin ->
                 for (uriString in repositoryPlugin.location.split(",")) {
