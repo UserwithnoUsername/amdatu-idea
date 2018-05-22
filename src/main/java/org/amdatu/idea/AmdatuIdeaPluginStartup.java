@@ -46,9 +46,9 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
         if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
             Workspace workspace = amdatuIdeaPlugin.getWorkspace();
             new BundleInfoToolWindow(project, workspace);
-        } else {
+        } else if (amdatuIdeaPlugin.isBndWorkspace()) {
             // TODO: Import action link
-            amdatuIdeaPlugin.getNotificationService().info("Bnd workspace detected, use 'Import Project' to import");
+            amdatuIdeaPlugin.getNotificationService().info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import");
         }
     }
 
