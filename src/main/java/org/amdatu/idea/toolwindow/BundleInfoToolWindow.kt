@@ -110,7 +110,6 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
                     return
                 } else {
                     file = event.newFile
-                    toolWindow.show(null)
                     updateToolWindow()
                 }
             }
