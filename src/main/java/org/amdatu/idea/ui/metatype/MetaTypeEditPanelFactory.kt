@@ -25,17 +25,19 @@ import com.intellij.ui.layout.panel
 import org.osgi.service.metatype.AttributeDefinition
 import org.osgi.service.metatype.ObjectClassDefinition
 import java.awt.Dimension
+import java.util.*
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 typealias PropertyChangeListener = (id: String, value: List<Any>) -> Unit
 
-
+val DEFAULT_CONTEXT_ATTRS: List<String> = Arrays.asList("basePackageDir", "basePackageName", "srcDir", "testSrcDir")
 class MetaTypeEditPanelFactory(private val myProject: Project) {
 
     fun create(objectClassDefinition: ObjectClassDefinition, propertyChangeListener: PropertyChangeListener) : JComponent {
         val attributeDefinitions = objectClassDefinition.getAttributeDefinitions(ObjectClassDefinition.ALL)
+                .filter { attributeDefinition -> !DEFAULT_CONTEXT_ATTRS.contains(attributeDefinition.id) }
 
         return panel(LCFlags.fillX) {
             for (attributeDefinition in attributeDefinitions) {
