@@ -68,7 +68,7 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
             // TODO: We could use some custom template documentation mentioning this
             isClassInput(attributeDefinition) -> clazz(attributeDefinition, propertyChangeListener)
             isPackageInput(attributeDefinition) -> pkg(attributeDefinition, propertyChangeListener)
-            attributeDefinition.optionValues.isNotEmpty() -> dropDown(attributeDefinition, propertyChangeListener)
+            attributeDefinition.optionValues?.isNotEmpty() ?: false -> dropDown(attributeDefinition, propertyChangeListener)
             attributeDefinition.type == AttributeDefinition.STRING -> textField(attributeDefinition, propertyChangeListener)
             attributeDefinition.type == AttributeDefinition.BOOLEAN -> checkBox(attributeDefinition, propertyChangeListener)
             else -> textField(attributeDefinition, propertyChangeListener)

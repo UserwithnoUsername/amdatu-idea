@@ -67,6 +67,7 @@ fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<
 private fun defaultTemplateContext(): java.util.HashMap<String, List<Any>> {
     val map = java.util.HashMap<String, List<Any>>()
     map["srcDir"] = listOf<Any>("src")
+    map["testSrcDir"] = listOf<Any>("test")
     return map
 }
 

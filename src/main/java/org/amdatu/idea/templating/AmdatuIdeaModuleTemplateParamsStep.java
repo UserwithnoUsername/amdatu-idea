@@ -20,9 +20,11 @@ import com.intellij.openapi.project.Project;
 import kotlin.Unit;
 import org.amdatu.idea.ui.metatype.MetaTypeEditPanelFactory;
 import org.bndtools.templating.Template;
+import org.osgi.service.metatype.AttributeDefinition;
 import org.osgi.service.metatype.ObjectClassDefinition;
 
 import javax.swing.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,8 @@ import static org.amdatu.idea.templating.AmdatuIdeaModuleBuilder.KEY_ATTRS;
 import static org.amdatu.idea.templating.AmdatuIdeaModuleBuilder.KEY_TEMPLATE;
 
 class AmdatuIdeaModuleTemplateParamsStep extends ModuleWizardStep {
+
+    private static final List<String> DEFAULT_CONTEXT_ATTRS = Arrays.asList("basePackageDir", "basePackageName", "srcDir", "testSrcDir");
 
     private WizardContext myContext;
     private final Map<String, List<Object>> map = new HashMap<>();
@@ -43,11 +47,13 @@ class AmdatuIdeaModuleTemplateParamsStep extends ModuleWizardStep {
     public JComponent getComponent() {
         Template template = getTemplate();
 
-        if (template == null) {
-            return new JLabel("No template selected");
-        }
-
         try {
+            if (template == null) {
+                return new JLabel("No template selected");
+            } else if (template.getMetadata() == null) {
+                return new JLabel("Template has no metadata");
+            }
+
             ObjectClassDefinition metadata = template.getMetadata();
             Project project = myContext.getProject();
             if (project == null) {
@@ -79,7 +85,9 @@ class AmdatuIdeaModuleTemplateParamsStep extends ModuleWizardStep {
             return template != null
                             && template.getMetadata() != null
                             && template.getMetadata().getAttributeDefinitions(-1) != null
-                            && template.getMetadata().getAttributeDefinitions(-1).length > 0;
+                            && Arrays.stream(template.getMetadata().getAttributeDefinitions(-1))
+                                .map(AttributeDefinition::getID)
+                                .anyMatch(ad -> !DEFAULT_CONTEXT_ATTRS.contains(ad));
         }
         catch (Exception e) {
             throw new RuntimeException(e);
