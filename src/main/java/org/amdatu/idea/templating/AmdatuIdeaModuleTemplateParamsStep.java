@@ -19,6 +19,7 @@ import com.intellij.ide.util.projectWizard.WizardContext;
 import com.intellij.openapi.project.Project;
 import kotlin.Unit;
 import org.amdatu.idea.ui.metatype.MetaTypeEditPanelFactory;
+import org.amdatu.idea.ui.metatype.MetaTypeEditPanelFactoryKt;
 import org.bndtools.templating.Template;
 import org.osgi.service.metatype.AttributeDefinition;
 import org.osgi.service.metatype.ObjectClassDefinition;
@@ -33,8 +34,6 @@ import static org.amdatu.idea.templating.AmdatuIdeaModuleBuilder.KEY_ATTRS;
 import static org.amdatu.idea.templating.AmdatuIdeaModuleBuilder.KEY_TEMPLATE;
 
 class AmdatuIdeaModuleTemplateParamsStep extends ModuleWizardStep {
-
-    private static final List<String> DEFAULT_CONTEXT_ATTRS = Arrays.asList("basePackageDir", "basePackageName", "srcDir", "testSrcDir");
 
     private WizardContext myContext;
     private final Map<String, List<Object>> map = new HashMap<>();
@@ -87,7 +86,7 @@ class AmdatuIdeaModuleTemplateParamsStep extends ModuleWizardStep {
                             && template.getMetadata().getAttributeDefinitions(-1) != null
                             && Arrays.stream(template.getMetadata().getAttributeDefinitions(-1))
                                 .map(AttributeDefinition::getID)
-                                .anyMatch(ad -> !DEFAULT_CONTEXT_ATTRS.contains(ad));
+                                .anyMatch(ad -> !MetaTypeEditPanelFactoryKt.getDEFAULT_CONTEXT_ATTRS().contains(ad));
         }
         catch (Exception e) {
             throw new RuntimeException(e);
