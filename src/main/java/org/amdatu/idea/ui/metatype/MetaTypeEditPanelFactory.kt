@@ -76,12 +76,14 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
     }
 
     private fun isClassInput(attributeDefinition: AttributeDefinition): Boolean {
-        return attributeDefinition.optionLabels.size == 1
+        val optionValues = attributeDefinition.optionValues ?: return false
+        return optionValues.size == 1
                 && attributeDefinition.optionValues.firstOrNull() == "class"
     }
 
     private fun isPackageInput(attributeDefinition: AttributeDefinition): Boolean {
-        return attributeDefinition.optionLabels.size == 1
+        val optionValues = attributeDefinition.optionValues ?: return false
+        return optionValues.size == 1
                 && attributeDefinition.optionValues.firstOrNull() == "package"
     }
 
