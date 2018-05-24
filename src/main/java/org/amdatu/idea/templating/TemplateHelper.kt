@@ -17,6 +17,7 @@ package org.amdatu.idea.templating
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFileManager
 import org.apache.commons.io.IOUtils
 import org.bndtools.templating.ResourceMap
 import org.bndtools.templating.ResourceType
@@ -34,6 +35,8 @@ fun applyWorkspaceTemplate(project: Project, template: Template) {
     }
     val projectRoot = File(project.basePath)
     applyTemplate(template, projectRoot, defaultTemplateContext())
+
+    VirtualFileManager.getInstance().refreshAndFindFileByUrl(projectRoot.toURI().toString())
 }
 
 fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<String, List<Any>>) {
@@ -41,7 +44,8 @@ fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<
     val moduleName = module.name
 
     val map = defaultTemplateContext()
-    map["basePackageDir"] = listOf<Any>(moduleName.replace("\\.".toRegex(), "/"))
+    val basePackageDir = moduleName.replace("\\.".toRegex(), "/")
+    map["basePackageDir"] = listOf<Any>(basePackageDir)
     map["basePackageName"] = listOf<Any>(moduleName)
 
     map.putAll(templateParams)
@@ -50,7 +54,14 @@ fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<
     val moduleRoot = File(projectRoot, moduleName)
     applyTemplate(template, moduleRoot, map)
 
+    // Create base package package if it does not exist after applying the template
+    File(moduleRoot, "src/$basePackageDir").apply {
+        if (!exists()) {
+            mkdirs()
+        }
+    }
 
+    VirtualFileManager.getInstance().refreshAndFindFileByUrl(moduleRoot.toURI().toString())
 }
 
 private fun defaultTemplateContext(): java.util.HashMap<String, List<Any>> {
