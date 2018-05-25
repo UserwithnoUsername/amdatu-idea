@@ -171,6 +171,15 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                 }
             }
 
+            // AMDATUIDEA-13: Junit 4 test classes are not required to have a RunWith annotation
+            for (PsiMethod psiMethod : psiClass.getMethods()) {
+                for (PsiAnnotation psiAnnotation : psiMethod.getAnnotations()) {
+                    if (org.junit.Test.class.getName().equals(psiAnnotation.getQualifiedName())) {
+                        return psiClass; // JUnit 4
+                    }
+                }
+            }
+
             PsiClass parent = psiClass;
             while (parent != null && !Object.class.getName().equals(parent.getQualifiedName())) {
                 if (TestCase.class.getName().equals(parent.getQualifiedName())) {
@@ -237,7 +246,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
         try {
             aQute.bnd.build.Project project = amdatuIdeaPlugin.getWorkspace().getProject(module.getName());
-            return project.get(Constants.TESTCASES) != null;
+            return project.getProperties().containsKey(Constants.TESTCASES);
         } catch (Exception e) {
             LOG.warn("isTestModule check failed for module: " + module.getName(), e);
             return false;
