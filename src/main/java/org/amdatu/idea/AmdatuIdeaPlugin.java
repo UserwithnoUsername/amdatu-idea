@@ -30,7 +30,7 @@ public interface AmdatuIdeaPlugin {
 
     void refreshWorkspace(boolean refreshExportedContentJars);
 
-    PackageInfoService getPackageInfoSevice();
+    PackageInfoService getPackageInfoService();
 
     AmdatuIdeaNotificationService getNotificationService();
 

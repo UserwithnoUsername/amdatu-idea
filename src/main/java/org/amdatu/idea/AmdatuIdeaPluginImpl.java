@@ -247,7 +247,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         private volatile boolean branchWillChange;
         private volatile String branchName;
 
-        private VcsRepositoryManager myVcsRepositoryManager = VcsRepositoryManager.getInstance(myProject);
+        private final VcsRepositoryManager myVcsRepositoryManager = VcsRepositoryManager.getInstance(myProject);
 
         private Set<String> workspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
@@ -373,7 +373,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
     }
 
     @Override
-    public PackageInfoService getPackageInfoSevice() {
+    public PackageInfoService getPackageInfoService() {
         return myPackageInfoService;
     }
 
