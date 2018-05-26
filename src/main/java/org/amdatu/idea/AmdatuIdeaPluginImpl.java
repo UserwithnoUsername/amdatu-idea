@@ -14,6 +14,33 @@
 
 package org.amdatu.idea;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.amdatu.idea.imp.BndProjectImporter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.intellij.dvcs.repo.Repository;
+import com.intellij.dvcs.repo.VcsRepositoryManager;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.vcs.BranchChangeListener;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.util.PathUtil;
+import com.intellij.util.containers.ContainerUtil;
+import com.intellij.util.messages.MessageBusConnection;
+
 import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Attrs;
 import aQute.bnd.osgi.Constants;
@@ -21,27 +48,6 @@ import aQute.bnd.repository.maven.provider.MavenBndRepository;
 import aQute.bnd.service.Refreshable;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.newvfs.BulkFileListener;
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
-import com.intellij.util.containers.ContainerUtil;
-import com.intellij.util.messages.MessageBusConnection;
-import org.amdatu.idea.imp.BndProjectImporter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
@@ -94,7 +100,14 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                     Workspace workspace = new Workspace(new File(getProject().getBasePath()));
                                     if (workspace.getErrors() != null) {
                                         myWorkspaceErrors = workspace.getErrors().stream()
-                                                .map(workspace::getLocation)
+                                                .map(msg -> {
+                                                    Report.Location location = workspace.getLocation(msg);
+                                                    if (location == null) {
+                                                        location = new Report.Location() {};
+                                                        location.message = msg;
+                                                    }
+                                                    return location;
+                                                })
                                                 .collect(Collectors.toList());
                                     }
 
@@ -113,7 +126,9 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     reImportProjects();
 
                     MessageBusConnection messageBusConnection = myProject.getMessageBus().connect();
-                    messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BndFileChangedListener());
+                    BndFileChangedListener fileChangedListener = new BndFileChangedListener();
+                    messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, fileChangedListener);
+                    messageBusConnection.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, fileChangedListener);
                 } catch (Exception e) {
                     LOG.error("Failed to create bnd workspace", e);
                 }
@@ -161,22 +176,22 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 reportWorkspaceIssues();
 
                 if (myWorkspaceErrors.isEmpty()) {
-                    new Task.Modal(myProject, "Refreshing Repositories", false) {
+                    new Task.Backgroundable(myProject, "Refreshing Repositories", false) {
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
                             refreshRepositories(indicator);
+                            RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
+
+                            reImportProjects();
+
+                            WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
+                                    myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                            workspaceRefreshedNotifier.workpaceRefreshed();
+
+                            myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
                         }
                     }.queue();
 
-                    RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
-
-                    reImportProjects();
-
-                    WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                            myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
-                    workspaceRefreshedNotifier.workpaceRefreshed();
-
-                    myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
                 } else {
                     myNotificationService.warning("Workspace has errors, not re-importing projects.");
                 }
@@ -227,7 +242,12 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
      * <li>Re-Imports projects on changes in other bnd files</li>
      * </ul>
      */
-    private class BndFileChangedListener implements BulkFileListener {
+    private class BndFileChangedListener implements BulkFileListener, BranchChangeListener {
+
+        private volatile boolean branchWillChange;
+        private volatile String branchName;
+
+        private VcsRepositoryManager myVcsRepositoryManager = VcsRepositoryManager.getInstance(myProject);
 
         private Set<String> workspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
@@ -243,22 +263,49 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
         @Override
         public void after(@NotNull List<? extends VFileEvent> events) {
+
+            if (branchWillChange) {
+                // vsc branch is about to change once that's done we'll do a workspace refresh
+                return;
+            }
+
+            Repository vcsRepository = myVcsRepositoryManager.getRepositoryForFile(myProject.getBaseDir());
+            if (vcsRepository != null) {
+                vcsRepository.update();
+
+                if (vcsRepository.getState() == Repository.State.REBASING
+                        || vcsRepository.getState() == Repository.State.MERGING) {
+                    // wait for the final change, clear the current branch will trigger a full workspace refresh on the
+                    // first change after rebase / merge.
+                    branchName = null;
+                    return;
+                }
+
+                // Detect branch changes performed by an external VCS client (e.g. command line git or Sourcetree.
+                String currentBranchName = vcsRepository.getCurrentBranchName();
+                if (branchName == null || !branchName.equals(currentBranchName)) {
+                    branchHasChanged(currentBranchName);
+                    return;
+                }
+            }
+
             boolean refreshWorkspace = false;
             boolean importProjects = false;
             Set<String> modulesToRefresh = ContainerUtil.newHashSet();
             for (VFileEvent event : events) {
-                VirtualFile file = event.getFile();
-                if (file == null) {
-                    continue;
-                }
 
-                if (workspaceFileNames().contains(file.getPath())) {
+                if (workspaceFileNames().contains(event.getPath())) {
                     // A workspace file has changed (.bnd file in cnf folder) refresh the workspace
                     refreshWorkspace = true;
                     break;
                 }
 
-                if (file.getName().endsWith(".bnd")) {
+                if (AmdatuIdeaConstants.BND_EXT.equals(PathUtil.getFileExtension(event.getPath()))) {
+                    VirtualFile file = event.getFile();
+                    if (file == null) {
+                        continue;
+                    }
+
                     Module module = ProjectFileIndex.getInstance(myProject).getModuleForFile(file);
                     if (module != null) {
                         // Bnd file not part set of workspace configuration files has changed
@@ -305,6 +352,18 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     }
                 }
             }.queue();
+        }
+
+        @Override
+        public void branchWillChange(@NotNull String branchName) {
+            branchWillChange = false;
+        }
+
+        @Override
+        public void branchHasChanged(@Nullable String branchName) {
+            this.branchName = branchName;
+            branchWillChange = false;
+            refreshWorkspace(true);
         }
     }
 

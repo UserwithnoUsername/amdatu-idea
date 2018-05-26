@@ -119,8 +119,8 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
             override fun after(events: MutableList<out VFileEvent>) {
                 if (!project.isOpen) return
 
-                if (file == null) return
-                if (events.any { it.file == file }) {
+                val currentPath = file?.path ?: return
+                if (events.any { it.path == currentPath}) {
                     updateToolWindow()
                 }
             }
