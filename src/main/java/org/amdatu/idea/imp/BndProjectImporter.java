@@ -15,15 +15,27 @@
  */
 package org.amdatu.idea.imp;
 
-import aQute.bnd.build.Container;
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Builder;
-import aQute.bnd.osgi.Constants;
-import aQute.bnd.osgi.Instructions;
-import aQute.bnd.osgi.Jar;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
+
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
@@ -65,33 +77,23 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.jar.Manifest;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
+import aQute.bnd.build.Container;
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
+import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Instructions;
+import aQute.bnd.osgi.Jar;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
 public class BndProjectImporter {
@@ -257,6 +259,20 @@ public class BndProjectImporter {
             ModifiableModuleModel moduleModel = ModuleManager.getInstance(myProject).getModifiableModel();
             LibraryTable.ModifiableModel libraryModel = ProjectLibraryTable.getInstance(myProject).getModifiableModel();
             try {
+                // Remove modules that no longer exist
+                for (Module module : moduleModel.getModules()) {
+                    String moduleDir = PathUtil.getParentPath(module.getModuleFilePath());
+                    if (moduleDir.equals(myProject.getBasePath())) {
+                        // Don't remove the root module.
+                        continue;
+                    }
+                    VirtualFile bndFile = LocalFileSystem.getInstance().findFileByPath(moduleDir + "/bnd.bnd");
+                    if (bndFile == null || !bndFile.exists()) {
+                        moduleModel.disposeModule(module);
+                    }
+                }
+
+                // Create modules
                 for (Project project : myProjects) {
                     try {
                         rootModels.put(project, createModule(moduleModel, project, projectLevel));
@@ -265,6 +281,7 @@ public class BndProjectImporter {
                         LOG.error(e);  // should not happen, since project.prepare() is already called
                     }
                 }
+                // Set dependencies for modules
                 for (Project project : myProjects) {
                     try {
                         setDependencies(moduleModel, libraryModel, rootModels.get(project), project);
