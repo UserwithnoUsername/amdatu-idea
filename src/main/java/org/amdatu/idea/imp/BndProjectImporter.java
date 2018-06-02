@@ -17,6 +17,7 @@ package org.amdatu.idea.imp;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -447,9 +448,15 @@ public class BndProjectImporter {
         Map<Module, ModifiableRootModel> updatedModuleModels = rootModels.values().stream()
                 .collect(Collectors.toMap(ModuleRootModel::getModule, modifiableRootModel -> modifiableRootModel));
 
+        List<ModifiableRootModel> toDispose = new ArrayList<>();
+
         Set<String> usedLibraryNames = Arrays.stream(moduleModel.getModules())
                 .map(module -> updatedModuleModels
-                        .computeIfAbsent(module, m -> ModuleRootManager.getInstance(module).getModifiableModel()))
+                        .computeIfAbsent(module, m -> {
+                            ModifiableRootModel modifiableModel = ModuleRootManager.getInstance(module).getModifiableModel();
+                            toDispose.add(modifiableModel);
+                            return modifiableModel;
+                        }))
                 .flatMap(modifiableModuleModel -> Arrays.stream(modifiableModuleModel.getOrderEntries())
                         .filter(LibraryOrderEntry.class::isInstance)
                         .map(LibraryOrderEntry.class::cast)
@@ -457,6 +464,8 @@ public class BndProjectImporter {
                         .filter(Objects::nonNull)
                         .map(Library::getName))
                 .collect(Collectors.toSet());
+
+        toDispose.forEach(ModifiableRootModel::dispose);
 
         Arrays.stream(libraryModel.getLibraries())
                 .filter(library -> !usedLibraryNames.contains(library.getName()))
