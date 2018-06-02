@@ -88,6 +88,10 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
             return null;
         }
 
+        if (myWorkspace != null) {
+            return myWorkspace;
+        }
+
         synchronized (workspaceLock) {
             if (myWorkspace == null) {
                 try {
@@ -140,60 +144,59 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
     @Override
     public void refreshWorkspace(boolean forceRefresh) {
         long start = System.currentTimeMillis();
-        synchronized (workspaceLock) {
-            if (myWorkspace == null) {
-                myNotificationService.info("Workspace not initialized, not refreshing'");
-                return;
-            }
+
+        if (myWorkspace == null) {
+            myNotificationService.info("Workspace not initialized, not refreshing'");
+            return;
         }
 
         new Task.Backgroundable(myProject, "Refreshing Bnd Workspace", false) {
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                myWorkspace.clear();
-                if (myWorkspace.refresh()) {
+                synchronized (workspaceLock) {
+                    myWorkspace.clear();
+                    if (myWorkspace.refresh()) {
+                        if (myWorkspace.getErrors() != null) {
+                            myWorkspaceErrors = myWorkspace.getErrors().stream()
+                                    .map(myWorkspace::getLocation)
+                                    .collect(Collectors.toList());
+                        }
+
+                    } else if (forceRefresh) {
+                        LOG.info("Forced workspace refresh");
+                        myWorkspace.forceRefresh();
+                        for (aQute.bnd.build.Project project : myWorkspace.getCurrentProjects()) {
+                            project.forceRefresh();
+                        }
+                    } else {
+                        // not refreshed
+                        return;
+                    }
+
                     if (myWorkspace.getErrors() != null) {
                         myWorkspaceErrors = myWorkspace.getErrors().stream()
                                 .map(myWorkspace::getLocation)
                                 .collect(Collectors.toList());
                     }
 
-                } else if (forceRefresh) {
-                    LOG.info("Forced workspace refresh");
-                    myWorkspace.forceRefresh();
-                } else {
-                    // not refreshed
-                    return;
-                }
+                    reportWorkspaceIssues();
 
-                if (myWorkspace.getErrors() != null) {
-                    myWorkspaceErrors = myWorkspace.getErrors().stream()
-                            .map(myWorkspace::getLocation)
-                            .collect(Collectors.toList());
-                }
+                    if (myWorkspaceErrors.isEmpty()) {
+                        indicator.setText("Refreshing Repositories");
+                        refreshRepositories(indicator);
+                        RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
 
-                reportWorkspaceIssues();
+                        reImportProjects();
 
-                if (myWorkspaceErrors.isEmpty()) {
-                    new Task.Backgroundable(myProject, "Refreshing Repositories", false) {
-                        @Override
-                        public void run(@NotNull ProgressIndicator indicator) {
-                            refreshRepositories(indicator);
-                            RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
+                        WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
+                                myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
+                        workspaceRefreshedNotifier.workpaceRefreshed();
 
-                            reImportProjects();
-
-                            WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
-                                    myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
-                            workspaceRefreshedNotifier.workpaceRefreshed();
-
-                            myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
-                        }
-                    }.queue();
-
-                } else {
-                    myNotificationService.warning("Workspace has errors, not re-importing projects.");
+                        myNotificationService.info("Workspace refreshed in " + (System.currentTimeMillis() - start) + " ms");
+                    } else {
+                        myNotificationService.warning("Workspace has errors, not re-importing projects.");
+                    }
                 }
             }
         }.queue();
@@ -247,7 +250,15 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         private volatile boolean branchWillChange;
         private volatile String branchName;
 
-        private VcsRepositoryManager myVcsRepositoryManager = VcsRepositoryManager.getInstance(myProject);
+        private final VcsRepositoryManager myVcsRepositoryManager = VcsRepositoryManager.getInstance(myProject);
+
+        BndFileChangedListener() {
+            Repository vcsRepository = myVcsRepositoryManager.getRepositoryForFile(myProject.getBaseDir());
+            if (vcsRepository != null) {
+                vcsRepository.update();
+                branchName = vcsRepository.getCurrentBranchName();
+            }
+        }
 
         private Set<String> workspaceFileNames() {
             List<File> workspaceFiles = new ArrayList<>();
@@ -284,6 +295,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 // Detect branch changes performed by an external VCS client (e.g. command line git or Sourcetree.
                 String currentBranchName = vcsRepository.getCurrentBranchName();
                 if (branchName == null || !branchName.equals(currentBranchName)) {
+                    branchWillChange = true; // prevent additional triggers during refresh
                     branchHasChanged(currentBranchName);
                     return;
                 }
@@ -356,14 +368,14 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
         @Override
         public void branchWillChange(@NotNull String branchName) {
-            branchWillChange = false;
+            branchWillChange = true;
         }
 
         @Override
         public void branchHasChanged(@Nullable String branchName) {
             this.branchName = branchName;
-            branchWillChange = false;
             refreshWorkspace(true);
+            branchWillChange = false;
         }
     }
 
