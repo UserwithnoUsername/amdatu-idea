@@ -78,7 +78,13 @@ class AmdatuIdeaNotificationService(private val myProject: Project) {
             title = String.format("%s [%s]", title, processor.name)
         }
 
-        val location = processor?.getLocation(message)
+        var location: Report.Location? = null
+        if (processor != null) {
+            location = processor.getLocation(message) ?: Report.Location()
+            if (location.file == null) {
+                location.file = processor.propertiesFile?.path
+            }
+        }
 
         message(type, title, message, location)
     }
