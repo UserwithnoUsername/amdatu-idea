@@ -55,9 +55,13 @@ fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<
     applyTemplate(template, moduleRoot, map)
 
     // Create base package package if it does not exist after applying the template
-    File(moduleRoot, "src/$basePackageDir").apply {
-        if (!exists()) {
-            mkdirs()
+    val sourceDir = File(moduleRoot, "src")
+
+    if (sourceDir.isDirectory) {
+        File(sourceDir, basePackageDir).apply {
+            if (!exists()) {
+                mkdirs()
+            }
         }
     }
 
