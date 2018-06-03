@@ -23,6 +23,7 @@ import com.intellij.ui.wizard.WizardDialog
 import com.intellij.ui.wizard.WizardModel
 import com.intellij.ui.wizard.WizardNavigationState
 import com.intellij.ui.wizard.WizardStep
+import org.amdatu.idea.AmdatuIdeaPlugin
 import org.amdatu.idea.templating.RepoTemplateLoader
 import org.amdatu.idea.templating.applyWorkspaceTemplate
 import org.amdatu.idea.ui.metatype.MetaTypeEditPanelFactory
@@ -44,6 +45,7 @@ class UpdateConfigurationProjectAction : AnAction() {
         if (wizardDialog.showAndGet()) {
             val template = wizardModel.template ?: return
             applyWorkspaceTemplate(project, template)
+            project.getComponent(AmdatuIdeaPlugin::class.java)?.refreshWorkspace(true)
         }
     }
 }
