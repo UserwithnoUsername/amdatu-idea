@@ -11,7 +11,7 @@ plugins {
 }
 
 group 'org.amdatu.idea'
-version '1.0.2'
+version '1.0.3-SNAPSHOT'
 
 allprojects {
     apply plugin: "org.jetbrains.intellij"
