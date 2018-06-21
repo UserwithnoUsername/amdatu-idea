@@ -16,6 +16,7 @@ package org.amdatu.idea.toolwindow
 
 import aQute.bnd.service.RepositoryPlugin
 import aQute.bnd.version.Version
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ColoredTreeCellRenderer
@@ -28,6 +29,8 @@ import org.amdatu.idea.WorkspaceRefreshedNotifier
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
+
+val LOG = Logger.getInstance(RepositoriesPanel::class.java)
 
 class RepositoriesPanel(private val myProject: Project) {
 
@@ -158,8 +161,16 @@ class RepositoriesPanel(private val myProject: Project) {
         }
 
         private fun getRepoBundlesList(parent: RepositoryPlugin): List<BsnWithRepoRef> {
-            return repoBundlesCache.computeIfAbsent(parent, { parent.list(null).map { BsnWithRepoRef(it, parent) } })
-                    .filter { bsnMatchesFilter(it.bsn) }
+            return repoBundlesCache.computeIfAbsent(parent, { repoPlugin ->
+                        try {
+                            repoPlugin.list(null)
+                                    .map { BsnWithRepoRef(it, repoPlugin) }
+                        } catch (e: Exception) {
+                            LOG.error("Failed to read from repo ${repoPlugin.name}", e)
+                            emptyList()
+                        }
+                    }
+            ).filter { bsnMatchesFilter(it.bsn) }
                     .sortedWith(compareBy({ it.bsn }))
         }
 
