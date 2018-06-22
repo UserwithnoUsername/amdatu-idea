@@ -184,6 +184,10 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
             public void run(@NotNull ProgressIndicator indicator) {
                 synchronized (workspaceLock) {
                     myWorkspace.clear();
+
+                    // Plugins will be discarded soon close the ones that implement Closable.
+                    closePlugins(myWorkspace);
+
                     if (!myWorkspace.refresh()) {
                         if (forceRefresh) {
                             LOG.info("Forced workspace refresh");
@@ -196,6 +200,9 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                     for (aQute.bnd.build.Project project : myWorkspace.getCurrentProjects()) {
                         project.clear();
+
+                        // Plugins will be discarded soon close the ones that implement Closable.
+                        closePlugins(myWorkspace);
                         if (!project.refresh()) {
                             // refresh anyway
                             project.forceRefresh();
@@ -228,6 +235,24 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 }
             }
         }.queue();
+    }
+
+    // TODO:  I think bnd should do this but doesn't. (reported on bnd's google groups)
+    private void closePlugins(Processor processor) {
+        Set<Object> plugins = processor.getPlugins();
+        if (plugins == null) {
+            return;
+        }
+        for (Object plugin : plugins) {
+            if (plugin instanceof Closeable) {
+                try {
+                    LOG.info("Closing plugin" + plugin.getClass());
+                    ((Closeable) plugin).close();
+                } catch (Exception e) {
+                    LOG.error("Exception closing plugin", e);
+                }
+            }
+        }
     }
 
     private void reImportProjects() {
