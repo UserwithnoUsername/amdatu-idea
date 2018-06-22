@@ -5,5 +5,5 @@ repositories {
 }
 
 dependencies {
-    compile "biz.aQute.bnd:biz.aQute.bnd:3.5.0"
+    compile "biz.aQute.bnd:biz.aQute.bnd:4.0.0"
 }
