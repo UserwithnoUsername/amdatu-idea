@@ -48,6 +48,10 @@ class AmdatuIdeaNotificationService(private val myProject: Project) {
         message(NotificationType.WARNING, message, processor)
     }
 
+    fun error(message: String) {
+        error(message, null)
+    }
+
     fun error(message: String, processor: Processor? = null) {
         message(NotificationType.ERROR, message, processor)
     }
@@ -99,6 +103,14 @@ class AmdatuIdeaNotificationService(private val myProject: Project) {
 
     fun notification(type: NotificationType, title: String, message: String) {
         val notification = myNotificationGroup.createNotification(title, message, type, null)
+        notification.notify(myProject)
+    }
+
+    fun notification(type: NotificationType, title: String, message: String, action: AnAction?) {
+        val notification = myNotificationGroup.createNotification(title, message, type, null)
+        if (action != null) {
+            notification.addAction(action)
+        }
         notification.notify(myProject)
     }
 

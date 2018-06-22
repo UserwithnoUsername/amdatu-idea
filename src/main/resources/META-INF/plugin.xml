@@ -106,6 +106,14 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
         </action>
 
+        <!-- Refresh repositories -->
+        <action id="amdatu.ide.action.refresh-repositories" icon="OsmorcIdeaIcons.Bnd"
+                text="Refresh repositories"
+                description="Refresh workspace"
+                class="org.amdatu.idea.actions.RefreshRepositoriesAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+        </action>
+
         <!-- Generate index -->
         <action id="amdatu.ide.action.generate-index" icon="OsmorcIdeaIcons.Bnd"
                 text="Generate index"
