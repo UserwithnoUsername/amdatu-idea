@@ -414,31 +414,38 @@ public class BndProjectImporter {
         File target = new File(base, IDEA_TMP_GENERATED);
         File outputFile = new File(target, subBuilder.getBsn() + ".jar");
 
-        Project tmpProject = new Project(project.getWorkspace(), base);
+        try (Project tmpProject = new Project(project.getWorkspace(), base)) {
 
-        tmpProject.setBase(base);
-        tmpProject.set(Constants.DEFAULT_PROP_BIN_DIR, "bin_dummy");
-        tmpProject.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
-        tmpProject.prepare();
+            tmpProject.setBase(base);
+            tmpProject.set(Constants.DEFAULT_PROP_BIN_DIR, "bin_dummy");
+            tmpProject.set(Constants.DEFAULT_PROP_TARGET_DIR, IDEA_TMP_GENERATED);
+            tmpProject.set(Constants.POM, "false");
+            tmpProject.set(Constants.BASELINE, "");
+            tmpProject.prepare();
 
-        Builder projectBuilder = new ProjectBuilder(tmpProject) {
-            @Override
-            public Manifest calcManifest() {
-                return new Manifest();
+            try (Builder projectBuilder = new ProjectBuilder(tmpProject) {
+                @Override
+                public Manifest calcManifest() {
+                    return new Manifest();
+                }
+            }) {
+                Builder builder;
+                if (subBuilder.getPropertiesFile() == null) {
+                    builder = projectBuilder;
+                } else {
+                    builder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
+                }
+                builder.setBase(base);
+
+                if (!outputFile.exists()) {
+                    if (outputFile.exists() && !outputFile.delete()) {
+                        LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
+                    }
+
+                    Jar build = builder.build();
+                    build.write(outputFile);
+                }
             }
-        };
-        if (subBuilder.getPropertiesFile() != null) {
-            projectBuilder = projectBuilder.getSubBuilder(subBuilder.getPropertiesFile());
-        }
-        projectBuilder.setBase(base);
-
-        if (!outputFile.exists()) {
-            if (outputFile.exists() && !outputFile.delete()) {
-                LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
-            }
-
-            Jar build = projectBuilder.build();
-            build.write(outputFile);
         }
         return outputFile;
     }
