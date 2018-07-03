@@ -14,16 +14,21 @@
 
 package org.amdatu.idea.jps;
 
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Builder;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.util.containers.ContainerUtil;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.builders.*;
+import org.jetbrains.jps.builders.BuildRootDescriptor;
+import org.jetbrains.jps.builders.BuildRootIndex;
+import org.jetbrains.jps.builders.BuildTarget;
+import org.jetbrains.jps.builders.BuildTargetRegistry;
+import org.jetbrains.jps.builders.ModuleBasedTarget;
+import org.jetbrains.jps.builders.TargetOutputIndex;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
 import org.jetbrains.jps.builders.storage.BuildDataPaths;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -33,11 +38,14 @@ import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Pattern;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.containers.ContainerUtil;
+
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
 
 public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRootDescriptor> {
 
@@ -63,7 +71,28 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
         BuildTargetRegistry.ModuleTargetSelector selector = BuildTargetRegistry.ModuleTargetSelector.PRODUCTION;
-        return Collections.unmodifiableCollection(targetRegistry.getModuleBasedTargets(getModule(), selector));
+
+        Collection<BuildTarget<?>> dependencies = ContainerUtil.newHashSet();
+        dependencies.addAll(targetRegistry.getModuleBasedTargets(getModule(), selector));
+
+        Project project = bndWorkspace.getProject(getModule().getName());
+        try {
+
+            List<String> dependson = project.getDependson().stream().map(Project::getName).collect(Collectors.toList());
+            if (!dependson.isEmpty()) {
+                targetRegistry.getAllTargets(AmdatuIdeaModuleBasedTargetType.INSTANCE)
+                        .stream()
+                        .filter(target -> dependson.contains(target.getId()))
+                        .forEach(dependencies::add);
+
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to compute dependecies", e);
+            throw new RuntimeException(e);
+        }
+
+        return Collections.unmodifiableCollection(dependencies);
     }
 
     @NotNull
