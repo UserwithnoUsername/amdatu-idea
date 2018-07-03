@@ -50,6 +50,9 @@ public class AmdatuIdeaModuleBasedTargetType extends ModuleBasedBuildTargetType<
     static {
         Workspace.setDriver(Constants.BNDDRIVER_INTELLIJ);
         Workspace.addGestalt(Constants.GESTALT_INTERACTIVE, new Attrs());
+        // Add offline gestalt this wil prevent OSGiRepositories starting polling process and
+        // force using cached bundles instead of re-downloading them.
+        Workspace.addGestalt(Constants.GESTALT_OFFLINE, new Attrs());
     }
 
     @NotNull
