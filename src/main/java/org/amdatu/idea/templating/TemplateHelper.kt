@@ -17,7 +17,7 @@ package org.amdatu.idea.templating
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.apache.commons.io.IOUtils
 import org.bndtools.templating.ResourceMap
 import org.bndtools.templating.ResourceType
@@ -36,7 +36,7 @@ fun applyWorkspaceTemplate(project: Project, template: Template) {
     val projectRoot = File(project.basePath)
     applyTemplate(template, projectRoot, defaultTemplateContext())
 
-    VirtualFileManager.getInstance().refreshAndFindFileByUrl(projectRoot.toURI().toString())
+    LocalFileSystem.getInstance().refreshIoFiles(listOf(projectRoot), false, true, null)
 }
 
 fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<String, List<Any>>) {
@@ -64,8 +64,7 @@ fun applyModuleTemplate(module: Module, template: Template, templateParams: Map<
             }
         }
     }
-
-    VirtualFileManager.getInstance().refreshAndFindFileByUrl(moduleRoot.toURI().toString())
+    LocalFileSystem.getInstance().refreshIoFiles(listOf(moduleRoot), false, true, null)
 }
 
 private fun defaultTemplateContext(): java.util.HashMap<String, List<Any>> {

@@ -21,6 +21,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.amdatu.idea.AmdatuIdeaPlugin
 import java.io.File
 
@@ -61,6 +62,7 @@ class GenerateIndexAction : AnAction() {
                             .index(indexFile)
 
                     amdatuIdePlugin.notificationService.info("Generated repository index: " + indexFile.toString())
+                    LocalFileSystem.getInstance().refreshIoFiles(listOf(indexFile.parentFile), false, true, null)
                 }
             }.queue()
 
