@@ -201,7 +201,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         project.clear();
 
                         // Plugins will be discarded soon close the ones that implement Closable.
-                        closePlugins(myWorkspace);
+                        closePlugins(project);
                         if (!project.refresh()) {
                             // refresh anyway
                             project.forceRefresh();
