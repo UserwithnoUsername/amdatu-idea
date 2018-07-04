@@ -83,7 +83,7 @@ public class RepoTemplateLoader {
             Map<String, String> map = new HashMap<>();
             map.put("name", "Amdatu preferences template repos");
             map.put("poll.time", "-1");
-            map.put("stale.time", "0");
+            map.put("max.stale", "0");
 
             String locations = templateRepositoryUrls.stream().collect(Collectors.joining(","));
             map.put("locations", locations);
