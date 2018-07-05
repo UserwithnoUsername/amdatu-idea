@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+import org.amdatu.idea.actions.CheckForBlueprintUpdate;
 import org.amdatu.idea.toolwindow.BundleInfoToolWindow;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,6 +47,9 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
         if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
             Workspace workspace = amdatuIdeaPlugin.getWorkspace();
             new BundleInfoToolWindow(project, workspace);
+
+            new CheckForBlueprintUpdate().checkForUpdate(project);
+
         } else if (amdatuIdeaPlugin.isBndWorkspace()) {
             // TODO: Import action link
             amdatuIdeaPlugin.getNotificationService().info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import");

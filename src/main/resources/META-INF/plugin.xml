@@ -148,5 +148,13 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
+        <!-- Check for Amdatu Blueprint update -->
+        <action id="amdatu.ide.action.blueprint.check-for-update" icon="OsmorcIdeaIcons.Bnd"
+                text="Check for Amdatu Blueprint update"
+                description="Check for Amdatu Blueprint update"
+                class="org.amdatu.idea.actions.CheckForBlueprintUpdate">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

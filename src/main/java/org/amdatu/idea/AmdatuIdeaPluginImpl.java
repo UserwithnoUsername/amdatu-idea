@@ -116,6 +116,8 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                 }
                             };
                     createdBndWorkspace.queue();
+                    // Get the plugins once to make sure all plugins are initialized
+                    createdBndWorkspace.getResult().getPlugins();
                     myWorkspace = createdBndWorkspace.getResult();
                     myPackageInfoService = new PackageInfoService(myProject, this);
 

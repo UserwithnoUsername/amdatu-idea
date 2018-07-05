@@ -31,7 +31,6 @@ public class AmdatuIdeaPreferences implements PersistentStateComponent<AmdatuIde
     private List<String> myTemplateRepositoryUrls = ContainerUtil.newArrayList();
 
     public AmdatuIdeaPreferences() {
-        myTemplateRepositoryUrls.add("https://repository.amdatu.org/amdatu-blueprint/latest.xml");
         myTemplateRepositoryUrls.add("https://raw.githubusercontent.com/bndtools/bundle-hub/master/index.xml.gz");
     }
 

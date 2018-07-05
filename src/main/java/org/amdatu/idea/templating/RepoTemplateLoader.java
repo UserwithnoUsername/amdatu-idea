@@ -14,11 +14,15 @@
 
 package org.amdatu.idea.templating;
 
-import aQute.bnd.build.Workspace;
-import aQute.bnd.osgi.resource.CapReqBuilder;
-import aQute.bnd.repository.osgi.OSGiRepository;
-import aQute.bnd.service.RepositoryPlugin;
-import com.intellij.openapi.project.Project;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.preferences.AmdatuIdeaPreferences;
 import org.bndtools.templating.Template;
@@ -29,13 +33,12 @@ import org.osgi.resource.Namespace;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.intellij.openapi.project.Project;
+
+import aQute.bnd.build.Workspace;
+import aQute.bnd.osgi.resource.CapReqBuilder;
+import aQute.bnd.repository.osgi.OSGiRepository;
+import aQute.bnd.service.RepositoryPlugin;
 
 public class RepoTemplateLoader {
 
@@ -60,7 +63,19 @@ public class RepoTemplateLoader {
 
             List<Repository> repositories = workspace.getPlugins(Repository.class);
 
-            createPreferencesLocationsRepo(workspace).map(repositories::add);
+            String blueprintVersion;
+            if ("workspace".equals(templateType)) {
+                blueprintVersion = "latest";
+            } else {
+                blueprintVersion = workspace.get("blueprintVersion");
+            }
+
+            if (blueprintVersion == null && workspace.getFile("cnf/ext/blueprint.bnd").exists()) {
+                // The blueprint version is only available for blueprint r4 and higher, use r3 version when version unknown
+                blueprintVersion = "r3";
+            }
+
+            createPreferencesLocationsRepo(workspace, blueprintVersion).map(repositories::add);
 
             return repositories.stream()
                     .flatMap(repo -> findTemplates(repo, templateType))
@@ -70,9 +85,19 @@ public class RepoTemplateLoader {
         }
     }
 
-    private Optional<OSGiRepository> createPreferencesLocationsRepo(Workspace workspace) throws Exception {
+    private Optional<OSGiRepository> createPreferencesLocationsRepo(Workspace workspace, String blueprintVersion) throws Exception {
         AmdatuIdeaPreferences preferences = AmdatuIdeaPreferences.getInstance();
-        List<String> templateRepositoryUrls = preferences.getTemplateRepositoryUrls();
+        List<String> templateRepositoryUrls = new ArrayList<>(preferences.getTemplateRepositoryUrls());
+
+
+        if (blueprintVersion != null ) {
+            if (blueprintVersion.equals("latest")) {
+                templateRepositoryUrls.add("https://repository.amdatu.org/amdatu-blueprint/latest.xml");
+
+            } else {
+                templateRepositoryUrls.add(String.format("https://repository.amdatu.org/amdatu-blueprint/%s/repo/index.xml.gz", blueprintVersion));
+            }
+        }
 
         if (templateRepositoryUrls.isEmpty()) {
             return Optional.empty();
