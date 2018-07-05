@@ -87,20 +87,17 @@ private fun applyTemplate(template: Template, dir: File, map: Map<String,List<An
         when (type) {
             ResourceType.Folder -> {
                 val folder = File(dir, relativePath)
-                if (!folder.exists()) {
-                    if (!folder.mkdirs()) {
-                        throw RuntimeException("Failed to create dir: $folder")
-                    }
-                } else if (!folder.isDirectory) {
-                    throw RuntimeException("File exists but is not a dir: $folder")
-                }
+                createFolder(folder)
             }
             ResourceType.File -> {
                 val file = File(dir, relativePath)
+
+                createFolder(file.parentFile)
+
                 try {
-                    BufferedInputStream(resource.content).use { `is` ->
+                    BufferedInputStream(resource.content).use { inputStream ->
                         FileOutputStream(file).use { outputStream ->
-                            IOUtils.copy(`is`, outputStream)
+                            IOUtils.copy(inputStream, outputStream)
                         }
                     }
                 } catch (e: IOException) {
@@ -112,4 +109,14 @@ private fun applyTemplate(template: Template, dir: File, map: Map<String,List<An
         }
     }
 
+}
+
+private fun createFolder(folder: File) {
+    if (!folder.exists()) {
+        if (!folder.mkdirs()) {
+            throw RuntimeException("Failed to create dir: $folder")
+        }
+    } else if (!folder.isDirectory) {
+        throw RuntimeException("File exists but is not a dir: $folder")
+    }
 }
