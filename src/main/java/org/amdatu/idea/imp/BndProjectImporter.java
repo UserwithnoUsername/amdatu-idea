@@ -414,6 +414,16 @@ public class BndProjectImporter {
         File target = new File(base, IDEA_TMP_GENERATED);
         File outputFile = new File(target, subBuilder.getBsn() + ".jar");
 
+        if (outputFile.exists()) {
+            if (outputFile.lastModified() > properties.lastModified()) {
+                LOG.info("Generated contents jar exists and written after the properties were last touched");
+                return outputFile;
+            } else if (!outputFile.delete()) {
+                LOG.error("Failed to delete exported content jar: " + outputFile.getName());
+                return outputFile;
+            }
+        }
+
         try (Project tmpProject = new Project(project.getWorkspace(), base)) {
 
             tmpProject.setBase(base);
@@ -437,14 +447,8 @@ public class BndProjectImporter {
                 }
                 builder.setBase(base);
 
-                if (!outputFile.exists()) {
-                    if (outputFile.exists() && !outputFile.delete()) {
-                        LOG.warn("Failed to delete exported content jar: " + outputFile.getName());
-                    }
-
-                    Jar build = builder.build();
-                    build.write(outputFile);
-                }
+                Jar build = builder.build();
+                build.write(outputFile);
             }
         }
         return outputFile;

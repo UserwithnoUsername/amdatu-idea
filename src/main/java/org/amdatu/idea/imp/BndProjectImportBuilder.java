@@ -25,6 +25,8 @@ import com.intellij.openapi.startup.StartupManager;
 import com.intellij.packaging.artifacts.ModifiableArtifactModel;
 import com.intellij.projectImport.ProjectImportBuilder;
 import icons.OsmorcIdeaIcons;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -93,7 +95,7 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
         final BndProjectImporter importer = new BndProjectImporter(project, Collections.emptyList());
         Module rootModule = importer.createRootModule(model);
         importer.setupProject();
-        StartupManager.getInstance(project).registerPostStartupActivity(() -> importer.resolve(false));
+        StartupManager.getInstance(project).registerPostStartupActivity(() -> project.getComponent(AmdatuIdeaPlugin.class).getWorkspace());
         return Collections.singletonList(rootModule);
     }
 

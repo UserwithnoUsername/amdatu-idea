@@ -15,16 +15,18 @@
  */
 package org.amdatu.idea.imp;
 
-import aQute.bnd.build.Workspace;
+import org.amdatu.idea.i18n.OsmorcBundle;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.ProjectWizardStepFactory;
 import com.intellij.ide.util.projectWizard.WizardContext;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.projectImport.ProjectImportProvider;
-import org.amdatu.idea.i18n.OsmorcBundle;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import aQute.bnd.build.Workspace;
 
 public class BndProjectImportProvider extends ProjectImportProvider {
     public BndProjectImportProvider() {
