@@ -369,13 +369,16 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         || vcsRepository.getState() == Repository.State.MERGING) {
                     // wait for the final change, clear the current branch will trigger a full workspace refresh on the
                     // first change after rebase / merge.
-                    branchName = null;
+                    branchName = "";
                     return;
                 }
 
                 // Detect branch changes performed by an external VCS client (e.g. command line git or Sourcetree.
                 String currentBranchName = vcsRepository.getCurrentBranchName();
-                if (branchName == null || !branchName.equals(currentBranchName)) {
+                if (branchName == null ){
+                    // assume branch didn't change if branchName is null, this prevents an immediate refresh on import
+                    branchName = currentBranchName;
+                } else if (!branchName.equals(currentBranchName)) {
                     branchWillChange = true; // prevent additional triggers during refresh
                     branchHasChanged(currentBranchName);
                     return;
