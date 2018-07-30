@@ -201,15 +201,11 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                     for (aQute.bnd.build.Project project : myWorkspace.getCurrentProjects()) {
                         project.clear();
-
-                        // Plugins will be discarded soon close the ones that implement Closable.
-                        closePlugins(project);
                         if (!project.refresh()) {
                             // refresh anyway
                             project.forceRefresh();
                         }
                     }
-
 
                     if (!refreshRepositories(indicator)) {
                         myNotificationService.error("Workspace refresh failed, failed to read from one or more repositories.");
@@ -239,13 +235,18 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
     }
 
     // TODO:  I think bnd should do this but doesn't. (reported on bnd's google groups)
-    private void closePlugins(Processor processor) {
+    private void closePlugins(Workspace processor) {
         Set<Object> plugins = processor.getPlugins();
         if (plugins == null) {
             return;
         }
         for (Object plugin : plugins) {
             if (plugin instanceof Closeable) {
+                if (plugin instanceof Workspace) {
+                    // The workspace is added to the plugins, don't close that
+                    continue;
+                }
+
                 try {
                     LOG.info("Closing plugin" + plugin.getClass());
                     ((Closeable) plugin).close();
