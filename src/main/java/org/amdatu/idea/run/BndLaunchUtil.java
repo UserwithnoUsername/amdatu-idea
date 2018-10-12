@@ -14,6 +14,7 @@
 package org.amdatu.idea.run;
 
 import aQute.bnd.build.ProjectLauncher;
+
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.configurations.JavaParameters;
 import com.intellij.execution.util.JavaParametersUtil;
@@ -21,6 +22,7 @@ import com.intellij.execution.util.ProgramParametersUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+
 import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
@@ -40,8 +42,8 @@ public class BndLaunchUtil {
         ProgramParametersUtil.configureConfiguration(parameters, configuration);
 
         String jreHome = configuration.getOptions().isUseAlternativeJre() ?
-                        configuration.getOptions().getAlternativeJrePath() :
-                        null;
+                configuration.getOptions().getAlternativeJrePath() :
+                null;
         JavaParametersUtil.configureProject(project, parameters, JavaParameters.JDK_ONLY, jreHome);
 
         parameters.getEnv().putAll(launcher.getRunEnv());
@@ -60,21 +62,20 @@ public class BndLaunchUtil {
     public static String message(Throwable t) {
         String message = t.getMessage();
         return StringUtil.isEmptyOrSpaces(message) ?
-                        t.getClass().getSimpleName() :
-                        t.getClass().getSimpleName() + ": " + message;
+                t.getClass().getSimpleName() :
+                t.getClass().getSimpleName() + ": " + message;
     }
 
     static void addBootDelegation(aQute.bnd.build.Project project, String packages) throws CantRunException {
         Map<String, String> runProperties = project.getRunProperties();
-        if (runProperties != null && runProperties.containsKey(Constants.FRAMEWORK_BOOTDELEGATION) &&
-            !runProperties.get(Constants.FRAMEWORK_BOOTDELEGATION).contains(packages)) {
-
+        if (runProperties == null || !runProperties.containsKey(Constants.FRAMEWORK_BOOTDELEGATION)) {
+            project.setProperty("-runproperties.intellij-bootdelegation",
+                    String.format("%s=%s", Constants.FRAMEWORK_BOOTDELEGATION, packages));
+        } else if (!runProperties.get(Constants.FRAMEWORK_BOOTDELEGATION).contains(packages)) {
             throw new CantRunException(OsmorcBundle.message("bnd.test.cannot.run",
                     String.format("-runproperties contains '%s' property that does not include '%s'",
                             Constants.FRAMEWORK_BOOTDELEGATION, packages)));
-        } else {
-            project.setProperty("-runproperties.intellij-bootdelegation",
-                String.format("%s=%s", Constants.FRAMEWORK_BOOTDELEGATION, packages));
         }
+
     }
 }
