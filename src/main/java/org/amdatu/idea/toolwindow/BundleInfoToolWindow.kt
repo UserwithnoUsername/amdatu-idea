@@ -19,7 +19,6 @@ import aQute.bnd.header.Attrs
 import aQute.bnd.osgi.Builder
 import aQute.bnd.osgi.Clazz
 import aQute.bnd.osgi.Constants
-import aQute.bnd.osgi.Descriptors
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
@@ -44,6 +43,7 @@ import icons.OsmorcIdeaIcons
 import org.amdatu.idea.AmdatuIdeaConstants
 import java.io.File
 import java.util.*
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JScrollPane
 import javax.swing.JTree
@@ -55,7 +55,7 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
     private val calculatedImportsTreeModel = CalculatedImportsTreeModel()
     private val calculatedImportsTree = Tree(calculatedImportsTreeModel)
     private val projectFileIndex = ProjectFileIndex.getInstance(project)
-
+    private val calculateImportsBtn = JButton("Calculate imports")
     private var file: VirtualFile? = null
 
     init {
@@ -66,13 +66,13 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
                 override fun customizeCellRenderer(tree: JTree, value: Any?, selected: Boolean, expanded: Boolean, leaf: Boolean, row: Int, hasFocus: Boolean) {
                     when (value) {
                         is Package -> {
-                            append(value.packageRef.fqn, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+                            append(value.fqn, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
                             val attrsString = value.attrs.toString()
                             if (attrsString.isNotEmpty()) {
                                 append(";$attrsString")
                             }
                         }
-                        is Clazz -> {
+                        is Class -> {
                             icon = when {
                                 value.isAnnotation -> AllIcons.Nodes.Annotationtype
                                 value.isInterface -> AllIcons.Nodes.Interface
@@ -80,13 +80,18 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
                                 value.isAbstract -> AllIcons.Nodes.AbstractClass
                                 else -> AllIcons.Nodes.Class
                             }
-                            append(value.className.fqn)
+                            append(value.fqn)
                         }
                         else -> append(value.toString())
                     }
                 }
             }
         }
+
+        calculateImportsBtn.addActionListener {
+            updateToolWindow()
+        }
+
         val toolWindowManager = ToolWindowManager.getInstance(project)
 
         val content = ContentFactory.SERVICE.getInstance().createContent(createBundleInfoPanel(), "Calculated imports  ", false)
@@ -104,13 +109,16 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
 
                 if (event.newFile == null || AmdatuIdeaConstants.BND_EXT != event.newFile?.extension) {
                     file = null
-                    calculatedImportsTreeModel.setBuilder(null)
+                    calculatedImportsTreeModel.setImports(null)
                     toolWindow.hide(null)
                     calculatedImportsTree.updateUI()
+                    calculateImportsBtn.isEnabled = false
                     return
                 } else {
                     file = event.newFile
-                    updateToolWindow()
+                    calculatedImportsTreeModel.setImports(null)
+                    calculatedImportsTree.updateUI()
+                    calculateImportsBtn.isEnabled = true
                 }
             }
         })
@@ -121,7 +129,10 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
 
                 val currentPath = file?.path ?: return
                 if (events.any { it.path == currentPath}) {
-                    updateToolWindow()
+                    // TODO: Set message that the list is potentially out of date and should be re-calculated?!
+//                    calculatedImportsTreeModel.setImports(null)
+                    calculatedImportsTree.updateUI()
+                    calculateImportsBtn.isEnabled = true
                 }
             }
         })
@@ -132,7 +143,7 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
         object : Task.Backgroundable(project, "Calculating imports", false) {
             override fun run(indicator: ProgressIndicator) {
                 getBuilderForFile(f)?.use { builder ->
-                    calculatedImportsTreeModel.setBuilder(null)
+                    calculatedImportsTreeModel.setImports(null)
                     calculatedImportsTree.updateUI()
 
                     // Disable baselining and sources to speed up the build
@@ -140,11 +151,43 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
                     builder.set(Constants.SOURCES, false.toString())
 
                     builder.build()
-                    calculatedImportsTreeModel.setBuilder(builder)
+
+                    val packages = builder.imports
+                    val imports = if (packages === null) {
+                        null
+                    } else {
+                        packages
+                                .map {
+                                    val importingClasses = findImportingClasses(it.key.fqn, builder)
+                                            .sortedWith(compareBy { it.fqn })
+                                            .map { Class(it.fqn, it.isAbstract, it.isAnnotation, it.isEnum, it.isInterface) }
+                                    Package(it.key.fqn, it.value, importingClasses)
+                                }
+                                .sortedWith(compareBy { it.fqn })
+                    }
+
+                    calculatedImportsTreeModel.setImports(imports)
                     calculatedImportsTree.updateUI()
+                    calculateImportsBtn.isEnabled = false
                 }
             }
         }.queue()
+    }
+
+    private fun findImportingClasses(pkgName: String, builder: Builder): List<Clazz> {
+        val classes = LinkedList<Clazz>()
+        val importers = builder.getClasses("", "IMPORTING", pkgName)
+
+        for (clazz in importers) {
+            val fqn = clazz.fqn
+            val dot = fqn.lastIndexOf('.')
+            if (dot >= 0) {
+                val pkg = fqn.substring(0, dot)
+                if (pkgName != pkg)
+                    classes.add(clazz)
+            }
+        }
+        return classes
     }
 
     private fun getBuilderForFile(file: VirtualFile): Builder? {
@@ -163,6 +206,9 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
             row {
                 panel {
                     row {
+                        calculateImportsBtn()
+                    }
+                    row {
                         JScrollPane(calculatedImportsTree)(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
                     }
                 }(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
@@ -170,29 +216,22 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
         }
     }
 
-    data class Package(val packageRef: Descriptors.PackageRef, val attrs: Attrs, val importingClasses: List<Clazz>)
+    data class Package(val fqn: String, val attrs: Attrs, val importingClasses: List<Class>)
+    data class Class(val fqn: String,
+                     val isAbstract: Boolean,
+                     val isAnnotation: Boolean,
+                     val isEnum: Boolean,
+                     val isInterface: Boolean)
+
+
+
     class CalculatedImportsTreeModel : AbstractTreeModel() {
 
         private val myRoot = DefaultMutableTreeNode(0)
         private var imports: List<Package>? = null
 
-        fun setBuilder(builder: Builder?) {
-            if (builder == null) {
-                imports = null
-            } else {
-                val packages = builder.imports
-                imports = if (packages === null) {
-                    null
-                } else {
-                    packages
-                            .map {
-                                val importingClasses = findImportingClasses(it.key.fqn, builder)
-                                        .sortedWith(compareBy({ it.fqn }))
-                                Package(it.key, it.value, importingClasses)
-                            }
-                            .sortedWith(compareBy({ it.packageRef.fqn }))
-                }
-            }
+        fun setImports(imports: List<Package>?) {
+            this.imports = imports
         }
 
         override fun getChild(parent: Any?, index: Int): Any {
@@ -207,7 +246,7 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
 
         override fun isLeaf(node: Any?): Boolean {
             return when (node) {
-                is Clazz -> true
+                is Class -> true
                 is Package -> node.importingClasses.isEmpty()
                 else -> false
             }
@@ -233,20 +272,5 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
             }
         }
 
-        private fun findImportingClasses(pkgName: String, builder: Builder): List<Clazz> {
-            val classes = LinkedList<Clazz>()
-            val importers = builder.getClasses("", "IMPORTING", pkgName)
-            
-            for (clazz in importers) {
-                val fqn = clazz.fqn
-                val dot = fqn.lastIndexOf('.')
-                if (dot >= 0) {
-                    val pkg = fqn.substring(0, dot)
-                    if (pkgName != pkg)
-                        classes.add(clazz)
-                }
-            }
-            return classes
-        }
     }
 }
