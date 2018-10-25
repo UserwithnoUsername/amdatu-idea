@@ -110,8 +110,7 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
             Workspace workspace = project.getComponent(AmdatuIdeaPlugin.class).getWorkspace();
             workspace.refresh();
             try {
-                aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
-                new BndProjectImporter(project, Collections.singletonList(bndProject)).resolve(true);
+                new BndProjectImporter(project, workspace.getAllProjects()).resolve(true);
             }
             catch (Exception e) {
                 e.printStackTrace();

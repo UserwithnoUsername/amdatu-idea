@@ -351,7 +351,7 @@ public class BndProjectImporter {
             ProjectBuilder builder = project.getBuilder(null);
             for (Builder subBuilder : builder.getSubBuilders()) {
 
-                String libName = BND_EXPORTED_CONTENTS_PREFIX + builder.getBsn();
+                String libName = BND_EXPORTED_CONTENTS_PREFIX + subBuilder.getBsn();
 
                 if (isExportingBuildpathContent(project, subBuilder)) {
                     File outputFile = generateExportedContentJar(project, subBuilder);
@@ -765,50 +765,6 @@ public class BndProjectImporter {
             importer.setupProject();
             importer.resolve(true);
         };
-        if (!isUnitTestMode()) {
-            ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
-        } else {
-            task.run();
-        }
-    }
-
-    public static void reimportProjects(@NotNull com.intellij.openapi.project.Project project,
-                                        @NotNull Collection<String> projectDirs) {
-        if (!isUnitTestMode()) {
-            new Task.Backgroundable(project, message("bnd.reimport.task"), true) {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    doReimportProjects(project, projectDirs, indicator);
-                }
-            }.queue();
-        } else {
-            doReimportProjects(project, projectDirs, null);
-        }
-    }
-
-    private static void doReimportProjects(com.intellij.openapi.project.Project project,
-                                           Collection<String> projectDirs,
-                                           ProgressIndicator indicator) {
-        Workspace workspace = project.getComponent(AmdatuIdeaPlugin.class).getWorkspace();
-        assert workspace != null : project;
-
-        Collection<Project> projects;
-        try {
-            projects = ContainerUtil.newArrayListWithCapacity(projectDirs.size());
-            for (String dir : projectDirs) {
-                if (indicator != null)
-                    indicator.checkCanceled();
-                Project p = workspace.getProject(PathUtil.getFileName(dir));
-                if (p != null) {
-                    projects.add(p);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("ws=" + workspace.getBase() + " pr=" + projectDirs, e);
-            return;
-        }
-
-        Runnable task = () -> new BndProjectImporter(project, projects).resolve(true);
         if (!isUnitTestMode()) {
             ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
         } else {

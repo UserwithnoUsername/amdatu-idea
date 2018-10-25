@@ -31,6 +31,7 @@ import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -162,7 +163,8 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 .map(msg -> {
                     Report.Location location = workspace.getLocation(msg);
                     if (location == null) {
-                        location = new Report.Location() {};
+                        location = new Report.Location() {
+                        };
                         location.message = msg;
                     }
                     return location;
@@ -291,7 +293,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                             LOG.error("Oops only expected a single action here");
                         }
 
-                    }catch (Exception ee) {
+                    } catch (Exception ee) {
                         LOG.error(ee);
                     }
 
@@ -299,7 +301,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                     myNotificationService.notification(NotificationType.ERROR,
                             String.format("Amdatu: Repository %s is failing with exception '%s'", plugin.getName(), e.getMessage()),
-                            "Try to refresh the repo? " , refreshAction);
+                            "Try to refresh the repo? ", refreshAction);
                 }
 
                 ok = false;
@@ -376,7 +378,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
                 // Detect branch changes performed by an external VCS client (e.g. command line git or Sourcetree.
                 String currentBranchName = vcsRepository.getCurrentBranchName();
-                if (branchName == null ){
+                if (branchName == null) {
                     // assume branch didn't change if branchName is null, this prevents an immediate refresh on import
                     branchName = currentBranchName;
                 } else if (!branchName.equals(currentBranchName)) {
@@ -433,21 +435,27 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         refreshWorkspace(false);
                     } else if (finalImportProjects) {
                         synchronized (workspaceLock) {
-                            List<String> bndProjectPaths = ContainerUtil.newArrayList();
                             for (String moduleName : modulesToRefresh) {
                                 try {
                                     aQute.bnd.build.Project project = myWorkspace.getProject(moduleName);
                                     if (project != null) {
                                         project.clear();
                                         project.refresh();
-                                        bndProjectPaths.add(project.getPropertiesFile().getParentFile().getAbsolutePath());
                                     }
                                 } catch (Exception e) {
                                     LOG.error("Failed to refresh project for module " + moduleName, e);
                                 }
                             }
 
-                            BndProjectImporter.reimportProjects(myProject, bndProjectPaths);
+                            try {
+                                BndProjectImporter bndProjectImporter = new BndProjectImporter(myProject, myWorkspace.getAllProjects());
+                                Runnable task = () -> {
+                                    bndProjectImporter.resolve(true);
+                                };
+                                ApplicationManager.getApplication().invokeLater(task, myProject.getDisposed());
+                            } catch (Exception e) {
+                                LOG.error("Failed to re-import projects", e);
+                            }
 
                             // TODO: Create specific event for changed module might be better
                             WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
