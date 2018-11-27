@@ -156,5 +156,13 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
+
+        <!-- Fix baselining errors -->
+        <action id="amdatu.ide.action.fix-baselining-errros" icon="OsmorcIdeaIcons.Bnd"
+                text="Fix baselining errors"
+                description="Fixes baselining errors reported by the build messages"
+                class="org.amdatu.idea.actions.FixBaseliningErrorsAction">
+            <add-to-group group-id="CompilerErrorViewPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>
