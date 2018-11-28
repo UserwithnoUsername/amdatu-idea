@@ -41,6 +41,8 @@ import org.apache.felix.metatype.OCD
 import java.awt.Dimension
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.lang.RuntimeException
 import java.util.*
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
@@ -67,30 +69,28 @@ class CreateConfigurationAction : AnAction() {
 
         val launcher = Run.createRun(amdatuIdeaPlugin.workspace, File(virtualFile.path)).projectLauncher
 
-        val metaDataList  = launcher.project.runbundles
-            .filter {  runBundle -> runBundle.file.name.endsWith(".jar") }
-            .flatMap { runBundle ->
+        val metaDataList = launcher.project.runbundles
+                .filter { runBundle -> runBundle.file.name.endsWith(".jar") }
+                .flatMap { runBundle ->
 
 
-            Jar(runBundle.file).resources.filter { (path, _) ->
-                path.startsWith("OSGI-INF/metatype")
-                    && path.endsWith(".xml")
-            }.forEach {
-                println("found: $it")
-            }
-
-
-            Jar(runBundle.file).resources.filter { (path, _) ->
-                path.startsWith("OSGI-INF/metatype")
-                        && path.endsWith(".xml")
-            }.values.map { resource ->
-                resource.openInputStream().use { stream ->
-                    MetaDataReader().parse(stream)
+                    val jar = Jar(runBundle.file)
+                    jar.resources
+                            .filter { (path, _) ->
+                                path.startsWith("OSGI-INF/metatype")
+                                        && path.endsWith(".xml")
+                            }
+                            .mapNotNull { (path, resource) ->
+                                try {
+                                    resource.openInputStream().use { stream ->
+                                        MetaDataReader().parse(stream)
+                                    }
+                                } catch (e: IOException) {
+                                    LOG.warn("Failed to read metattype resource '$path' from Bundle: '${jar.bsn}' version '${jar.version}'")
+                                    null
+                                }
+                            }
                 }
-            }
-
-
-        }
 
         if (metaDataList.isEmpty()) {
             return
@@ -103,11 +103,11 @@ class CreateConfigurationAction : AnAction() {
         val wizardModel = CreateConfigurationTemplateModel(project, metaDataList)
         if (object : WizardDialog<CreateConfigurationTemplateModel>(project, false, wizardModel) {
                     override fun getWindowPreferredSize(): Dimension {
-                        return Dimension(400,300)
+                        return Dimension(400, 300)
                     }
                 }.showAndGet()) {
             val properties = Properties()
-            wizardModel.templateParamsMap!!.forEach {(key, value) ->
+            wizardModel.templateParamsMap!!.forEach { (key, value) ->
                 properties[key] = value.firstOrNull().toString()
                 println("$key - $value")
             }
@@ -126,7 +126,7 @@ class CreateConfigurationAction : AnAction() {
 
             val file = File(confDir, fileName)
             FileOutputStream(file).use {
-                properties.store(it,null)
+                properties.store(it, null)
             }
             LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
         }
@@ -150,13 +150,13 @@ class CreateConfigurationTemplateModel(val project: Project, private val myMetaD
 }
 
 
-class SelectStep(private val myModel: CreateConfigurationTemplateModel) : WizardStep<CreateConfigurationTemplateModel>("Select" ) {
+class SelectStep(private val myModel: CreateConfigurationTemplateModel) : WizardStep<CreateConfigurationTemplateModel>("Select") {
 
     override fun prepare(state: WizardNavigationState?): JComponent {
 
         val designateModel = DefaultComboBoxModel<Designate>()
         myModel.metaDataList.flatMap { it.designates }
-                .forEach{ designateModel.addElement(it as Designate) }
+                .forEach { designateModel.addElement(it as Designate) }
 
         val designateComboBox = ComboBox<Designate>(designateModel)
         designateComboBox.renderer = object : ColoredListCellRenderer<Designate>() {
@@ -172,10 +172,8 @@ class SelectStep(private val myModel: CreateConfigurationTemplateModel) : Wizard
         }
 
 
-        val model  = DefaultComboBoxModel<MetaData>()
+        val model = DefaultComboBoxModel<MetaData>()
         myModel.metaDataList.forEach(model::addElement)
-
-
 
 
         val textField = JBTextField()
@@ -196,9 +194,9 @@ class SelectStep(private val myModel: CreateConfigurationTemplateModel) : Wizard
         var a: Row? = null
 
 
-        val panel =  panel{
+        val panel = panel {
             row("select") { designateComboBox() }
-            a = row("subName" ) { textField() }
+            a = row("subName") { textField() }
         }
 
         designateComboBox.addActionListener {

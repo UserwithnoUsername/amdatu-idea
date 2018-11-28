@@ -84,7 +84,7 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
     private static Icon createLayeredIcon(Icon icon) {
         LayeredIcon layeredIcon = new LayeredIcon(2);
         layeredIcon.setIcon(OsmorcIdeaIcons.Bnd, 0);
-        layeredIcon.setIcon(IconUtil.scale(icon, 0.5), 1, 4);
+        layeredIcon.setIcon(IconUtil.scale(icon, null,0.5f), 1, 4);
         return layeredIcon;
     }
 

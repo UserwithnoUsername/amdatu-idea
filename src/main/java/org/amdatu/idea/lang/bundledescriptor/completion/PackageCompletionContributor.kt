@@ -47,7 +47,7 @@ class PackageCompletionContributor : CompletionContributor() {
 
     class PackageCompletionProvider : CompletionProvider<CompletionParameters>() {
 
-        override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext?, result: CompletionResultSet) {
+        override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet) {
             if (shouldComplete(parameters)) return
 
             // Use bnd's UTF8Properties to read the contents of the full instruction, this properties implementation

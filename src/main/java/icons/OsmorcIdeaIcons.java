@@ -44,7 +44,7 @@ public class OsmorcIdeaIcons {
     private static Icon createLayeredIcon(Icon base, Icon overlay) {
         LayeredIcon layeredIcon = new LayeredIcon(2);
         layeredIcon.setIcon(base, 0);
-        layeredIcon.setIcon(IconUtil.scale(overlay, 0.6), 1, SwingConstants.SOUTH_EAST);
+        layeredIcon.setIcon(IconUtil.scale(overlay, null, 0.6f), 1, SwingConstants.SOUTH_EAST);
         return layeredIcon;
     }
 }

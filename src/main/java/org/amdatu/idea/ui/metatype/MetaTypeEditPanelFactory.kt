@@ -33,33 +33,36 @@ import javax.swing.event.DocumentListener
 typealias PropertyChangeListener = (id: String, value: List<Any>) -> Unit
 
 val DEFAULT_CONTEXT_ATTRS: List<String> = Arrays.asList("basePackageDir", "basePackageName", "srcDir", "testSrcDir")
+
 class MetaTypeEditPanelFactory(private val myProject: Project) {
 
-    fun create(objectClassDefinition: ObjectClassDefinition, propertyChangeListener: PropertyChangeListener) : JComponent {
+    fun create(objectClassDefinition: ObjectClassDefinition, propertyChangeListener: PropertyChangeListener): JComponent {
         val attributeDefinitions = objectClassDefinition.getAttributeDefinitions(ObjectClassDefinition.ALL)
                 .filter { attributeDefinition -> !DEFAULT_CONTEXT_ATTRS.contains(attributeDefinition.id) }
 
-        return panel(LCFlags.fillX) {
-            for (attributeDefinition in attributeDefinitions) {
-                val name = attributeDefinition.name ?: attributeDefinition.id
-                row(name) {
-                    input(attributeDefinition, propertyChangeListener)(CCFlags.growX, CCFlags.pushX)
-                }
-
-                if (attributeDefinition.description != null) row {
-                    JScrollPane(
-                            JTextArea("  ${attributeDefinition.description}").apply {
-                                wrapStyleWord = true
-                                isEditable = false
-                                isFocusable = false
-                                rows = 1
-                                background = JPanel().background
-                                border = null
-                            }
-                    ).apply {
-                        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-                        border = null
-                    }()
+        return panel {
+            row {
+                for (attributeDefinition in attributeDefinitions) {
+                    val name = attributeDefinition.name ?: attributeDefinition.id
+                    row(name) {
+                        input(attributeDefinition, propertyChangeListener)(growX, pushX)
+                    }
+                    if (attributeDefinition.description != null) {
+                        row {
+                            JTextArea("  ${attributeDefinition.description}")
+                                    .apply {
+                                        wrapStyleWord = true
+                                        isEditable = false
+                                        isFocusable = false
+                                        rows = 1
+                                        background = JPanel().background
+                                        border = null
+                                        val metrics = getFontMetrics(font)
+                                        preferredSize = Dimension(400, metrics.height)
+                                        maximumSize = Dimension(400, metrics.height)
+                                    }(growX, pushX)
+                        }
+                    }
                 }
             }
         }
@@ -70,7 +73,8 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
             // TODO: We could use some custom template documentation mentioning this
             isClassInput(attributeDefinition) -> clazz(attributeDefinition, propertyChangeListener)
             isPackageInput(attributeDefinition) -> pkg(attributeDefinition, propertyChangeListener)
-            attributeDefinition.optionValues?.isNotEmpty() ?: false -> dropDown(attributeDefinition, propertyChangeListener)
+            attributeDefinition.optionValues?.isNotEmpty()
+                    ?: false -> dropDown(attributeDefinition, propertyChangeListener)
             attributeDefinition.type == AttributeDefinition.STRING -> textField(attributeDefinition, propertyChangeListener)
             attributeDefinition.type == AttributeDefinition.BOOLEAN -> checkBox(attributeDefinition, propertyChangeListener)
             else -> textField(attributeDefinition, propertyChangeListener)
@@ -174,8 +178,8 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
         val codeFragment = JavaCodeFragmentFactory.getInstance(myProject).createReferenceCodeFragment("", null, true, isClassesAccepted)
         val document = PsiDocumentManager.getInstance(myProject).getDocument(codeFragment)
         return EditorTextField(document, myProject, JavaFileType.INSTANCE).apply {
-            addDocumentListener( object : com.intellij.openapi.editor.event.DocumentListener {
-                override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent?) {
+            addDocumentListener(object : com.intellij.openapi.editor.event.DocumentListener {
+                override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent) {
                     val text = document?.text
                     if (text.isNullOrBlank()) {
                         propertyChangeListener(attributeDefinition.id, emptyList())

@@ -77,11 +77,11 @@ class RepositoriesPanel(private val myProject: Project) {
                 }
             }
             row {
-                panel {
-                    row {
+                cell(isVerticalFlow = true) {
+                    this@row.row {
                         JScrollPane(repositoriesTree)(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
                     }
-                }(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
+                }
             }
         }
     }

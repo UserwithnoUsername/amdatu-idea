@@ -121,8 +121,8 @@ class AmdatuIdeaNotificationService(private val myProject: Project) {
             if (virtualFile != null) {
                 notification.addAction(object : AnAction("Open " + virtualFile.name) {
 
-                    override fun actionPerformed(e: AnActionEvent?) {
-                        if (e == null || e.project == null) {
+                    override fun actionPerformed(e: AnActionEvent) {
+                        if (e.project == null) {
                             return
                         }
 

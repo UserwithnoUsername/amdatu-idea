@@ -46,7 +46,7 @@ class BsnCompletionContributor : CompletionContributor() {
 
     class BundleCompletionProvider(private val workspaceBundlesWithExportedPackagesOnly: Boolean) : CompletionProvider<CompletionParameters>() {
 
-        override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext?, result: CompletionResultSet) {
+        override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet) {
             if (shouldComplete(parameters)) return
 
             val amdatuIdePlugin = parameters.position.project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
