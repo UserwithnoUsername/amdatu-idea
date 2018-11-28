@@ -14,16 +14,13 @@
 
 package org.amdatu.idea;
 
-import java.io.Closeable;
-import java.io.File;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import com.intellij.util.messages.Topic;
-import org.amdatu.idea.imp.BndProjectImporter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Attrs;
+import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Processor;
+import aQute.bnd.repository.osgi.OSGiRepository;
+import aQute.bnd.service.RepositoryPlugin;
+import aQute.service.reporter.Report;
 import com.intellij.dvcs.repo.Repository;
 import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.notification.NotificationType;
@@ -35,7 +32,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vcs.BranchChangeListener;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -45,14 +41,14 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
+import org.amdatu.idea.imp.BndProjectImporter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Attrs;
-import aQute.bnd.osgi.Constants;
-import aQute.bnd.osgi.Processor;
-import aQute.bnd.repository.osgi.OSGiRepository;
-import aQute.bnd.service.RepositoryPlugin;
-import aQute.service.reporter.Report;
+import java.io.Closeable;
+import java.io.File;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
@@ -409,11 +405,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 // vsc branch is about to change once that's done we'll do a workspace refresh
                 return;
             }
-            List<VFileEvent> fileEvents = new ArrayList<>(events);
-            onFileEvents(fileEvents);
-        }
-
-        private void onFileEvents(List<VFileEvent> events) {
             Repository vcsRepository = myVcsRepositoryManager.getRepositoryForFile(myProject.getBaseDir());
             if (vcsRepository != null) {
                 vcsRepository.update();
@@ -437,7 +428,11 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     return;
                 }
             }
+            List<VFileEvent> fileEvents = new ArrayList<>(events);
+            onFileEvents(fileEvents);
+        }
 
+        private void onFileEvents(List<VFileEvent> events) {
             boolean refreshWorkspace = false;
             boolean importProjects = false;
             Set<String> modulesToRefresh = ContainerUtil.newHashSet();

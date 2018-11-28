@@ -21,6 +21,7 @@ import com.intellij.ide.errorTreeView.ErrorViewStructure;
 import com.intellij.ide.errorTreeView.GroupingElement;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,12 +34,15 @@ import org.amdatu.idea.AmdatuIdeaPlugin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FixBaseliningErrorsAction extends AnAction {
 
     @Override
     public void update(AnActionEvent e) {
-        List<BaseliningBundleSuggestion> suggestions = getSuggestions();
+        List<BaseliningSuggestion> suggestions = getSuggestions();
         e.getPresentation().setEnabled(suggestions.size() > 0);
         e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
     }
@@ -48,21 +52,23 @@ public class FixBaseliningErrorsAction extends AnAction {
         Project currentProject = e.getProject();
         AmdatuIdeaPlugin plugin = currentProject.getComponent(AmdatuIdeaPlugin.class);
         AmdatuIdeaPlugin.WorkspaceOperationToken token = plugin.startWorkspaceOperation();
-        int count = 0;
+        AtomicInteger count = new AtomicInteger();
         try {
-            List<BaseliningBundleSuggestion> suggestions = getSuggestions();
-            for (BaseliningBundleSuggestion suggestion : suggestions) {
-                suggestion.apply();
-                count++;
-            }
+            List<BaseliningSuggestion> suggestions = getSuggestions();
+            ApplicationManager.getApplication().runWriteAction(() -> {
+                for (BaseliningSuggestion suggestion : suggestions) {
+                    suggestion.apply();
+                    count.incrementAndGet();
+                }
+            });
         } finally {
             plugin.completeWorkspaceOperation(token);
             Messages.showMessageDialog(currentProject, "Baselining errors found and fixed: " + count, "Fix baselining errors", Messages.getInformationIcon());
         }
     }
 
-    private List<BaseliningBundleSuggestion> getSuggestions() {
-        List<BaseliningBundleSuggestion> suggestions = new ArrayList<>();
+    private List<BaseliningSuggestion> getSuggestions() {
+        List<BaseliningSuggestion> suggestions = new ArrayList<>();
         ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
         ContentManager contentManager = activeToolWindow.getContentManager();
         Content[] contents = contentManager.getContents();
@@ -76,9 +82,12 @@ public class FixBaseliningErrorsAction extends AnAction {
                 GroupingElement groupingElement = (GroupingElement) childElement;
                 for (ErrorTreeElement messageChild : errorViewStructure.getChildElements(groupingElement)) {
                     for (String text : messageChild.getText()) {
+                        VirtualFile file = groupingElement.getFile();
                         if (isBundleVersionMessage(text)) {
-                            VirtualFile file = groupingElement.getFile();
                             BaseliningBundleSuggestion suggestion = BaseliningBundleSuggestion.parse(file, text);
+                            suggestions.add(suggestion);
+                        } else if (isPackageVersionMessage(text)) {
+                            BaseliningPackageSuggestion suggestion = BaseliningPackageSuggestion.parse(file, text);
                             suggestions.add(suggestion);
                         }
                     }
@@ -88,14 +97,66 @@ public class FixBaseliningErrorsAction extends AnAction {
         return suggestions;
     }
 
+    public boolean isPackageVersionMessage(String message) {
+        return message.contains("Baseline mismatch for package");
+    }
+
     public boolean isBundleVersionMessage(String message) {
         return message.contains("The bundle version") && message.contains("is too low");
     }
 
-    static class BaseliningBundleSuggestion {
-        VirtualFile source;
-        String currentVersion;
-        String suggestedVersion;
+    interface BaseliningSuggestion {
+        void apply();
+    }
+
+    static class BaseliningPackageSuggestion implements BaseliningSuggestion {
+        private final VirtualFile source;
+        private final String suggestedVersion;
+
+        static BaseliningPackageSuggestion parse(VirtualFile source, String message) {
+            String patternString = ".*suggest (.*) or.*";
+            Pattern pattern = Pattern.compile(patternString, Pattern.DOTALL);
+            Matcher matcher = pattern.matcher(message);
+            boolean matches = matcher.matches();
+            if (matches) {
+                String version = matcher.group(1);
+                return new BaseliningPackageSuggestion(source, version);
+            }
+            throw new IllegalStateException("Could not extract version from message: " + message);
+        }
+
+        private BaseliningPackageSuggestion(VirtualFile source, String suggestedVersion) {
+            this.source = source;
+            this.suggestedVersion = suggestedVersion;
+        }
+
+        @Override
+        public void apply() {
+            if (source.getName().equals("package-info.java")) {
+                try {
+                    byte[] contents = source.contentsToByteArray();
+                    String contentAsString = new String(contents);
+                    contentAsString = contentAsString.replaceAll("\\(.*\\)", "(\"" + suggestedVersion + "\")");
+                    source.setBinaryContent(contentAsString.getBytes());
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not write to package-info.java", e);
+                }
+            } else if (source.getName().equals("packageinfo")) {
+                try {
+                    source.setBinaryContent(("version " + suggestedVersion).getBytes());
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not write to packageinfo", e);
+                }
+            } else {
+                throw new IllegalStateException("Cannot fix baselining error for file: " + source.getPath());
+            }
+        }
+    }
+
+    static class BaseliningBundleSuggestion implements BaseliningSuggestion {
+        private final VirtualFile source;
+        private final String currentVersion;
+        private final String suggestedVersion;
 
         static BaseliningBundleSuggestion parse(VirtualFile source, String message) {
             String suggestionMarker = "must be at least ";
@@ -117,6 +178,7 @@ public class FixBaseliningErrorsAction extends AnAction {
             return "Bundle version " + source.getPath() + " " + currentVersion + " -> " + suggestedVersion;
         }
 
+        @Override
         public void apply() {
             try {
                 byte[] contents = source.contentsToByteArray();
