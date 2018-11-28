@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.Map;
 
-public abstract class BndRunConfigurationBase extends LocatableConfigurationBase implements ModuleRunProfile,
+public abstract class BndRunConfigurationBase extends LocatableConfigurationBase<Element> implements ModuleRunProfile,
                 CommonProgramRunConfigurationParameters, PersistentStateComponent<Element> {
 
     BndRunConfigurationBase(Project project, @NotNull ConfigurationFactory factory, String name) {

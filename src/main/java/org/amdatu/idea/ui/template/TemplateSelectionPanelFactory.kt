@@ -14,10 +14,12 @@
 package org.amdatu.idea.ui.template
 
 import com.intellij.icons.AllIcons
+import com.intellij.internal.statistic.eventLog.initStateEventTrackers
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.layout.CCFlags
+import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.IconUtil
@@ -50,6 +52,7 @@ class TemplateSelectionPanelFactory {
             isFocusable = false
             focusTraversalKeysEnabled = false
             preferredSize = Dimension(480, 60)
+            minimumSize = Dimension(200, 40)
         }
 
         templateTree.apply {
@@ -77,7 +80,7 @@ class TemplateSelectionPanelFactory {
         }
 
         // Expand all nodes (reverse order to prevent expanding the first impacting the row count)
-        for (i in templateTree.rowCount -1 downTo 0) {
+        for (i in templateTree.rowCount - 1 downTo 0) {
             templateTree.expandRow(i)
         }
 
@@ -97,35 +100,24 @@ class TemplateSelectionPanelFactory {
             }
         }
 
-        onlyLatestVersion.addActionListener({
+        onlyLatestVersion.addActionListener {
             templateTree.updateUI()
-        })
+        }
 
         return panel {
 
             row {
-                panel {
-                    row {
-                        JScrollPane(templateTree)(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
-                    }
-                }(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
+                scrollPane(templateTree, growX, growY, pushX )
             }
             row {
-                panel {
-                    row {
-                        descriptionPane(CCFlags.growX, CCFlags.pushX)
-                    }
-                }(CCFlags.growX, CCFlags.pushX)
+                descriptionPane(growX, pushX)
             }
-            row {
-                panel {
-                    row("Only latest version") {
-                        onlyLatestVersion()
-                    }
-                }()
+            row("Only latest version") {
+                onlyLatestVersion(growX, pushX)
             }
         }
     }
+
 
     // The bndtools templates have some 'mmm /', 'nnnn /' prefix
     fun sanitizeCategoryName(category: String): String {

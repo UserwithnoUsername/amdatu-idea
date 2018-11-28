@@ -24,6 +24,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.FileInputStream
+import java.nio.charset.Charset
 
 data class PackageInfo(
         val fqn: String,
@@ -84,7 +85,7 @@ class PackageUtil {
                             it.getFiles(scope)
                                     .filter { it.name == "packageinfo" }
                                     .map {
-                                        val toString = IOUtils.toString(FileInputStream(File(it.virtualFile.path)))
+                                        val toString = IOUtils.toString(FileInputStream(File(it.virtualFile.path)), Charset.defaultCharset())
                                         val matchResult = "version (.*)".toRegex().find(toString)
 
                                         matchResult?.groupValues?.get(1)

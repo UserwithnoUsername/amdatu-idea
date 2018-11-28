@@ -204,14 +204,14 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
     private fun createBundleInfoPanel(): JComponent {
         return panel {
             row {
-                panel {
-                    row {
+                cell(isVerticalFlow = true) {
+                    this@row.row {
                         calculateImportsBtn()
                     }
-                    row {
+                    this@row.row {
                         JScrollPane(calculatedImportsTree)(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
                     }
-                }(CCFlags.growX, CCFlags.pushX, CCFlags.growY, CCFlags.pushY)
+                }
             }
         }
     }
