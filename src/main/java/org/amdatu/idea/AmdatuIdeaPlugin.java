@@ -34,4 +34,11 @@ public interface AmdatuIdeaPlugin {
 
     AmdatuIdeaNotificationService getNotificationService();
 
+    WorkspaceOperationToken startWorkspaceOperation();
+
+    void completeWorkspaceOperation(WorkspaceOperationToken token);
+
+    public interface WorkspaceOperationToken {
+
+    }
 }

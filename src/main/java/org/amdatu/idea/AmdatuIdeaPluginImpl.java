@@ -16,12 +16,10 @@ package org.amdatu.idea;
 
 import java.io.Closeable;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.intellij.util.messages.Topic;
 import org.amdatu.idea.imp.BndProjectImporter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,6 +63,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
     private List<Report.Location> myWorkspaceErrors;
     private final AmdatuIdeaNotificationService myNotificationService;
     private PackageInfoService myPackageInfoService;
+    private Set<WorkspaceOperationToken> workspaceOperationTokens = new HashSet<>();
 
     static {
         Workspace.setDriver(Constants.BNDDRIVER_INTELLIJ);
@@ -150,6 +149,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     BndFileChangedListener fileChangedListener = new BndFileChangedListener();
                     messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, fileChangedListener);
                     messageBusConnection.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, fileChangedListener);
+                    messageBusConnection.subscribe(WorkspaceOperationListener.WORKSPACE_OPERATION_TOPIC, fileChangedListener);
                 } catch (Exception e) {
                     LOG.error("Failed to create bnd workspace", e);
                 }
@@ -318,6 +318,47 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         }
     }
 
+    @Override
+    public WorkspaceOperationToken startWorkspaceOperation() {
+        WorkspaceOperationToken workspaceOperationToken = new WorkspaceOperationTokenImpl();
+        workspaceOperationTokens.add(workspaceOperationToken);
+        return workspaceOperationToken;
+    }
+
+    public void completeWorkspaceOperation(WorkspaceOperationToken token) {
+        workspaceOperationTokens.remove(token);
+        ((WorkspaceOperationTokenImpl)token).close();
+    }
+
+    private boolean isWorkspaceOperationRunning() {
+        return !workspaceOperationTokens.isEmpty();
+    }
+
+    public class WorkspaceOperationTokenImpl implements WorkspaceOperationToken, BulkFileListener {
+        private MessageBusConnection messageBusConnection;
+        private List<VFileEvent> fileEvents = new ArrayList<>();
+
+        public WorkspaceOperationTokenImpl() {
+            messageBusConnection = myProject.getMessageBus().connect();
+            messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, this);
+        }
+
+        @Override
+        public void after(@NotNull List<? extends VFileEvent> events) {
+            this.fileEvents.addAll(events);
+        }
+
+        public List<VFileEvent> getFileEvents() {
+            return fileEvents;
+        }
+
+        public void close() {
+            messageBusConnection.disconnect();
+            WorkspaceOperationListener publisher = myProject.getMessageBus().syncPublisher(WorkspaceOperationListener.WORKSPACE_OPERATION_TOPIC);
+            publisher.afterWorkspaceOperation(fileEvents);
+        }
+    }
+
     /**
      * {@link BulkFileListener} handling changes in bnd files.
      *
@@ -329,7 +370,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
      * <li>Re-Imports projects on changes in other bnd files</li>
      * </ul>
      */
-    private class BndFileChangedListener implements BulkFileListener, BranchChangeListener {
+    private class BndFileChangedListener implements BulkFileListener, BranchChangeListener, WorkspaceOperationListener {
 
         private volatile boolean branchWillChange;
         private volatile String branchName;
@@ -357,13 +398,21 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         }
 
         @Override
-        public void after(@NotNull List<? extends VFileEvent> events) {
+        public void afterWorkspaceOperation(List<VFileEvent> events) {
+            onFileEvents(events);
+        }
 
-            if (branchWillChange) {
+        @Override
+        public void after(@NotNull List<? extends VFileEvent> events) {
+            if (branchWillChange || isWorkspaceOperationRunning()) {
                 // vsc branch is about to change once that's done we'll do a workspace refresh
                 return;
             }
+            List<VFileEvent> fileEvents = new ArrayList<>(events);
+            onFileEvents(fileEvents);
+        }
 
+        private void onFileEvents(List<VFileEvent> events) {
             Repository vcsRepository = myVcsRepositoryManager.getRepositoryForFile(myProject.getBaseDir());
             if (vcsRepository != null) {
                 vcsRepository.update();
@@ -466,6 +515,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                     }
                 }
             }.queue();
+
         }
 
         @Override

@@ -13,6 +13,8 @@
  */
 package org.amdatu.idea.actions;
 
+import aQute.bnd.build.model.BndEditModel;
+import aQute.bnd.properties.Document;
 import com.intellij.compiler.impl.CompilerErrorTreeView;
 import com.intellij.ide.errorTreeView.ErrorTreeElement;
 import com.intellij.ide.errorTreeView.ErrorViewStructure;
@@ -26,13 +28,41 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
+import org.amdatu.idea.AmdatuIdeaPlugin;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FixBaseliningErrorsAction extends AnAction {
 
     @Override
+    public void update(AnActionEvent e) {
+        List<BaseliningBundleSuggestion> suggestions = getSuggestions();
+        e.getPresentation().setEnabled(suggestions.size() > 0);
+        e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
+    }
+
+    @Override
     public void actionPerformed(AnActionEvent e) {
+        Project currentProject = e.getProject();
+        AmdatuIdeaPlugin plugin = currentProject.getComponent(AmdatuIdeaPlugin.class);
+        AmdatuIdeaPlugin.WorkspaceOperationToken token = plugin.startWorkspaceOperation();
+        int count = 0;
+        try {
+            List<BaseliningBundleSuggestion> suggestions = getSuggestions();
+            for (BaseliningBundleSuggestion suggestion : suggestions) {
+                suggestion.apply();
+                count++;
+            }
+        } finally {
+            plugin.completeWorkspaceOperation(token);
+            Messages.showMessageDialog(currentProject, "Baselining errors found and fixed: " + count, "Fix baselining errors", Messages.getInformationIcon());
+        }
+    }
+
+    private List<BaseliningBundleSuggestion> getSuggestions() {
+        List<BaseliningBundleSuggestion> suggestions = new ArrayList<>();
         ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
         ContentManager contentManager = activeToolWindow.getContentManager();
         Content[] contents = contentManager.getContents();
@@ -40,7 +70,7 @@ public class FixBaseliningErrorsAction extends AnAction {
         ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
         Object root = errorViewStructure.getRootElement();
         ErrorTreeElement[] childElements = errorViewStructure.getChildElements(root);
-        int count = 0;
+
         for (ErrorTreeElement childElement : childElements) {
             if (childElement instanceof GroupingElement) {
                 GroupingElement groupingElement = (GroupingElement) childElement;
@@ -49,15 +79,13 @@ public class FixBaseliningErrorsAction extends AnAction {
                         if (isBundleVersionMessage(text)) {
                             VirtualFile file = groupingElement.getFile();
                             BaseliningBundleSuggestion suggestion = BaseliningBundleSuggestion.parse(file, text);
-                            suggestion.apply();
-                            count++;
+                            suggestions.add(suggestion);
                         }
                     }
                 }
             }
         }
-        Project currentProject = e.getProject();
-        Messages.showMessageDialog(currentProject, "Baselining errors found and fixed: " + count, "Fix baselining errors", Messages.getInformationIcon());
+        return suggestions;
     }
 
     public boolean isBundleVersionMessage(String message) {
@@ -92,27 +120,14 @@ public class FixBaseliningErrorsAction extends AnAction {
         public void apply() {
             try {
                 byte[] contents = source.contentsToByteArray();
-                String bnd = new String(contents);
-                String[] lines = bnd.split("\n");
-                StringBuilder newContentBuilder = new StringBuilder();
-                for (int index = 0; index < lines.length; index++) {
-                    String line = lines[index];
-                    if (line.startsWith("Bundle-Version:")) {
-                        // replace
-                        newContentBuilder.append("Bundle-Version: " + suggestedVersion);
-                    } else {
-                        newContentBuilder.append(line);
-                    }
-                    if (index < lines.length - 1) {
-                        newContentBuilder.append("\n");
-                    }
-                }
-                if (bnd.endsWith("\n")) {
-                    newContentBuilder.append("\n");
-                }
-                source.setBinaryContent(newContentBuilder.toString().getBytes());
+                Document bndDocument = new Document(new String(contents));
+                BndEditModel bndEditModel = new BndEditModel();
+                bndEditModel.loadFrom(bndDocument);
+                bndEditModel.setBundleVersion(suggestedVersion);
+                bndEditModel.saveChangesTo(bndDocument);
+                source.setBinaryContent(bndDocument.get().getBytes());
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException("Could not edit bnd document " + source.getPath(), e);
             }
         }
     }
