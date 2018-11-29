@@ -113,7 +113,7 @@ class PackageUtil {
         /**
          * Get source packages for a module
          *
-         * @param module the module to getBundleSuggestion a list of packages for
+         * @param module the module to get a list of packages for
          */
         fun getPsiPackagesForModule(module: Module): Set<PsiPackage> {
 

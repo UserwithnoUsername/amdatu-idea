@@ -56,7 +56,7 @@ class PsiUtil {
         private fun getBndProject(workspace: Workspace, module: Module): Project? {
             val project = workspace.getProject(module.name)
             if (project == null) {
-                logger.debug("Failed to getBundleSuggestion bnd project for Module ${module.name}")
+                logger.debug("Failed to get bnd project for Module ${module.name}")
             }
             return project
         }
@@ -65,7 +65,7 @@ class PsiUtil {
             val amdatuIdePlugin = getAmdatuIdePlugin(psiFile) ?: return null
             val workspace = amdatuIdePlugin.workspace
             if (workspace == null) {
-                logger.debug({ "Failed to getBundleSuggestion module for PsiFile: $psiFile" })
+                logger.debug({ "Failed to get module for PsiFile: $psiFile" })
             }
             return workspace
         }
@@ -73,7 +73,7 @@ class PsiUtil {
         private fun getModuleForPsiFile(psiFile: PsiFile): Module? {
             val module = ProjectFileIndex.getInstance(psiFile.project).getModuleForFile(psiFile.virtualFile)
             if (module == null) {
-                logger.debug({ "Failed to getBundleSuggestion module for PsiFile: $psiFile" })
+                logger.debug({ "Failed to get module for PsiFile: $psiFile" })
             }
             return module
         }
