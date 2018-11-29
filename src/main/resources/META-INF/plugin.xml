@@ -31,6 +31,10 @@
             <interface-class>org.amdatu.idea.AmdatuIdeaPlugin</interface-class>
             <implementation-class>org.amdatu.idea.AmdatuIdeaPluginImpl</implementation-class>
         </component>
+        <component>
+            <interface-class>org.amdatu.idea.BaseliningErrorService</interface-class>
+            <implementation-class>org.amdatu.idea.BaseliningErrorServiceImpl</implementation-class>
+        </component>
     </project-components>
 
     <extensionPoints>

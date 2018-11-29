@@ -24,7 +24,11 @@ class AmdatuIdeaInspectionToolProvider : InspectionToolProvider {
                 ExportedPackageWithoutVersion::class.java as Class<Any>,
                 MissingExportedPackage::class.java as Class<Any>,
                 MissingPrivatePackage::class.java as Class<Any>,
-                MissingBundleInspection::class.java as Class<Any>)
+                MissingBundleInspection::class.java as Class<Any>,
+                BundleVersionBaselining::class.java as Class<Any>,
+                PackageInfoJavaPackageVersion::class.java as Class<Any>,
+                PackageInfoPackageVersion::class.java as Class<Any>
+                )
     }
 
 }

@@ -284,7 +284,7 @@ public class CapabilityBasedTemplate implements Template {
 
         // Try to locate from the workspace and/or repositories if a BundleLocator was provide
 //        if (locator != null) {
-//            String hashStr = (String) contentCap.getAttributes().get(ContentNamespace.CONTENT_NAMESPACE);
+//            String hashStr = (String) contentCap.getAttributes().getBundleSuggestion(ContentNamespace.CONTENT_NAMESPACE);
 //            try {
 //                _bundleFile = locator.locate(id, hashStr, "SHA-256", location);
 //                if (_bundleFile != null)

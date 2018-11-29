@@ -26,9 +26,11 @@ import com.intellij.diagnostic.errordialog.PluginConflictDialog;
 import com.intellij.ide.highlighter.ModuleFileType;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.util.messages.MessageBusConnection;
 
 import aQute.bnd.build.Workspace;
 import static com.intellij.openapi.extensions.PluginId.getId;
