@@ -13,8 +13,15 @@
  */
 package org.amdatu.idea.actions;
 
-import aQute.bnd.build.model.BndEditModel;
-import aQute.bnd.properties.Document;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+
 import com.intellij.compiler.impl.CompilerErrorTreeView;
 import com.intellij.ide.errorTreeView.ErrorTreeElement;
 import com.intellij.ide.errorTreeView.ErrorViewStructure;
@@ -25,24 +32,18 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
-import org.amdatu.idea.AmdatuIdeaPlugin;
+import com.intellij.ui.content.MessageView;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import aQute.bnd.build.model.BndEditModel;
+import aQute.bnd.properties.Document;
 
 public class FixBaseliningErrorsAction extends AnAction {
 
     @Override
     public void update(AnActionEvent e) {
-        List<BaseliningSuggestion> suggestions = getSuggestions();
+        List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
         e.getPresentation().setEnabled(suggestions.size() > 0);
         e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
     }
@@ -54,7 +55,7 @@ public class FixBaseliningErrorsAction extends AnAction {
         AmdatuIdeaPlugin.WorkspaceOperationToken token = plugin.startWorkspaceOperation();
         AtomicInteger count = new AtomicInteger();
         try {
-            List<BaseliningSuggestion> suggestions = getSuggestions();
+            List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
             ApplicationManager.getApplication().runWriteAction(() -> {
                 for (BaseliningSuggestion suggestion : suggestions) {
                     suggestion.apply();
@@ -67,10 +68,10 @@ public class FixBaseliningErrorsAction extends AnAction {
         }
     }
 
-    private List<BaseliningSuggestion> getSuggestions() {
+    private List<BaseliningSuggestion> getSuggestions(Project project) {
         List<BaseliningSuggestion> suggestions = new ArrayList<>();
-        ToolWindow activeToolWindow = ToolWindowManager.getActiveToolWindow();
-        ContentManager contentManager = activeToolWindow.getContentManager();
+        MessageView messageView = MessageView.SERVICE.getInstance(project);
+        ContentManager contentManager = messageView.getContentManager();
         Content[] contents = contentManager.getContents();
         CompilerErrorTreeView view = (CompilerErrorTreeView) contents[0].getComponent();
         ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
