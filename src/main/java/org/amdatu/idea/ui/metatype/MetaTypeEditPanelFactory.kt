@@ -184,7 +184,7 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
                     if (text.isNullOrBlank()) {
                         propertyChangeListener(attributeDefinition.id, emptyList())
                     } else {
-                        propertyChangeListener(attributeDefinition.id, listOf(text!!))
+                        propertyChangeListener(attributeDefinition.id, listOf(text))
                     }
                 }
             })
