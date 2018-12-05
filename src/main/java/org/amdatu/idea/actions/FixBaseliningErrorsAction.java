@@ -73,23 +73,25 @@ public class FixBaseliningErrorsAction extends AnAction {
         MessageView messageView = MessageView.SERVICE.getInstance(project);
         ContentManager contentManager = messageView.getContentManager();
         Content[] contents = contentManager.getContents();
-        CompilerErrorTreeView view = (CompilerErrorTreeView) contents[0].getComponent();
-        ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
-        Object root = errorViewStructure.getRootElement();
-        ErrorTreeElement[] childElements = errorViewStructure.getChildElements(root);
+        if (contents.length > 0 && contents[0] instanceof  CompilerErrorTreeView) {
+            CompilerErrorTreeView view = (CompilerErrorTreeView) contents[0].getComponent();
+            ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
+            Object root = errorViewStructure.getRootElement();
+            ErrorTreeElement[] childElements = errorViewStructure.getChildElements(root);
 
-        for (ErrorTreeElement childElement : childElements) {
-            if (childElement instanceof GroupingElement) {
-                GroupingElement groupingElement = (GroupingElement) childElement;
-                for (ErrorTreeElement messageChild : errorViewStructure.getChildElements(groupingElement)) {
-                    for (String text : messageChild.getText()) {
-                        VirtualFile file = groupingElement.getFile();
-                        if (isBundleVersionMessage(text)) {
-                            BaseliningBundleSuggestion suggestion = BaseliningBundleSuggestion.parse(file, text);
-                            suggestions.add(suggestion);
-                        } else if (isPackageVersionMessage(text)) {
-                            BaseliningPackageSuggestion suggestion = BaseliningPackageSuggestion.parse(file, text);
-                            suggestions.add(suggestion);
+            for (ErrorTreeElement childElement : childElements) {
+                if (childElement instanceof GroupingElement) {
+                    GroupingElement groupingElement = (GroupingElement) childElement;
+                    for (ErrorTreeElement messageChild : errorViewStructure.getChildElements(groupingElement)) {
+                        for (String text : messageChild.getText()) {
+                            VirtualFile file = groupingElement.getFile();
+                            if (isBundleVersionMessage(text)) {
+                                BaseliningBundleSuggestion suggestion = BaseliningBundleSuggestion.parse(file, text);
+                                suggestions.add(suggestion);
+                            } else if (isPackageVersionMessage(text)) {
+                                BaseliningPackageSuggestion suggestion = BaseliningPackageSuggestion.parse(file, text);
+                                suggestions.add(suggestion);
+                            }
                         }
                     }
                 }
