@@ -34,7 +34,7 @@ class MissingPrivatePackage : LocalInspectionTool() {
     }
 
     override fun getStaticDescription(): String? {
-        return  """
+        return """
             This inspection checks whether a private package exists in the module sources or in the module build path.
         """.trimIndent()
     }
@@ -53,8 +53,6 @@ class MissingPrivatePackage : LocalInspectionTool() {
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
         return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
-            val array = arrayListOf<ProblemDescriptor>()
-
             val privatePackages = PackageUtil.getModulePackageInfo(module, builder.privatePackage)
 
             val privatePackageHeader = psiElement<Header>(Header::class.java)
@@ -64,23 +62,22 @@ class MissingPrivatePackage : LocalInspectionTool() {
                     .firstOrNull()
                     ?: file
 
-            array.addAll(privatePackages
+            privatePackages
                     .filter { !it.exists }
                     .map { packageInfo ->
 
                         val headerValuePartFinder = psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
-                        val test = PsiTreeUtil.collectElements(privatePackageHeaderPsi, {
+                        val test = PsiTreeUtil.collectElements(privatePackageHeaderPsi) {
                             headerValuePartFinder.accepts(it) && it?.text?.startsWith(packageInfo.fqn) ?: false
-                        }).firstOrNull() ?: privatePackageHeaderPsi
+                        }.firstOrNull() ?: privatePackageHeaderPsi
 
                         manager.createProblemDescriptor(test,
                                 "Package '${packageInfo.fqn}' doesn't exist.",
                                 false,
                                 emptyArray(),
                                 ProblemHighlightType.ERROR)
-                    })
-
-            return@Computable array.toTypedArray()
+                    }
+                    .toTypedArray()
         })
     }
 }

@@ -71,18 +71,21 @@ class PackageUtil {
                     listOf(rootPackage)
                 }
 
-                packages.forEach {
+                packages.forEach { psiPackage ->
 
-                    val version = it.annotations
+                    val versionAnnotation = psiPackage.annotations
                             .firstOrNull { it.qualifiedName == "org.osgi.annotation.versioning.Version" }
                             ?.findAttributeValue(null)
 
                     val strVersion = when {
-                        attrs["version"] != null -> attrs["version"]
-                        version is PsiLiteralExpression -> version.text.replace("\"", "")
-                        version is PsiReferenceExpression -> ((version as PsiReferenceExpressionImpl).resolve() as PsiField).initializer!!.text
-                        else -> {
-                            it.getFiles(scope)
+                        attrs["version"] != null -> // Version is specified as an attribute in the bnd file
+                            attrs["version"]
+                        versionAnnotation is PsiLiteralExpression -> // version annotation value is a String
+                            versionAnnotation.text.replace("\"", "")
+                        versionAnnotation is PsiReferenceExpression -> // version annotation value is a constant
+                            ((versionAnnotation as PsiReferenceExpressionImpl).resolve() as PsiField).initializer!!.text
+                        else -> // get version from packageinfo file
+                            psiPackage.getFiles(scope)
                                     .filter { it.name == "packageinfo" }
                                     .map {
                                         val toString = IOUtils.toString(FileInputStream(File(it.virtualFile.path)), Charset.defaultCharset())
@@ -91,10 +94,10 @@ class PackageUtil {
                                         matchResult?.groupValues?.get(1)
                                     }
                                     .firstOrNull()
-                        }
+
                     }
 
-                    val packageInfo = PackageInfo(it.qualifiedName, strVersion, true, packagesForModule.contains(it.qualifiedName))
+                    val packageInfo = PackageInfo(psiPackage.qualifiedName, strVersion, true, packagesForModule.contains(psiPackage.qualifiedName))
                     result += packageInfo
                 }
             }

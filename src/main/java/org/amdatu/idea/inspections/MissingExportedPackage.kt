@@ -53,29 +53,27 @@ class MissingExportedPackage : LocalInspectionTool() {
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
         return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
-            val array = arrayListOf<ProblemDescriptor>()
-
             val exportPackageHeader = psiElement<Header>(Header::class.java).withName(Constants.EXPORT_PACKAGE)
             val exportPackageHeaderPsi = PsiTreeUtil.collectElements(file, exportPackageHeader::accepts).firstOrNull()
                     ?: file
             val packages = PackageUtil.getModulePackageInfo(module, builder.exportPackage)
 
-            array.addAll(packages
+            packages
                     .filter { !it.exists }
                     .map { packageInfo ->
                         val headerValuePartFinder = psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
-                        val test = PsiTreeUtil.collectElements(exportPackageHeaderPsi, {
+                        val test = PsiTreeUtil.collectElements(exportPackageHeaderPsi) {
                             headerValuePartFinder.accepts(it) && it?.text?.trim()?.startsWith(packageInfo.fqn) ?: false
-                        }).firstOrNull() ?: exportPackageHeaderPsi
+                        }.firstOrNull() ?: exportPackageHeaderPsi
 
                         manager.createProblemDescriptor(test,
                                 "Package '${packageInfo.fqn}' doesn't exist",
                                 false,
                                 emptyArray(),
                                 ProblemHighlightType.ERROR)
-                    })
+                    }.toTypedArray()
 
-            return@Computable array.toTypedArray()
+
         })
     }
 }
