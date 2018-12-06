@@ -73,7 +73,7 @@ public class FixBaseliningErrorsAction extends AnAction {
         MessageView messageView = MessageView.SERVICE.getInstance(project);
         ContentManager contentManager = messageView.getContentManager();
         Content[] contents = contentManager.getContents();
-        if (contents.length > 0 && contents[0] instanceof  CompilerErrorTreeView) {
+        if (contents.length > 0 && contents[0].getComponent() instanceof  CompilerErrorTreeView) {
             CompilerErrorTreeView view = (CompilerErrorTreeView) contents[0].getComponent();
             ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
             Object root = errorViewStructure.getRootElement();
