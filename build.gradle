@@ -11,7 +11,7 @@ plugins {
 }
 
 group 'org.amdatu.idea'
-version '2.0.2-SNAPSHOT'
+version '2.1.0-SNAPSHOT'
 
 allprojects {
     apply plugin: "org.jetbrains.intellij"
@@ -40,7 +40,7 @@ repositories {
 }
 
 dependencies {
-    compile "biz.aQute.bnd:biz.aQute.bnd:4.0.0",
+    compile "biz.aQute.bnd:biz.aQute.bnd:4.1.0",
             "eu.maxschuster:dataurl:2.0.0",
             "org.osgi:osgi.core:7.0.0",
             project('jps-plugin'),

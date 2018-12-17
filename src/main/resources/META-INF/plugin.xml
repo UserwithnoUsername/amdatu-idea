@@ -15,7 +15,7 @@
 <idea-plugin>
     <id>org.amdatu.idea</id>
     <name>Amdatu</name>
-    <version>2.0.2-SNAPSHOT</version>
+    <version>2.1.0-SNAPSHOT</version>
     <description>The Amdatu IntelliJ plugin adds support for OSGi workspaces using the bnd workspace model.</description>
     <category>Framework integration</category>
     <vendor>The Amdatu Foundation</vendor>
@@ -76,7 +76,7 @@
         <lang.commenter language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter" />
 
         <!-- JPS plugin -->
-        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.0.0.jar"/>
+        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.1.0.jar"/>
 
         <!--  Run -->
         <configurationType implementation="org.amdatu.idea.run.BndRunConfigurationType"/>
