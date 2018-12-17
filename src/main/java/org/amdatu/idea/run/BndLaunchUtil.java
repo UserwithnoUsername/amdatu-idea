@@ -41,7 +41,7 @@ public class BndLaunchUtil {
         JavaParameters parameters = new JavaParameters();
         ProgramParametersUtil.configureConfiguration(parameters, configuration);
 
-        String jreHome = configuration.getOptions().isUseAlternativeJre() ?
+        String jreHome = configuration.getOptions().getUseAlternativeJre() ?
                 configuration.getOptions().getAlternativeJrePath() :
                 null;
         JavaParametersUtil.configureProject(project, parameters, JavaParameters.JDK_ONLY, jreHome);

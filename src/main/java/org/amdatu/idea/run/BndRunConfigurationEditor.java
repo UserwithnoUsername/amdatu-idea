@@ -58,7 +58,7 @@ public class BndRunConfigurationEditor extends SettingsEditor<BndRunConfiguratio
     protected void resetEditorFrom(@NotNull BndRunConfigurationBase configuration) {
         BndRunConfigurationOptions options = configuration.getOptions();
         myChooser.setText(options.getBndRunFile());
-        myJrePathEditor.setPathOrName(options.getAlternativeJrePath(), options.isUseAlternativeJre());
+        myJrePathEditor.setPathOrName(options.getAlternativeJrePath(), options.getUseAlternativeJre());
         myCommonProgramParametersPanel.reset(configuration);
     }
 

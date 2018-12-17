@@ -15,20 +15,30 @@
  */
 package org.amdatu.idea.run;
 
-import com.intellij.execution.*;
-import com.intellij.execution.configurations.*;
-import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.execution.util.JavaParametersUtil;
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.options.SettingsEditorGroup;
-import com.intellij.openapi.project.Project;
+import java.io.File;
+import java.util.Map;
+
 import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.util.Map;
+import com.intellij.execution.CommonJavaRunConfigurationParameters;
+import com.intellij.execution.CommonProgramRunConfigurationParameters;
+import com.intellij.execution.ExecutionBundle;
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.Executor;
+import com.intellij.execution.JavaRunConfigurationExtensionManager;
+import com.intellij.execution.configurations.ConfigurationFactory;
+import com.intellij.execution.configurations.LocatableConfigurationBase;
+import com.intellij.execution.configurations.ModuleRunProfile;
+import com.intellij.execution.configurations.RunProfileState;
+import com.intellij.execution.configurations.RuntimeConfigurationException;
+import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.util.JavaParametersUtil;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.options.SettingsEditorGroup;
+import com.intellij.openapi.project.Project;
 
 public abstract class BndRunConfigurationBase extends LocatableConfigurationBase<Element> implements ModuleRunProfile,
                 CommonProgramRunConfigurationParameters, PersistentStateComponent<Element> {
@@ -43,6 +53,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
     }
 
     @Override
+    @NotNull
     protected BndRunConfigurationOptions getOptions() {
         return (BndRunConfigurationOptions) super.getOptions();
     }
@@ -107,7 +118,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
 
     @Override
     public boolean isPassParentEnvs() {
-        return getOptions().isPassParentEnvs();
+        return getOptions().getPassParentEnvs();
     }
 
     @Override
@@ -116,7 +127,7 @@ public abstract class BndRunConfigurationBase extends LocatableConfigurationBase
         if (file == null || !new File(file).isFile()) {
             throw new RuntimeConfigurationException(OsmorcBundle.message("bnd.run.configuration.invalid", file));
         }
-        if (getOptions().isUseAlternativeJre()) {
+        if (getOptions().getUseAlternativeJre()) {
             JavaParametersUtil.checkAlternativeJRE(getOptions().getAlternativeJrePath());
         }
     }
