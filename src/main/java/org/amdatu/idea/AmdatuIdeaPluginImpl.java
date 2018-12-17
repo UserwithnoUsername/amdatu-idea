@@ -264,6 +264,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
         indicator.setText("Refreshing Repositories");
         List<RepositoryPlugin> plugins = myWorkspace.getPlugins(RepositoryPlugin.class);
         boolean ok = true;
+
         for (int i = 0; i < plugins.size(); i++) {
             RepositoryPlugin plugin = plugins.get(i);
 
@@ -294,8 +295,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         LOG.error(ee);
                     }
 
-                    RepoUtilKt.validateRepoLocations(AmdatuIdeaPluginImpl.this);
-
                     myNotificationService.notification(NotificationType.ERROR,
                             String.format("Amdatu: Repository %s is failing with exception '%s'", plugin.getName(), e.getMessage()),
                             "Try to refresh the repo? ", refreshAction);
@@ -306,6 +305,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
             indicator.setFraction((double) i / (double) plugins.size());
         }
+        ok &= myProject.getComponent(RepositoryValidationService.class).validateRepositories(myWorkspace);
         return ok;
     }
 
@@ -525,11 +525,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
             refreshWorkspace(true);
             branchWillChange = false;
         }
-    }
-
-    @Override
-    public AmdatuIdeaNotificationService getNotificationService() {
-        return myNotificationService;
     }
 
     @Override

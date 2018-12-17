@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.amdatu.idea.AmdatuIdeaNotificationService;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -203,7 +204,7 @@ public class BndProjectImporter {
                 LOG.warn(e);
                 return false;
             } finally {
-                amdatuIdeaPlugin.getNotificationService().report(project, true);
+                myProject.getComponent(AmdatuIdeaNotificationService.class).report(project, true);
             }
 
             findSources(project);
@@ -713,7 +714,7 @@ public class BndProjectImporter {
                 String text = message("bnd.import.warn.text", project.getName(),
                         "<br>" + StringUtil.join(warnings, "<br>"));
 
-                myProject.getComponent(AmdatuIdeaPlugin.class).getNotificationService()
+                myProject.getComponent(AmdatuIdeaNotificationService.class)
                         .notification(type, message("bnd.import.warn.title"), text);
 
             } else {

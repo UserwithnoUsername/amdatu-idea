@@ -32,8 +32,6 @@ public interface AmdatuIdeaPlugin {
 
     PackageInfoService getPackageInfoService();
 
-    AmdatuIdeaNotificationService getNotificationService();
-
     WorkspaceOperationToken startWorkspaceOperation();
 
     void completeWorkspaceOperation(WorkspaceOperationToken token);

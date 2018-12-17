@@ -52,7 +52,7 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
 
         } else if (amdatuIdeaPlugin.isBndWorkspace()) {
             // TODO: Import action link
-            amdatuIdeaPlugin.getNotificationService().info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import");
+            project.getComponent(AmdatuIdeaNotificationService.class).info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import");
         }
     }
 

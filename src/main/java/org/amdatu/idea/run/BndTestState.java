@@ -54,6 +54,8 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+
+import org.amdatu.idea.AmdatuIdeaNotificationService;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -107,7 +109,7 @@ public class BndTestState extends JavaCommandLineState {
             }
 
             // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
-            if (amdatuIdeaPlugin.getNotificationService().report(project, false)) {
+            if (myConfiguration.getProject().getComponent(AmdatuIdeaNotificationService.class).report(project, false)) {
                 throw new CantRunException(
                                 message("bnd.test.cannot.run", "project has errors"));
             }

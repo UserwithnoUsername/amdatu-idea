@@ -22,6 +22,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import org.amdatu.idea.AmdatuIdeaNotificationService
 import org.amdatu.idea.AmdatuIdeaPlugin
 import java.io.File
 
@@ -51,7 +52,8 @@ class GenerateIndexAction : AnAction() {
                     val workspace = amdatuIdePlugin?.workspace
 
                     if (workspace == null) {
-                        amdatuIdePlugin.notificationService.error("Failed to generate repostiory index, bnd workspace not available")
+                        project.getComponent(AmdatuIdeaNotificationService::class.java)
+                                .error("Failed to generate repostiory index, bnd workspace not available")
                         return
                     }
 
@@ -61,7 +63,8 @@ class GenerateIndexAction : AnAction() {
                             .compress(compressed)
                             .index(indexFile)
 
-                    amdatuIdePlugin.notificationService.info("Generated repository index: " + indexFile.toString())
+                    project.getComponent(AmdatuIdeaNotificationService::class.java)
+                            .info("Generated repository index: " + indexFile.toString())
                     LocalFileSystem.getInstance().refreshIoFiles(listOf(indexFile.parentFile), false, true, null)
                 }
             }.queue()

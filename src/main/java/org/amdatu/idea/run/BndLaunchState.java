@@ -39,6 +39,8 @@ import com.intellij.openapi.util.io.FileAttributes;
 import com.intellij.openapi.util.io.FileSystemUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
+
+import org.amdatu.idea.AmdatuIdeaNotificationService;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -97,7 +99,7 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
             ProjectLauncher launcher = run.getProjectLauncher();
             launcher.prepare();
 
-            if (amdatuIdeaPlugin.getNotificationService().report(launcher.getProject(), false)) {
+            if (myProject.getComponent(AmdatuIdeaNotificationService.class).report(launcher.getProject(), false)) {
                 throw new CantRunException(
                                 message("bnd.test.cannot.run", "project has errors"));
             }

@@ -20,6 +20,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import org.amdatu.idea.AmdatuIdeaNotificationService
 import org.amdatu.idea.AmdatuIdeaPlugin
 import org.osgi.resource.Namespace
 import java.util.*
@@ -68,7 +69,7 @@ class CheckForBlueprintUpdate : AnAction() {
                     .lastOrNull()
         }
 
-        val notificationService = amdatuIdeaPlugin.notificationService
+        val notificationService = project.getComponent(AmdatuIdeaNotificationService::class.java)
         when {
             repoVersion == null -> {
                 notificationService.error("Failed to check for Amdatu Blueprint updates. Could not retrieve latest version.")

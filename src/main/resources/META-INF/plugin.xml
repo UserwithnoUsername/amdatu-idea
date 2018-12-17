@@ -28,6 +28,14 @@
 
     <project-components>
         <component>
+            <interface-class>org.amdatu.idea.AmdatuIdeaNotificationService</interface-class>
+            <implementation-class>org.amdatu.idea.AmdatuIdeaNotificationService</implementation-class>
+        </component>
+        <component>
+            <interface-class>org.amdatu.idea.RepositoryValidationService</interface-class>
+            <implementation-class>org.amdatu.idea.RepositoryValidationServiceImpl</implementation-class>
+        </component>
+        <component>
             <interface-class>org.amdatu.idea.AmdatuIdeaPlugin</interface-class>
             <implementation-class>org.amdatu.idea.AmdatuIdeaPluginImpl</implementation-class>
         </component>
