@@ -37,6 +37,10 @@ class UpdatePackageInfoJavaPackageVersion(val baseliningPackageSuggestion: Basel
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        apply()
+    }
+
+    fun apply() {
         try {
             val contents = baseliningPackageSuggestion.source.contentsToByteArray()
             var contentAsString = String(contents)

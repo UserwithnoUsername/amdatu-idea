@@ -33,6 +33,10 @@ class UpdateBundleVersion(val baseliningBundleSuggestion: BaseliningBundleSugges
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        apply()
+    }
+
+    fun apply() {
         try {
             val contents = baseliningBundleSuggestion.source.contentsToByteArray()
             val bndDocument = Document(String(contents))
@@ -44,7 +48,6 @@ class UpdateBundleVersion(val baseliningBundleSuggestion: BaseliningBundleSugges
         } catch (e: IOException) {
             throw RuntimeException("Could not edit bnd document " + baseliningBundleSuggestion.source.path, e)
         }
-
     }
 
 }

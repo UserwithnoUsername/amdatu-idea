@@ -46,6 +46,7 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
 
         if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
             Workspace workspace = amdatuIdeaPlugin.getWorkspace();
+
             new BundleInfoToolWindow(project, workspace);
 
             new CheckForBlueprintUpdate().checkForUpdate(project);
