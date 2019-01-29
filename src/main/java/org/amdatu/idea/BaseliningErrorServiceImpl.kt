@@ -14,21 +14,23 @@
 
 package org.amdatu.idea
 
-import com.intellij.openapi.compiler.CompilationStatusListener
-import com.intellij.openapi.compiler.CompileContext
-import com.intellij.openapi.compiler.CompilerMessageCategory
-import com.intellij.openapi.compiler.CompilerTopics
+import com.intellij.openapi.compiler.*
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import java.io.File
 import java.util.regex.Pattern
 
-data class BaseliningBundleSuggestion(val source: VirtualFile, val currentVersion: String, val suggestedVersion: String)
-data class BaseliningPackageSuggestion(val source: VirtualFile, val suggestedVersion: String)
+sealed class BaseliningSuggestion
+data class BaseliningBundleSuggestion(val source: VirtualFile, val currentVersion: String, val suggestedVersion: String) : BaseliningSuggestion()
+data class BaseliningPackageSuggestion(val source: VirtualFile, val suggestedVersion: String) : BaseliningSuggestion()
 
 
 interface BaseliningErrorService {
     fun getBundleSuggestion(file: VirtualFile): BaseliningBundleSuggestion?
     fun getPackageSuggestion(file: VirtualFile): BaseliningPackageSuggestion?
+    fun parseBundleVersionSuggestion(source: VirtualFile, warning: String): BaseliningBundleSuggestion
+    fun parsePackageVersionSuggestion(source: VirtualFile, warning: String): BaseliningPackageSuggestion?
 }
 
 class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService, CompilationStatusListener {
@@ -62,15 +64,9 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
         allCompilerMessages
                 .filter { it.message.contains("The bundle version ") }
                 .forEach { warning ->
-                    val message = warning.message.lines().first()
-
-                    val suggestionMarker = "must be at least "
-                    val suggestedVersion = message.substring(message.indexOf(suggestionMarker) + suggestionMarker.length)
-                    val currentMarker = "The bundle version ("
-                    val currentMarkerIndex = message.indexOf(currentMarker) + currentMarker.length
-                    val currentVersion = message.substring(currentMarkerIndex, currentMarkerIndex + 5)
-
-                    bundleSuggestions[warning.virtualFile] = BaseliningBundleSuggestion(warning.virtualFile, currentVersion, suggestedVersion)
+                    parseBundleVersionSuggestion(warning.virtualFile, warning.message).let { suggestion ->
+                        bundleSuggestions[suggestion.source] = suggestion
+                    }
                 }
 
         packageSuggestions.clear()
@@ -78,20 +74,66 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
         allCompilerMessages
                 .filter { it.message.contains("Baseline mismatch for package ") }
                 .forEach { warning ->
-                    val message = warning.message.lines().first()
-
-                    val patternString = ".*suggest (.*) or.*"
-                    val pattern = Pattern.compile(patternString, Pattern.DOTALL)
-                    val matcher = pattern.matcher(message)
-                    val matches = matcher.matches()
-                    if (matches) {
-                        val version = matcher.group(1)
-                        packageSuggestions[warning.virtualFile] = BaseliningPackageSuggestion(warning.virtualFile, version)
+                    parsePackageVersionSuggestion(warning.virtualFile, warning.message)?.let { suggestion ->
+                        packageSuggestions[suggestion.source] = suggestion
                     }
-//                    throw IllegalStateException("Could not extract version from message: $message")
                 }
 
     }
 
+    override fun parseBundleVersionSuggestion(source: VirtualFile, warning: String): BaseliningBundleSuggestion {
+        val message = warning.lines().first()
+
+        val suggestionMarker = "must be at least "
+        val suggestedVersion = message.substring(message.indexOf(suggestionMarker) + suggestionMarker.length)
+        val currentMarker = "The bundle version ("
+        val currentMarkerIndex = message.indexOf(currentMarker) + currentMarker.length
+        val currentVersion = message.substring(currentMarkerIndex, currentMarkerIndex + 5)
+
+        return BaseliningBundleSuggestion(source, currentVersion, suggestedVersion)
+    }
+
+    override fun parsePackageVersionSuggestion(source: VirtualFile, warning: String): BaseliningPackageSuggestion? {
+        val message = warning.lines().first()
+        val patternString = ".*package ([.0-9a-zA-Z]*),.*suggest (.*) or.*"
+        val pattern = Pattern.compile(patternString, Pattern.DOTALL)
+        val matcher = pattern.matcher(message)
+        val matches = matcher.matches()
+
+        return if (matches) {
+            val pkg = matcher.group(1)
+            val virtualFile = fixSourceFile(source, pkg)
+            val version = matcher.group(2)
+            BaseliningPackageSuggestion(virtualFile, version)
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Workaround for bnd reporting the wrong file as the source for the baselining issue.
+     *
+     * At least present in bnd 4.1 and older
+     * https://github.com/bndtools/bnd/issues/2877
+     */
+    private fun fixSourceFile(virtualFile: VirtualFile, pkg: String): VirtualFile {
+        if (virtualFile.name.endsWith(".bnd")) {
+
+            val bndProject = project.getComponent(AmdatuIdeaPlugin::class.java).workspace.getProjectFromFile(File(virtualFile.path).parentFile)
+            for (sourceDir in bndProject.sourcePath) {
+                val packageDir = File(sourceDir, pkg.replace(".", "/"))
+                val packageInfoJavaFile = File(packageDir, "package-info.java")
+                if (packageInfoJavaFile.exists()) {
+                    return LocalFileSystem.getInstance().findFileByIoFile(packageInfoJavaFile) ?: virtualFile
+                } else {
+                    val packageinfoFile = File(packageDir, "packageinfo")
+                    if (packageinfoFile.exists()) {
+                        return LocalFileSystem.getInstance().findFileByIoFile(packageinfoFile) ?: virtualFile
+                    }
+                }
+            }
+        }
+        return virtualFile
+    }
 
 }

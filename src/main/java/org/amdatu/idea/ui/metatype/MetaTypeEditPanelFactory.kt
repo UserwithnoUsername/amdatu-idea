@@ -181,7 +181,7 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
             addDocumentListener(object : com.intellij.openapi.editor.event.DocumentListener {
                 override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent) {
                     val text = document?.text
-                    if (text.isNullOrBlank()) {
+                    if (text == null || text.isBlank()) {
                         propertyChangeListener(attributeDefinition.id, emptyList())
                     } else {
                         propertyChangeListener(attributeDefinition.id, listOf(text))

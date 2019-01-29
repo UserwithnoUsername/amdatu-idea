@@ -37,6 +37,11 @@ class UpdatePackageInfoPackageVersion(val baseliningPackageSuggestion: Baselinin
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        apply()
+    }
+
+    fun apply() {
         baseliningPackageSuggestion.source.setBinaryContent("version ${baseliningPackageSuggestion.suggestedVersion}".toByteArray())
     }
 }
+
