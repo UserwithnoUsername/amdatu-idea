@@ -21,6 +21,7 @@ import aQute.bnd.osgi.Processor;
 import aQute.bnd.repository.osgi.OSGiRepository;
 import aQute.bnd.service.RepositoryPlugin;
 import aQute.service.reporter.Report;
+
 import com.intellij.dvcs.repo.Repository;
 import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.notification.NotificationType;
@@ -41,6 +42,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
+
 import org.amdatu.idea.imp.BndProjectImporter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -198,13 +200,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                         }
                     }
 
-                    for (aQute.bnd.build.Project project : myWorkspace.getCurrentProjects()) {
-                        project.clear();
-                        if (!project.refresh()) {
-                            // refresh anyway
-                            project.forceRefresh();
-                        }
-                    }
+                    myWorkspace.refreshProjects();
 
                     if (!refreshRepositories(indicator)) {
                         myNotificationService.error("Workspace refresh failed, failed to read from one or more repositories.");
@@ -324,7 +320,7 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
 
     public void completeWorkspaceOperation(WorkspaceOperationToken token) {
         workspaceOperationTokens.remove(token);
-        ((WorkspaceOperationTokenImpl)token).close();
+        ((WorkspaceOperationTokenImpl) token).close();
     }
 
     private boolean isWorkspaceOperationRunning() {
@@ -468,6 +464,10 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                 }
             }
 
+            if (!(importProjects || refreshWorkspace)) {
+                return; // nothing to do
+            }
+
             boolean finalRefreshWorkspace = refreshWorkspace;
             boolean finalImportProjects = importProjects;
 
@@ -486,6 +486,10 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                                     if (project != null) {
                                         project.clear();
                                         project.refresh();
+                                    } else {
+                                        // refresh workspace projects as it doesn't know about the module
+                                        myWorkspace.refreshProjects();
+                                        break;
                                     }
                                 } catch (Exception e) {
                                     LOG.error("Failed to refresh project for module " + moduleName, e);
@@ -506,7 +510,6 @@ public class AmdatuIdeaPluginImpl implements AmdatuIdeaPlugin {
                             WorkspaceRefreshedNotifier workspaceRefreshedNotifier =
                                     myProject.getMessageBus().syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED);
                             workspaceRefreshedNotifier.workpaceRefreshed();
-
                         }
                     }
                 }

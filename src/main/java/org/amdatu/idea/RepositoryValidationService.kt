@@ -190,7 +190,7 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
 
 }
 
-private inline fun BndPomRepository.configuration(): PomConfiguration {
+private fun BndPomRepository.configuration(): PomConfiguration {
     return javaClass.getDeclaredField("configuration").let {
         it.isAccessible = true
         val value = it.get(this)
