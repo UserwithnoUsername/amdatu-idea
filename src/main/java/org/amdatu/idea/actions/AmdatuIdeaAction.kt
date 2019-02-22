@@ -12,31 +12,17 @@
  * limitations under the License.
  */
 
-package org.amdatu.idea;
+package org.amdatu.idea.actions
 
-import aQute.bnd.build.Workspace;
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.amdatu.idea.AmdatuIdeaPlugin
 
-public interface AmdatuIdeaPlugin {
+abstract class AmdatuIdeaAction : AnAction() {
 
-    boolean isBndWorkspace();
-
-    /**
-     * Get the bnd workspace for a project
-     *
-     * @return The bnd {@link Workspace} for the project
-     */
-    Workspace getWorkspace();
-
-
-    void refreshWorkspace(boolean refreshExportedContentJars);
-
-    PackageInfoService getPackageInfoService();
-
-    WorkspaceOperationToken startWorkspaceOperation();
-
-    void completeWorkspaceOperation(WorkspaceOperationToken token);
-
-    public interface WorkspaceOperationToken {
-
+    override fun update(e: AnActionEvent) {
+        super.update(e)
+        val amdatuIdeaPlugin = e.project?.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        e.presentation.isVisible = amdatuIdeaPlugin.isBndWorkspace()
     }
 }

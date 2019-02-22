@@ -57,18 +57,20 @@ class BsnCompletionContributor : CompletionContributor() {
             p.load("$DUMMY_PROPERTY_KEY: ${parameters.position.parent.text}", null, null)
 
             val added = Parameters(p[DUMMY_PROPERTY_KEY] as String).keys
-            amdatuIdePlugin.workspace.allProjects
-                    .flatMap {
-                        it.getBuilder(null)
-                                .subBuilders
-                                .filter { !workspaceBundlesWithExportedPackagesOnly || it.exportPackage.isNotEmpty() } // Ignore bundles that don't export anything
-                                .filter { !added.contains(it.bsn) } // Remove already added bundles
-                                .map { "${it.bsn};version=latest" }
+            amdatuIdePlugin.withWorkspace { workspace ->
+                workspace.allProjects
+                        .flatMap {
+                            it.getBuilder(null)
+                                    .subBuilders
+                                    .filter { !workspaceBundlesWithExportedPackagesOnly || it.exportPackage.isNotEmpty() } // Ignore bundles that don't export anything
+                                    .filter { !added.contains(it.bsn) } // Remove already added bundles
+                                    .map { "${it.bsn};version=latest" }
 
-                    }
-                    .forEach {
-                        result.addElement(LookupElementBuilder.create(it))
-                    }
+                        }
+            }.forEach {
+                result.addElement(LookupElementBuilder.create(it))
+            }
+
             getBundles(parameters.position.project).forEach {
                 result.addElement(LookupElementBuilder.create(it))
             }

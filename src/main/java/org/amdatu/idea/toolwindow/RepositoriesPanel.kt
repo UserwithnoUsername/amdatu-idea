@@ -19,11 +19,15 @@ import aQute.bnd.version.Version
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindowAnchor
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.ColoredTreeCellRenderer
+import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.layout.CCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.tree.AbstractTreeModel
+import icons.OsmorcIdeaIcons
 import org.amdatu.idea.AmdatuIdeaPlugin
 import org.amdatu.idea.WorkspaceRefreshedNotifier
 import javax.swing.*
@@ -34,16 +38,31 @@ val LOG = Logger.getInstance(RepositoriesPanel::class.java)
 
 class RepositoriesPanel(private val myProject: Project) {
 
+    init {
+        val toolWindowManager = ToolWindowManager.getInstance(myProject)
+
+        val content = ContentFactory.SERVICE.getInstance().createContent(createRepositoriesPanel(), "Repositories", false)
+        val toolWindow = toolWindowManager.registerToolWindow("amdatu.idea.toolwindow.repositories", false, ToolWindowAnchor.RIGHT, myProject, true)
+        toolWindow.stripeTitle = "Repositories"
+        toolWindow.icon = OsmorcIdeaIcons.Bnd
+        toolWindow.contentManager.addContent(content)
+    }
+
     fun createRepositoriesPanel(): JPanel {
         val searchField = JTextField()
+        val searchButton = JButton("Search")
         val repositoriesTreeModel = RepositoriesTreeModel(myProject, searchField)
         val repositoriesTree = Tree(repositoriesTreeModel)
 
-        searchField.addActionListener { _ ->
-            run {
-                repositoriesTree.updateUI()
-            }
+        searchField.addActionListener {
+            repositoriesTreeModel.refreshRepositories()
+            repositoriesTree.updateUI()
         }
+        searchButton.addActionListener {
+            repositoriesTreeModel.refreshRepositories()
+            repositoriesTree.updateUI()
+        }
+
 
         repositoriesTree.apply {
             isEditable = false
@@ -69,11 +88,12 @@ class RepositoriesPanel(private val myProject: Project) {
 
         })
 
+
         return panel {
             row {
                 searchField(CCFlags.growX, CCFlags.pushX)
                 buttonGroup {
-                    JButton("Search")()
+                    searchButton()
                 }
             }
             row {
@@ -98,13 +118,14 @@ class RepositoriesPanel(private val myProject: Project) {
         }
 
         fun refreshRepositories() {
-            val workspace = myProject.getComponent(AmdatuIdeaPlugin::class.java)?.workspace
-            repositoryPlugins.clear()
-            repoBundlesCache.clear()
-            repositoryPlugins.addAll(workspace
-                    ?.getPlugins(RepositoryPlugin::class.java)
-                    ?.sortedBy { repo -> repo.name }
-                    ?.toMutableList() ?: mutableListOf())
+            myProject.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { workspace ->
+                repositoryPlugins.clear()
+                repoBundlesCache.clear()
+                repositoryPlugins.addAll(workspace
+                        .getPlugins(RepositoryPlugin::class.java)
+                        ?.sortedBy { repo -> repo.name }
+                        ?.toMutableList() ?: mutableListOf())
+            }
         }
 
         override fun getChild(parent: Any?, index: Int): Any {
@@ -161,17 +182,17 @@ class RepositoriesPanel(private val myProject: Project) {
         }
 
         private fun getRepoBundlesList(parent: RepositoryPlugin): List<BsnWithRepoRef> {
-            return repoBundlesCache.computeIfAbsent(parent, { repoPlugin ->
-                        try {
-                            repoPlugin.list(null)
-                                    .map { BsnWithRepoRef(it, repoPlugin) }
-                        } catch (e: Exception) {
-                            LOG.error("Failed to read from repo ${repoPlugin.name}", e)
-                            emptyList()
-                        }
-                    }
-            ).filter { bsnMatchesFilter(it.bsn) }
-                    .sortedWith(compareBy({ it.bsn }))
+            return repoBundlesCache.computeIfAbsent(parent) { repoPlugin ->
+                try {
+                    repoPlugin.list(null)
+                            .map { BsnWithRepoRef(it, repoPlugin) }
+                            .filter { bsnMatchesFilter(it.bsn) }
+                            .sortedWith(compareBy { it.bsn })
+                } catch (e: Exception) {
+                    LOG.error("Failed to read from repo ${repoPlugin.name}", e)
+                    emptyList()
+                }
+            }
         }
 
         private fun bsnMatchesFilter(bsn: String): Boolean {

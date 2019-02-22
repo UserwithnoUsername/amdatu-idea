@@ -21,5 +21,5 @@ public interface WorkspaceRefreshedNotifier {
     Topic<WorkspaceRefreshedNotifier> WORKSPACE_REFRESHED =
                     Topic.create("Workspace refreshed", WorkspaceRefreshedNotifier.class);
 
-    void workpaceRefreshed();
+    void workspaceRefreshed();
 }

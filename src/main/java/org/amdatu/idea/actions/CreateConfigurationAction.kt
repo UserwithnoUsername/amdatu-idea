@@ -15,7 +15,6 @@ package org.amdatu.idea.actions
 
 import aQute.bnd.build.Run
 import aQute.bnd.osgi.Jar
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.diagnostic.Logger
@@ -42,7 +41,6 @@ import java.awt.Dimension
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.RuntimeException
 import java.util.*
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
@@ -51,9 +49,11 @@ import javax.swing.event.DocumentEvent
 
 val LOG = Logger.getInstance(CreateConfigurationAction::class.java)
 
-class CreateConfigurationAction : AnAction() {
+class CreateConfigurationAction : AmdatuIdeaAction() {
 
     override fun update(e: AnActionEvent) {
+        super.update(e)
+
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE)
 
         val isBndrun = virtualFile?.name?.endsWith(AmdatuIdeaConstants.BND_RUN_EXT) ?: false
@@ -67,7 +67,7 @@ class CreateConfigurationAction : AnAction() {
         val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
 
 
-        val launcher = Run.createRun(amdatuIdeaPlugin.workspace, File(virtualFile.path)).projectLauncher
+        val launcher = amdatuIdeaPlugin.withWorkspace { workspace -> Run.createRun(workspace, File(virtualFile.path)).projectLauncher }
 
         val metaDataList = launcher.project.runbundles
                 .filter { runBundle -> runBundle.file.name.endsWith(".jar") }
@@ -221,13 +221,13 @@ class EditStep(private val myModel: CreateConfigurationTemplateModel) : WizardSt
 
         val ocdAdapter = FelixOCDAdapter(ocd)
         myModel.templateParamsMap = HashMap()
-        return MetaTypeEditPanelFactory(myModel.project).create(ocdAdapter, { id: String, value: List<Any> ->
+        return MetaTypeEditPanelFactory(myModel.project).create(ocdAdapter) { id: String, value: List<Any> ->
             if (value.isEmpty()) {
                 myModel.templateParamsMap!!.remove(id)
             } else {
                 myModel.templateParamsMap!![id] = value
             }
-        })
+        }
     }
 
 }

@@ -24,6 +24,7 @@ import com.intellij.ui.wizard.WizardModel
 import com.intellij.ui.wizard.WizardNavigationState
 import com.intellij.ui.wizard.WizardStep
 import org.amdatu.idea.AmdatuIdeaPlugin
+import org.amdatu.idea.isBndWorkspaceProject
 import org.amdatu.idea.templating.RepoTemplateLoader
 import org.amdatu.idea.templating.applyWorkspaceTemplate
 import org.amdatu.idea.ui.metatype.MetaTypeEditPanelFactory
@@ -32,10 +33,17 @@ import org.bndtools.templating.Template
 import javax.swing.JComponent
 import javax.swing.JPanel
 
+/**
+ * This action does not extend the AmdatuIdeaAction so it's possible to create a configuration project in a project that
+ * doesn't have one yet.
+ */
 class UpdateConfigurationProjectAction : AnAction() {
+
     override fun actionPerformed(e: AnActionEvent) {
 
         val project = e.project ?: return
+
+        val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
 
         val templateLoader = RepoTemplateLoader()
         val templates = templateLoader.findTemplates(project, "workspace")
@@ -44,8 +52,21 @@ class UpdateConfigurationProjectAction : AnAction() {
         val wizardDialog = WizardDialog<TemplateWizardModel>(project, false, wizardModel)
         if (wizardDialog.showAndGet()) {
             val template = wizardModel.template ?: return
-            applyWorkspaceTemplate(project, template)
-            project.getComponent(AmdatuIdeaPlugin::class.java)?.refreshWorkspace(true)
+
+            if (project.isBndWorkspaceProject()) {
+                val enableSync = amdatuIdeaPlugin.pauseWorkspaceModelSync("Update configuration project")
+                try {
+                    applyWorkspaceTemplate(project, template)
+                } finally {
+                    if (enableSync)
+                        amdatuIdeaPlugin.resumeWorkspaceModelSync("Update configuration project")
+                }
+            } else {
+                // No bnd workspace yet, create one and initialize the plugin
+                applyWorkspaceTemplate(project, template)
+                amdatuIdeaPlugin.initialize()
+            }
+
         }
     }
 }
@@ -109,9 +130,7 @@ class SelectTemplateStep(
             state.NEXT.isEnabled = hasParams
             state.FINISH.isEnabled = !hasParams
         }
-
     }
-
 }
 
 class TemplateParamsStep(private var model: TemplateWizardModel) : WizardStep<TemplateWizardModel>() {
@@ -127,13 +146,13 @@ class TemplateParamsStep(private var model: TemplateWizardModel) : WizardStep<Te
         val template = model.template ?: throw IllegalStateException("Template should not be null")
 
         container.add(
-                MetaTypeEditPanelFactory(model.project).create(template.metadata, { id: String, value: List<Any> ->
+                MetaTypeEditPanelFactory(model.project).create(template.metadata) { id: String, value: List<Any> ->
                     if (value.isEmpty()) {
                         model.templateParamsMap.remove(id)
                     } else {
                         model.templateParamsMap[id] = value
                     }
-                })
+                }
         )
         container.revalidate()
         container.repaint()

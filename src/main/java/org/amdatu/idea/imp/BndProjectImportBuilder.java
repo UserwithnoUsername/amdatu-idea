@@ -15,23 +15,23 @@
  */
 package org.amdatu.idea.imp;
 
-import aQute.bnd.build.Project;
+import javax.swing.*;
+import java.util.Collections;
+import java.util.List;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.ModifiableModuleModel;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
-import com.intellij.openapi.startup.StartupManager;
 import com.intellij.packaging.artifacts.ModifiableArtifactModel;
 import com.intellij.projectImport.ProjectImportBuilder;
+
+import aQute.bnd.build.Project;
 import icons.OsmorcIdeaIcons;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
-import java.util.Collections;
-import java.util.List;
 
 public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
     private boolean myOpenProjectSettings = false;
@@ -94,8 +94,15 @@ public class BndProjectImportBuilder extends ProjectImportBuilder<Project> {
 
         final BndProjectImporter importer = new BndProjectImporter(project, Collections.emptyList());
         Module rootModule = importer.createRootModule(model);
-        importer.setupProject();
-        StartupManager.getInstance(project).registerPostStartupActivity(() -> project.getComponent(AmdatuIdeaPlugin.class).getWorkspace());
+
+        AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
+
+        amdatuIdeaPlugin.initialize();
+        amdatuIdeaPlugin.withWorkspace(workspace -> {
+            importer.setupProject(workspace);
+            return null;
+        });
+
         return Collections.singletonList(rootModule);
     }
 

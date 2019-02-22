@@ -30,7 +30,6 @@ import com.intellij.compiler.impl.CompilerErrorTreeView;
 import com.intellij.ide.errorTreeView.ErrorTreeElement;
 import com.intellij.ide.errorTreeView.ErrorViewStructure;
 import com.intellij.ide.errorTreeView.GroupingElement;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -41,10 +40,11 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.MessageView;
 
-public class FixBaseliningErrorsAction extends AnAction {
+public class FixBaseliningErrorsAction extends AmdatuIdeaAction {
 
     @Override
     public void update(AnActionEvent e) {
+        super.update(e);
         List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
         e.getPresentation().setEnabled(suggestions.size() > 0);
         e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
@@ -54,7 +54,7 @@ public class FixBaseliningErrorsAction extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         Project currentProject = e.getProject();
         AmdatuIdeaPlugin plugin = currentProject.getComponent(AmdatuIdeaPlugin.class);
-        AmdatuIdeaPlugin.WorkspaceOperationToken token = plugin.startWorkspaceOperation();
+        boolean enableModuleUpdater = plugin.pauseWorkspaceModelSync("Fix baselining errors");
         AtomicInteger count = new AtomicInteger();
         List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
         try {
@@ -78,7 +78,9 @@ public class FixBaseliningErrorsAction extends AnAction {
                 }
             });
         } finally {
-            plugin.completeWorkspaceOperation(token);
+            if (enableModuleUpdater) {
+                plugin.resumeWorkspaceModelSync("Fix baselining errors");
+            }
             Messages.showMessageDialog(currentProject, "Baselining  " + suggestions.size() + " errors found and " + count + " fixed", "Fix baselining errors", Messages.getInformationIcon());
         }
     }

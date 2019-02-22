@@ -28,10 +28,9 @@ enum class PackageStatus { EXPORTED, PRIVATE, NOT_INCLUDED }
 
 data class PackageInfo(val qualifiedName: String, val state: PackageStatus)
 
-class PackageInfoService(project: Project, amdatuIdeaPlugin: AmdatuIdeaPlugin) {
+class PackageInfoService(project: Project) {
 
     private val myProject: Project = project
-    private val myAmdatuIdeaPlugin: AmdatuIdeaPlugin = amdatuIdeaPlugin
     private val myPackageStatusMap: MutableMap<PsiDirectory, PackageInfo> = mutableMapOf()
 
     init {
@@ -64,7 +63,7 @@ class PackageInfoService(project: Project, amdatuIdeaPlugin: AmdatuIdeaPlugin) {
                     continue
                 }
 
-                val bndProject = myAmdatuIdeaPlugin.workspace.getProject(module.name) ?: continue
+                val bndProject = myProject.getComponent(AmdatuIdeaPlugin::class.java).withWorkspace { workspace -> workspace.getProject(module.name) }  ?: continue
 
                 val exportPackageInstructions = Instructions()
                 val privatePackageInstructions = Instructions()

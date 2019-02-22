@@ -40,17 +40,18 @@ class PsiUtil {
 
         fun getBndBuilderContextForPsiFile(psiFile: PsiFile): BndBuilderContext? {
             val module = getModuleForPsiFile(psiFile) ?: return null
-            val workspace = getBndWorkspace(psiFile) ?: return null
+            return getAmdatuIdePlugin(psiFile)?.withWorkspace { workspace ->
 
-            val bndProject = getBndProject(workspace, module) ?: return null
+                val bndProject = getBndProject(workspace, module) ?: return@withWorkspace null
 
-            val builder: Builder = (if (bndProject.get(Constants.SUB) == null || psiFile.name == "bnd.bnd") {
-                bndProject.getBuilder(null)
-            } else {
-                bndProject.getSubBuilder(File(psiFile.virtualFile.path))
-            }) ?: return null
+                val builder: Builder = (if (bndProject.get(Constants.SUB) == null || psiFile.name == "bnd.bnd") {
+                    bndProject.getBuilder(null)
+                } else {
+                    bndProject.getSubBuilder(File(psiFile.virtualFile.path))
+                }) ?: return@withWorkspace null
 
-            return BndBuilderContext(psiFile, module, workspace, bndProject, builder)
+                BndBuilderContext(psiFile, module, workspace, bndProject, builder)
+            }
         }
 
         private fun getBndProject(workspace: Workspace, module: Module): Project? {
@@ -61,14 +62,6 @@ class PsiUtil {
             return project
         }
 
-        private fun getBndWorkspace(psiFile: PsiFile): Workspace? {
-            val amdatuIdePlugin = getAmdatuIdePlugin(psiFile) ?: return null
-            val workspace = amdatuIdePlugin.workspace
-            if (workspace == null) {
-                logger.debug({ "Failed to get module for PsiFile: $psiFile" })
-            }
-            return workspace
-        }
 
         private fun getModuleForPsiFile(psiFile: PsiFile): Module? {
             val module = ProjectFileIndex.getInstance(psiFile.project).getModuleForFile(psiFile.virtualFile)

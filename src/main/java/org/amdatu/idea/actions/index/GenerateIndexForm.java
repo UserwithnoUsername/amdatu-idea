@@ -14,21 +14,19 @@
 
 package org.amdatu.idea.actions.index;
 
-import com.intellij.ui.CollectionListModel;
-import com.intellij.ui.ColoredListCellRenderer;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JTextField;
+import javax.swing.*;
 import java.io.File;
 import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+
+import com.intellij.ui.CollectionListModel;
+import com.intellij.ui.ColoredListCellRenderer;
 
 public class GenerateIndexForm {
     private JTextField myBaseDir;
     private JTextField myResourcePattern;
-    private JList myResourceList;
+    private JList<File> myResourceList;
     private JTextField myPrefix;
     private JRadioButton myPrettyPrintedXmlRadioButton;
     private JRadioButton myCompressedGZipRadioButton;
@@ -40,7 +38,6 @@ public class GenerateIndexForm {
         myBaseDir.setText(baseDir.getAbsolutePath());
         myResourcePattern.setText("**.jar");
 
-        // TODO: Don't support editing for now, just generate an index for the selected folder will do for most cases
         myBaseDir.setEditable(false);
         myResourcePattern.setEditable(false);
 

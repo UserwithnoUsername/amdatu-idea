@@ -14,7 +14,6 @@
 
 package org.amdatu.idea.actions
 
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -22,24 +21,21 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.roots.ProjectFileIndex
 import org.amdatu.idea.AmdatuIdeaPlugin
 
-class ExportExecutableJar : AnAction() {
+class ExportExecutableJar : AmdatuIdeaAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val project = e.project ?: return
-        val workspace = project.getComponent(AmdatuIdeaPlugin::class.java)?.workspace ?: return
+        project.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { workspace ->
+            val moduleForFile = ProjectFileIndex.getInstance(project).getModuleForFile(virtualFile) ?: return@withWorkspace
 
-        val moduleForFile = ProjectFileIndex.getInstance(project).getModuleForFile(virtualFile) ?: return
+            val bndProject = workspace.getProject(moduleForFile.name)
 
-        val bndProject = workspace.getProject(moduleForFile.name)
+            val targetFile = FileChooserFactory.getInstance()
+                    .createSaveFileDialog(FileSaverDescriptor("Export executable jar", "todo"), project)
+                    .save(null, virtualFile.nameWithoutExtension + ".jar") ?: return@withWorkspace
 
-        val targetFile = FileChooserFactory.getInstance()
-                .createSaveFileDialog(FileSaverDescriptor("Export executable jar", "todo"), project)
-                .save(null, virtualFile.nameWithoutExtension + ".jar") ?: return
-
-        bndProject.export(virtualFile.path, true, targetFile.file)
-
-
-
+            bndProject.export(virtualFile.path, true, targetFile.file)
+        }
     }
 }

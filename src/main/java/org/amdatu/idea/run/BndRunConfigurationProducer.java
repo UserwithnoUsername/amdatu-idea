@@ -13,14 +13,21 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import aQute.bnd.osgi.Constants;
+import org.amdatu.idea.AmdatuIdeaConstants;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.runner.RunWith;
+
 import com.intellij.execution.JavaRunConfigurationExtensionManager;
 import com.intellij.execution.Location;
 import com.intellij.execution.actions.ConfigurationContext;
+import com.intellij.execution.actions.ConfigurationFromContext;
 import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,16 +36,9 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.util.PsiTreeUtil;
+
+import aQute.bnd.osgi.Constants;
 import junit.framework.TestCase;
-import org.amdatu.idea.AmdatuIdeaConstants;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorFile;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.runner.RunWith;
-
-import java.util.Collection;
-
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_EXT;
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_RUN_EXT;
 
@@ -60,28 +60,32 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         Location<?> location = context.getLocation();
         PsiElement psiLocation = context.getPsiLocation();
         Module module = context.getModule();
-        VirtualFile file = null;
-        if (location.getVirtualFile() != null) {
-            file = location.getVirtualFile();
-        } else if (isTestModule(module)) {
-            Collection<BundleDescriptorFile> bundleDescriptorFiles = PsiTreeUtil.findChildrenOfType(location.getPsiElement(), BundleDescriptorFile.class);
-            file = bundleDescriptorFiles.stream()
-                    .filter(bd -> bd.getName().equals("bnd.bnd"))
-                    .findFirst()
-                    .map(BundleDescriptorFile::getVirtualFile)
-                    .orElse(null);
-        }
 
-        if (file == null) {
+        String moduleName = module.getName();
+        VirtualFile projectDir = ProjectUtil.guessProjectDir(context.getProject());
+        if (projectDir == null) {
             return false;
         }
 
-        String moduleName = module.getName();
-
-        VirtualFile moduleDir = context.getProject().getBaseDir().findChild(moduleName);
+        VirtualFile moduleDir = projectDir.findChild(moduleName);
         if (moduleDir == null) {
             return false;
         }
+
+        VirtualFile file = location.getVirtualFile();
+        if ((file == null || file.isDirectory()) && isTestModule(module)) {
+            // For test projects try to find the bnd.bnd file in case there is no file or it's a folder.
+            // This can happen for example when the module is right clicked from the project tree.
+            // Only for test projects as "normal" projects can't (or should not run from bnd.bnd) but use a bndrun
+            file = moduleDir.findChild("bnd.bnd");
+        }
+
+        if (file == null || file.isDirectory()) {
+            // No file so
+            return false;
+        }
+
+
         String modulePath = moduleDir.getPath();
         configuration.getOptions().setWorkingDirectory(modulePath);
         configuration.getOptions().setPassParentEnvs(true);
@@ -196,29 +200,38 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
     public boolean isConfigurationFromContext(BndRunConfigurationBase configuration, ConfigurationContext context) {
         if (getConfigurationFactory() == configuration.getFactory()) {
             Location<?> location = context.getLocation();
-            if (location != null) {
-                BndRunConfigurationOptions configurationOptions = configuration.getOptions();
-                if ((configuration instanceof BndRunConfigurationBase.Test) && configurationOptions.getTest() != null) {
-                    PsiClass psiClass = findTestClass(context.getPsiLocation());
-                    if (psiClass != null) {
-                        String test = psiClass.getQualifiedName();
-
-                        PsiMethod psiMethod = findTestMethod(context.getPsiLocation());
-                        if (psiMethod != null) {
-                            test = test + ":" + psiMethod.getName();
-                        }
-
-                        return configurationOptions.getTest().equals(test);
-                    }
+            if (location == null) {
+                return false;
+            }
+            BndRunConfigurationOptions configurationOptions = configuration.getOptions();
+            if ((configuration instanceof BndRunConfigurationBase.Test) && configurationOptions.getTest() != null) {
+                PsiClass psiClass = findTestClass(context.getPsiLocation());
+                if (psiClass == null) {
                     return false;
                 }
 
-                VirtualFile file = location.getVirtualFile();
-                return file != null && !file.isDirectory() && FileUtil.pathsEqual(file.getPath(), configurationOptions.getBndRunFile());
+                String test = psiClass.getQualifiedName();
+
+                PsiMethod psiMethod = findTestMethod(context.getPsiLocation());
+                if (psiMethod != null) {
+                    test = test + ":" + psiMethod.getName();
+                }
+
+                return configurationOptions.getTest().equals(test);
             }
+
+            VirtualFile file = location.getVirtualFile();
+            return file != null && !file.isDirectory() && FileUtil.pathsEqual(file.getPath(), configurationOptions.getBndRunFile());
         }
 
         return false;
+    }
+
+    @Override
+    public boolean shouldReplace(@NotNull ConfigurationFromContext self, @NotNull ConfigurationFromContext other) {
+        // Replace plain JUnit configurations when there is a bnd BndRunConfigurationBase.Test as the JUnit
+        // configuration won't work in that case.
+        return (self.getConfiguration() instanceof BndRunConfigurationBase.Test) && other.getConfigurationType().getId().equals("JUnit");
     }
 
     public static class Launch extends BndRunConfigurationProducer {
@@ -245,7 +258,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
         AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
         try {
-            aQute.bnd.build.Project project = amdatuIdeaPlugin.getWorkspace().getProject(module.getName());
+            aQute.bnd.build.Project project = amdatuIdeaPlugin.withWorkspace(ws -> ws.getProject(module.getName()));
             return project.getProperties().containsKey(Constants.TESTCASES);
         } catch (Exception e) {
             LOG.warn("isTestModule check failed for module: " + module.getName(), e);

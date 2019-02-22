@@ -13,7 +13,16 @@
  */
 package org.amdatu.idea.templating;
 
-import aQute.bnd.build.Workspace;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.imp.BndProjectImporter;
+import org.bndtools.templating.Template;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.intellij.ide.util.projectWizard.JavaModuleBuilder;
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
@@ -27,16 +36,6 @@ import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.util.Key;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.imp.BndProjectImporter;
-import org.bndtools.templating.Template;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
 
@@ -107,14 +106,17 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
             ModuleRootModificationUtil.setSdkInherited(module);
         }
         else {
-            Workspace workspace = project.getComponent(AmdatuIdeaPlugin.class).getWorkspace();
-            workspace.refresh();
-            try {
-                new BndProjectImporter(project, workspace.getAllProjects()).resolve(true);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
+            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
+            amdatuIdeaPlugin.withWorkspace(workspace -> {
+                try {
+                    workspace.refresh();
+                    new BndProjectImporter(project, workspace.getAllProjects()).resolve(true);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
         }
 
         return module;
