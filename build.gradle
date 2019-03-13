@@ -39,6 +39,11 @@ repositories {
     mavenCentral()
 }
 
+
+// When updating the bnd version used make sure to
+// - Update the version in the JPS Plugin
+// - Update the org.bndtools.templating jar in lib (as this embeds part of bnd, using incompatible versions can cause issues)
+
 dependencies {
     compile "biz.aQute.bnd:biz.aQute.bnd:4.1.0",
             "eu.maxschuster:dataurl:2.0.0",
