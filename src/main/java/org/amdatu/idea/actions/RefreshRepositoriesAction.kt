@@ -14,36 +14,28 @@
 
 package org.amdatu.idea.actions
 
-import aQute.bnd.repository.maven.provider.MavenBndRepository
 import aQute.bnd.service.Refreshable
 import aQute.bnd.service.RepositoryPlugin
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.amdatu.idea.AmdatuIdeaPlugin
 
-class RefreshRepositoriesAction : AnAction() {
+class RefreshRepositoriesAction : AmdatuIdeaAction() {
 
     override fun actionPerformed(event: AnActionEvent) {
         val amdatuIdeaPlugin = event.project?.getComponent(AmdatuIdeaPlugin::class.java) ?: return
-        val workspace = amdatuIdeaPlugin.workspace ?: return
-        val plugins: List<RepositoryPlugin> = workspace.getPlugins(RepositoryPlugin::class.java)
+        amdatuIdeaPlugin.withWorkspace { workspace ->
 
-        plugins.filter { it is Refreshable }
-                .forEach { plugin ->
-                    try {
-                        val refreshablePlugin = plugin as Refreshable
-                        refreshablePlugin.refresh()
-                    } catch (e: Exception) {
-                        if (plugin is MavenBndRepository && e is NullPointerException) {
-                            // This repo doesn't init until it's used and throws an NPE on refresh
-                            // TODO: Report as BND issue (if not already fixed in next)
-                            LOG.info("Failed to refresh repository, '${plugin.name}'", e)
-                        } else {
+            workspace.getPlugins(RepositoryPlugin::class.java)
+                    .filter { it is Refreshable }
+                    .forEach { plugin ->
+                        try {
+                            (plugin as Refreshable).refresh()
+                        } catch (e: Exception) {
                             LOG.error("Failed to refresh repository, '${plugin.name}'", e)
                         }
                     }
-                }
-        amdatuIdeaPlugin.refreshWorkspace(true)
+        }
+        amdatuIdeaPlugin.refreshWorkspace()
     }
 
 

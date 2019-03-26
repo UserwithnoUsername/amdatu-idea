@@ -13,9 +13,13 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import aQute.bnd.build.ProjectLauncher;
-import aQute.bnd.build.Run;
-import aQute.bnd.build.Workspace;
+import java.io.File;
+import java.util.Map;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.BndExtensionsKt;
+import org.jetbrains.annotations.NotNull;
+
 import com.intellij.debugger.ui.HotSwapUI;
 import com.intellij.debugger.ui.HotSwapVetoableListener;
 import com.intellij.execution.CantRunException;
@@ -40,13 +44,8 @@ import com.intellij.openapi.util.io.FileSystemUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
 
-import org.amdatu.idea.AmdatuIdeaNotificationService;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
-import java.util.Map;
-
+import aQute.bnd.build.ProjectLauncher;
+import aQute.bnd.build.Run;
 import static com.intellij.openapi.util.Pair.pair;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
@@ -89,27 +88,29 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
 
         try {
             AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getComponent(AmdatuIdeaPlugin.class);
-            Workspace workspace = amdatuIdeaPlugin.getWorkspace();
+            ProjectLauncher launcher = amdatuIdeaPlugin.withWorkspace(workspace -> {
+                try {
+                    Run run = Run.createRun(workspace, runFile);
+                    if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
+                        BndLaunchUtil.addBootDelegation(run, "com.intellij.rt.debugger.agent");
+                    }
 
-            Run run = Run.createRun(workspace, runFile);
-            if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
-                BndLaunchUtil.addBootDelegation(run, "com.intellij.rt.debugger.agent");
-            }
+                    return run.getProjectLauncher();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-            ProjectLauncher launcher = run.getProjectLauncher();
             launcher.prepare();
 
-            if (myProject.getComponent(AmdatuIdeaNotificationService.class).report(launcher.getProject(), false)) {
+            if (!BndExtensionsKt.isValid(launcher.getProject(), true)) {
+                amdatuIdeaPlugin.report(launcher.getProject(), false);
                 throw new CantRunException(
-                                message("bnd.test.cannot.run", "project has errors"));
+                        message("bnd.test.cannot.run", "project has errors"));
             }
 
             myLauncher = launcher;
-        }
-        catch (CantRunException e) {
-            throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.info(e);
             throw new CantRunException(message("bnd.run.configuration.cannot.run", runFile, BndLaunchUtil.message(e)));
         }
@@ -148,9 +149,8 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
             try {
                 myLauncher.update();
                 myNotifications.createNotification(message("bnd.run.reloaded.text"), NotificationType.INFORMATION)
-                                .notify(myProject);
-            }
-            catch (Exception e) {
+                        .notify(myProject);
+            } catch (Exception e) {
                 LOG.error(e);
             }
         }
@@ -162,7 +162,7 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         for (String bundle : myLauncher.getRunBundles()) {
             FileAttributes attributes = FileSystemUtil.getAttributes(bundle);
             Pair<Long, Long> current =
-                            attributes != null ? pair(attributes.lastModified, attributes.length) : MISSING_BUNDLE;
+                    attributes != null ? pair(attributes.lastModified, attributes.length) : MISSING_BUNDLE;
             if (!current.equals(myBundleStamps.get(bundle))) {
                 myBundleStamps.put(bundle, current);
                 changed = true;
@@ -181,3 +181,4 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         return false;
     }
 }
+

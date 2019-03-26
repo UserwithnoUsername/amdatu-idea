@@ -24,9 +24,8 @@ val LOG = Logger.getInstance("org.amdatu.idea.RepoUtil")
 fun getBundles(project: Project): Set<String> {
     val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return emptySet()
 
-    val repositories = amdatuIdePlugin.workspace?.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
-
-    return repositories
+    return amdatuIdePlugin
+            .withWorkspace { workspace -> workspace.getPlugins(RepositoryPlugin::class.java) }
             .flatMap { it.list(null) }
             .toSortedSet()
 
@@ -35,15 +34,19 @@ fun getBundles(project: Project): Set<String> {
 fun getBundlesOnlyAvailableInBaselineRepo(project: Project): Set<String> {
     val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return emptySet()
 
-    val workspace = amdatuIdePlugin.workspace ?: return emptySet()
+    return amdatuIdePlugin.withWorkspace { workspace ->
+        val baselineRepoName = workspace.get(Constants.BASELINEREPO)
 
-    val baselineRepoName = workspace.get(Constants.BASELINEREPO) ?: return emptySet() // no baseline repo
+        if (baselineRepoName == null) {
+            emptySet()
+        } else {
+            workspace
+                    .getPlugins(RepositoryPlugin::class.java)
+                    .filter { repositoryPlugin -> repositoryPlugin.name == baselineRepoName }
+                    .flatMap { repositoryPlugin -> repositoryPlugin.list(null) }
+                    .filter { bsn -> workspace.getProject(bsn) == null }
+                    .toSet()
 
-    val repositories = workspace.getPlugins(RepositoryPlugin::class.java) ?: return emptySet()
-
-    return repositories
-            .filter { it.name == baselineRepoName }
-            .flatMap { it.list(null) }
-            .filter { workspace.getProject(it) == null }
-            .toSet()
+        }
+    }
 }

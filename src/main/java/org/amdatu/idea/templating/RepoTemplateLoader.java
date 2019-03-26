@@ -29,6 +29,7 @@ import org.bndtools.templating.Template;
 import org.bndtools.templating.TemplateEngine;
 import org.bndtools.templating.engine.mustache.MustacheTemplateEngine;
 import org.bndtools.templating.engine.st.StringTemplateEngine;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.resource.Namespace;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
@@ -49,17 +50,22 @@ public class RepoTemplateLoader {
     private StringTemplateEngine myStringTemplateEngine = new StringTemplateEngine();
 
     public List<Template> findTemplates(Project project, String templateType) {
-
-        Workspace workspace = null;
         if (project != null) {
             AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
-            workspace = amdatuIdeaPlugin.getWorkspace();
-        }
-
-        try {
-            if (workspace == null) {
-                workspace = Workspace.createDefaultWorkspace();
+            if (amdatuIdeaPlugin.isBndWorkspace()) {
+                return amdatuIdeaPlugin.withWorkspace(workspace -> doLoadTemplates(templateType, workspace));
             }
+        }
+        try {
+            return doLoadTemplates(templateType, Workspace.createDefaultWorkspace());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private List<Template> doLoadTemplates(String templateType, Workspace workspace) {
+        try {
 
             List<Repository> repositories = workspace.getPlugins(Repository.class);
 

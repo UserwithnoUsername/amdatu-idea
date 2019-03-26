@@ -14,8 +14,22 @@
 
 package org.amdatu.idea.lang.bundledescriptor.completion;
 
-import aQute.bnd.build.Workspace;
-import com.intellij.codeInsight.completion.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.amdatu.idea.AmdatuIdeaConstants;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType;
+import org.amdatu.idea.lang.bundledescriptor.psi.Header;
+import org.jetbrains.annotations.NotNull;
+
+import com.intellij.codeInsight.completion.CompletionContributor;
+import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionProvider;
+import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionType;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -24,16 +38,6 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
-import org.amdatu.idea.AmdatuIdeaConstants;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType;
-import org.amdatu.idea.lang.bundledescriptor.psi.Header;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static org.amdatu.idea.AmdatuIdeaConstants.BLUEPRINT_FEATURE;
@@ -96,18 +100,20 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
                     prevSibling = prevSibling.getPrevSibling();
                 }
 
-                Workspace workspace = amdatuIdeaPlugin.getWorkspace();
-                aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
-                List<String> addedBndModel = COMMA_PATTERN.splitAsStream(bndProject.get(instruction + ".*", ""))
-                        .map(String::trim)
-                        .collect(Collectors.toList());
+                amdatuIdeaPlugin.withWorkspace(workspace -> {
+                    aQute.bnd.build.Project bndProject = workspace.getProject(module.getName());
+                    List<String> addedBndModel = COMMA_PATTERN.splitAsStream(bndProject.get(instruction + ".*", ""))
+                            .map(String::trim)
+                            .collect(Collectors.toList());
 
-                //
-                COMMA_PATTERN.splitAsStream(bndProject.getProperty(BLUEPRINT_FEATURE + ".*", ""))
-                        .map(String::trim)
-                        .filter(feature -> !addedBndModel.contains(feature))
-                        .filter(feature -> !addedCurrentHeader.contains(feature))
-                        .forEach(feature -> resultSet.addElement(LookupElementBuilder.create(feature)));
+                    //
+                    COMMA_PATTERN.splitAsStream(bndProject.getProperty(BLUEPRINT_FEATURE + ".*", ""))
+                            .map(String::trim)
+                            .filter(feature -> !addedBndModel.contains(feature))
+                            .filter(feature -> !addedCurrentHeader.contains(feature))
+                            .forEach(feature -> resultSet.addElement(LookupElementBuilder.create(feature)));
+                    return null;
+                });
             } catch (Exception e) {
                 LOG.warn("Blueprint feature completion failed", e);
             }

@@ -15,23 +15,23 @@
 package org.amdatu.idea.actions.index
 
 import aQute.bnd.osgi.repository.SimpleIndexer
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import org.amdatu.idea.AmdatuIdeaNotificationService
 import org.amdatu.idea.AmdatuIdeaPlugin
+import org.amdatu.idea.actions.AmdatuIdeaAction
 import java.io.File
 
 
-class GenerateIndexAction : AnAction() {
+class GenerateIndexAction : AmdatuIdeaAction() {
 
     override fun update(e: AnActionEvent) {
-        val isDir = e.getData(CommonDataKeys.VIRTUAL_FILE)?.isDirectory ?: false
+        super.update(e)
 
+        val isDir = e.getData(CommonDataKeys.VIRTUAL_FILE)?.isDirectory ?: false
         e.presentation.isEnabled = isDir
     }
 
@@ -48,22 +48,13 @@ class GenerateIndexAction : AnAction() {
     private fun generateIndex(project: Project, toIndex: Set<File>, indexFile: File, compressed: Boolean) =
             object : Backgroundable(project, "Generate index", true) {
                 override fun run(progressIndicator: ProgressIndicator) {
-                    val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java)
-                    val workspace = amdatuIdePlugin?.workspace
-
-                    if (workspace == null) {
-                        project.getComponent(AmdatuIdeaNotificationService::class.java)
-                                .error("Failed to generate repostiory index, bnd workspace not available")
-                        return
-                    }
-
                     SimpleIndexer()
                             .files(toIndex)
                             .base(indexFile.parentFile.toURI())
                             .compress(compressed)
                             .index(indexFile)
 
-                    project.getComponent(AmdatuIdeaNotificationService::class.java)
+                    project.getComponent(AmdatuIdeaPlugin::class.java)
                             .info("Generated repository index: " + indexFile.toString())
                     LocalFileSystem.getInstance().refreshIoFiles(listOf(indexFile.parentFile), false, true, null)
                 }

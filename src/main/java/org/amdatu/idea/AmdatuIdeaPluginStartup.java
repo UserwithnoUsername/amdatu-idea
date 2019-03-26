@@ -18,8 +18,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import org.amdatu.idea.actions.CheckForBlueprintUpdate;
 import org.amdatu.idea.toolwindow.BundleInfoToolWindow;
+import org.amdatu.idea.toolwindow.RepositoriesPanel;
 import org.jetbrains.annotations.NotNull;
 
 import com.intellij.diagnostic.errordialog.PluginConflictDialog;
@@ -30,7 +30,6 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 
-import aQute.bnd.build.Workspace;
 import static com.intellij.openapi.extensions.PluginId.getId;
 
 public class AmdatuIdeaPluginStartup implements StartupActivity {
@@ -45,15 +44,18 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
         String imlPath = rootDir + File.separator + project.getName() + ModuleFileType.DOT_DEFAULT_EXTENSION;
 
         if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
-            Workspace workspace = amdatuIdeaPlugin.getWorkspace();
+            amdatuIdeaPlugin.initialize();
 
-            new BundleInfoToolWindow(project, workspace);
+            new BundleInfoToolWindow(project);
+            new RepositoriesPanel(project);
 
-            new CheckForBlueprintUpdate().checkForUpdate(project);
+            // TODO: Fix update check
+//            new CheckForBlueprintUpdate().checkForUpdate(project);
 
         } else if (amdatuIdeaPlugin.isBndWorkspace()) {
             // TODO: Import action link
-            project.getComponent(AmdatuIdeaNotificationService.class).info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import");
+            amdatuIdeaPlugin.info("Bnd workspace detected, use 'New -> Project from Existing Sources' to import", null);
+
         }
     }
 

@@ -13,11 +13,21 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectLauncher;
-import aQute.bnd.build.ProjectTester;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.service.EclipseJUnitTester;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.BndExtensionsKt;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.intellij.coverage.CoverageExecutor;
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.ExecutionException;
@@ -55,21 +65,10 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
 
-import org.amdatu.idea.AmdatuIdeaNotificationService;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectLauncher;
+import aQute.bnd.build.ProjectTester;
+import aQute.bnd.service.EclipseJUnitTester;
 import static com.intellij.openapi.util.Pair.pair;
 import static com.intellij.util.io.URLUtil.SCHEME_SEPARATOR;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
@@ -83,7 +82,7 @@ public class BndTestState extends JavaCommandLineState {
     private ServerSocket mySocket;
 
     BndTestState(@NotNull ExecutionEnvironment environment,
-                    @NotNull BndRunConfigurationBase.Test configuration) {
+                 @NotNull BndRunConfigurationBase.Test configuration) {
         super(environment);
         myConfiguration = configuration;
     }
@@ -92,10 +91,11 @@ public class BndTestState extends JavaCommandLineState {
     protected JavaParameters createJavaParameters() throws ExecutionException {
         try {
             AmdatuIdeaPlugin amdatuIdeaPlugin = myConfiguration.getProject().getComponent(AmdatuIdeaPlugin.class);
-            Workspace workspace = amdatuIdeaPlugin.getWorkspace();
-
             BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
-            Project project = workspace.getProject(configurationOptions.getModuleName());
+
+            Project project = amdatuIdeaPlugin.withWorkspace(workspace -> {
+                return workspace.getProject(configurationOptions.getModuleName());
+            });
 
             if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
                 BndLaunchUtil.addBootDelegation(project, "com.intellij.rt.debugger.agent");
@@ -108,15 +108,14 @@ public class BndTestState extends JavaCommandLineState {
                 projectTester.addTest(configurationOptions.getTest());
             }
 
-            // TODO: Reporting warnings always seems to cause a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
-            if (myConfiguration.getProject().getComponent(AmdatuIdeaNotificationService.class).report(project, false)) {
-                throw new CantRunException(
-                                message("bnd.test.cannot.run", "project has errors"));
+            // NOTE: Warnings always seems to contain a warning "No translation found for macro: classes;CONCRETE;NAMED;*Test" (bnd bug?)
+            if (!BndExtensionsKt.isValid(project, true)) {
+                amdatuIdeaPlugin.report(project, false);
+                throw new CantRunException(message("bnd.test.cannot.run", "project has errors"));
             }
 
             myTester = projectTester;
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOG.info(t);
             throw new CantRunException(message("bnd.test.cannot.run", BndLaunchUtil.message(t)));
         }
@@ -130,8 +129,7 @@ public class BndTestState extends JavaCommandLineState {
             mySocket = new ServerSocket(0);
             //noinspection CastToIncompatibleInterface
             ((EclipseJUnitTester) myTester).setPort(mySocket.getLocalPort());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.info(e);
             throw new CantRunException(message("bnd.test.cannot.run", e.getMessage()));
         }
@@ -139,8 +137,7 @@ public class BndTestState extends JavaCommandLineState {
         try {
             myTester.prepare();
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.info(e);
             throw new CantRunException(message("bnd.test.cannot.run", e.getMessage()));
         }
@@ -180,8 +177,7 @@ public class BndTestState extends JavaCommandLineState {
         try {
             mySocket.close();
             FileUtil.delete(myTester.getReportDir());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error(e);
         }
     }
@@ -198,13 +194,18 @@ public class BndTestState extends JavaCommandLineState {
         @NotNull
         @Override
         public OutputToGeneralTestEventsConverter createTestEventsConverter(@NotNull String testFrameworkName,
-                        @NotNull TestConsoleProperties consoleProperties) {
+                                                                            @NotNull TestConsoleProperties consoleProperties) {
             return new MyProcessOutputConsumer(testFrameworkName, consoleProperties, mySocket);
         }
 
         @Override
         public SMTestLocator getTestLocator() {
             return JavaTestLocator.INSTANCE;
+        }
+
+        @Override
+        public boolean isEditable() {
+            return true;
         }
     }
 
@@ -215,8 +216,8 @@ public class BndTestState extends JavaCommandLineState {
         private String myCurrentTest = null;
 
         MyProcessOutputConsumer(@NotNull String testFrameworkName,
-                        @NotNull TestConsoleProperties consoleProperties,
-                        @NotNull ServerSocket socket) {
+                                @NotNull TestConsoleProperties consoleProperties,
+                                @NotNull ServerSocket socket) {
             super(testFrameworkName, consoleProperties);
             mySocket = socket;
         }
@@ -232,8 +233,7 @@ public class BndTestState extends JavaCommandLineState {
                 try (Socket socket = mySocket.accept();
                      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
                     reader.lines().forEach(this::processEventLine);
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     LOG.debug(e);
                 }
             });
@@ -245,9 +245,8 @@ public class BndTestState extends JavaCommandLineState {
             synchronized (myTestLock) {
                 if (myCurrentTest != null) {
                     processor.onTestOutput(
-                                    new TestOutputEvent(myCurrentTest, text, outputType == ProcessOutputTypes.STDOUT));
-                }
-                else {
+                            new TestOutputEvent(myCurrentTest, text, outputType == ProcessOutputTypes.STDOUT));
+                } else {
                     processor.onUncapturedOutput(text, outputType);
                 }
             }
@@ -287,8 +286,7 @@ public class BndTestState extends JavaCommandLineState {
             if (myTrace != null) {
                 if (Proto.TRACE_END.equals(line)) {
                     processTrace();
-                }
-                else {
+                } else {
                     myTrace.add(line);
                 }
                 return;
@@ -297,28 +295,21 @@ public class BndTestState extends JavaCommandLineState {
             if (line.length() >= EVENT_TYPE_LEN && line.charAt(0) == '%') {
                 if (line.startsWith(Proto.INIT)) {
                     processInit(line);
-                }
-                else if (line.startsWith(Proto.TREE)) {
+                } else if (line.startsWith(Proto.TREE)) {
                     processTreeLine(line);
-                }
-                else if (line.startsWith(Proto.TEST)) {
+                } else if (line.startsWith(Proto.TEST)) {
                     processTestStart(line);
-                }
-                else if (line.startsWith(Proto.FAILED)) {
+                } else if (line.startsWith(Proto.FAILED)) {
                     myReason = Proto.FAILED;
                     myFailingTest = line;
-                }
-                else if (line.startsWith(Proto.ERROR)) {
+                } else if (line.startsWith(Proto.ERROR)) {
                     myReason = Proto.ERROR;
                     myFailingTest = line;
-                }
-                else if (Proto.TRACE.equals(line)) {
+                } else if (Proto.TRACE.equals(line)) {
                     myTrace = ContainerUtil.newArrayListWithCapacity(20);
-                }
-                else if (line.startsWith(Proto.TEST_END)) {
+                } else if (line.startsWith(Proto.TEST_END)) {
                     processTestEnd(line);
-                }
-                else if (line.startsWith(Proto.DONE)) {
+                } else if (line.startsWith(Proto.DONE)) {
                     processDone();
                 }
             }
@@ -361,7 +352,7 @@ public class BndTestState extends JavaCommandLineState {
                     }
 
                     myProcessor.onSuiteStarted(new TestSuiteStartedEvent(suite,
-                                    JavaTestLocator.SUITE_PROTOCOL + SCHEME_SEPARATOR + suite));
+                            JavaTestLocator.SUITE_PROTOCOL + SCHEME_SEPARATOR + suite));
                     myCurrentSuite = suite;
                 }
             }
@@ -370,7 +361,7 @@ public class BndTestState extends JavaCommandLineState {
             synchronized (myTestLock) {
                 myCurrentTest = testName;
                 processor.onTestStarted(new TestStartedEvent(testName,
-                                JavaTestLocator.TEST_PROTOCOL + SCHEME_SEPARATOR + testName));
+                        JavaTestLocator.TEST_PROTOCOL + SCHEME_SEPARATOR + testName));
             }
         }
 
@@ -413,10 +404,9 @@ public class BndTestState extends JavaCommandLineState {
                     String expected = pair != null ? pair.first : null;
                     String actual = pair != null ? pair.second : null;
                     myProcessor.onTestFailure(
-                                    new TestFailedEvent(testName, message, stack.toString(), testError, actual,
-                                                    expected));
-                }
-                else {
+                            new TestFailedEvent(testName, message, stack.toString(), testError, actual,
+                                    expected));
+                } else {
                     myProcessor.onError(message, stack.toString(), false);
                 }
             }
@@ -455,13 +445,13 @@ public class BndTestState extends JavaCommandLineState {
 
         private static final class Comparisons {
             private static final List<Pattern> PATTERNS = ContainerUtil.newArrayList(
-                            compile("\nExpected: is \"(.*)\"\n\\s*got: \"(.*)\"\n"),
-                            compile("\nExpected: is \"(.*)\"\n\\s*but: was \"(.*)\""),
-                            compile("\nExpected: (.*)\n\\s*got: (.*)"),
-                            compile(".*?\\s*expected same:<(.*)> was not:<(.*)>"),
-                            compile(".*?\\s*expected:<(.*?)> but was:<(.*?)>"),
-                            compile("\nExpected: \"(.*)\"\n\\s*but: was \"(.*)\""),
-                            compile("\\s*Expected: (.*)\\s*but: was (.*)")
+                    compile("\nExpected: is \"(.*)\"\n\\s*got: \"(.*)\"\n"),
+                    compile("\nExpected: is \"(.*)\"\n\\s*but: was \"(.*)\""),
+                    compile("\nExpected: (.*)\n\\s*got: (.*)"),
+                    compile(".*?\\s*expected same:<(.*)> was not:<(.*)>"),
+                    compile(".*?\\s*expected:<(.*?)> but was:<(.*?)>"),
+                    compile("\nExpected: \"(.*)\"\n\\s*but: was \"(.*)\""),
+                    compile("\\s*Expected: (.*)\\s*but: was (.*)")
             );
 
             private static Pattern compile(String regex) {

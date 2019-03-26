@@ -14,7 +14,6 @@
 
 package org.amdatu.idea.toolwindow
 
-import aQute.bnd.build.Workspace
 import aQute.bnd.header.Attrs
 import aQute.bnd.osgi.Builder
 import aQute.bnd.osgi.Clazz
@@ -41,6 +40,7 @@ import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.tree.AbstractTreeModel
 import icons.OsmorcIdeaIcons
 import org.amdatu.idea.AmdatuIdeaConstants
+import org.amdatu.idea.AmdatuIdeaPlugin
 import java.io.File
 import java.util.*
 import javax.swing.JButton
@@ -50,7 +50,7 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
+class BundleInfoToolWindow(val project: Project) {
 
     private val calculatedImportsTreeModel = CalculatedImportsTreeModel()
     private val calculatedImportsTree = Tree(calculatedImportsTreeModel)
@@ -192,7 +192,7 @@ class BundleInfoToolWindow(val project: Project, val workspace: Workspace) {
 
     private fun getBuilderForFile(file: VirtualFile): Builder? {
         val moduleForFile = projectFileIndex.getModuleForFile(file) ?: return null
-        val bndProject = workspace.getProject(moduleForFile.name) ?: return null
+        val bndProject = project.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { ws -> ws.getProject(moduleForFile.name) } ?: return null
 
         return if (bndProject.get(Constants.SUB) == null || file.name == "bnd.bnd") {
             bndProject.getBuilder(null)

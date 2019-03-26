@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.amdatu.idea.AmdatuIdeaNotificationService;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +40,6 @@ import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.ModifiableModuleModel;
@@ -96,6 +94,7 @@ import aQute.bnd.osgi.Builder;
 import aQute.bnd.osgi.Constants;
 import aQute.bnd.osgi.Instructions;
 import aQute.bnd.osgi.Jar;
+import kotlin.Unit;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
 public class BndProjectImporter {
@@ -146,10 +145,7 @@ public class BndProjectImporter {
         return module;
     }
 
-    void setupProject() {
-        AmdatuIdeaPlugin amdatuIdeaPlugin= myProject.getComponent(AmdatuIdeaPlugin.class);
-        Workspace workspace = amdatuIdeaPlugin.getWorkspace();
-
+    public void setupProject(Workspace workspace) {
         LanguageLevel sourceLevel = LanguageLevel.parse(workspace.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel != null) {
             LanguageLevelProjectExtension.getInstance(myProject).setLanguageLevel(sourceLevel);
@@ -197,14 +193,13 @@ public class BndProjectImporter {
                 indicator.setText(project.getName());
             }
 
-            AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getComponent(AmdatuIdeaPlugin.class);
             try {
                 project.prepare();
             } catch (Exception e) {
                 LOG.warn(e);
                 return false;
             } finally {
-                myProject.getComponent(AmdatuIdeaNotificationService.class).report(project, true);
+                myProject.getComponent(AmdatuIdeaPlugin.class).report(project, true);
             }
 
             findSources(project);
@@ -710,12 +705,16 @@ public class BndProjectImporter {
             if (!isUnitTestMode()) {
                 LOG.warn(warnings.toString());
 
-                NotificationType type = NotificationType.WARNING;
+
                 String text = message("bnd.import.warn.text", project.getName(),
                         "<br>" + StringUtil.join(warnings, "<br>"));
 
-                myProject.getComponent(AmdatuIdeaNotificationService.class)
-                        .notification(type, message("bnd.import.warn.title"), text);
+                myProject.getComponent(AmdatuIdeaPlugin.class)
+                        .warning(text, notification -> {
+                            notification.setTitle(message("bnd.import.warn.title"));
+                            return Unit.INSTANCE;
+                        });
+
 
             } else {
                 throw new AssertionError(warnings.toString());
@@ -734,43 +733,6 @@ public class BndProjectImporter {
     @NotNull
     private static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
         return ContainerUtil.filter(workspace.getAllProjects(), Condition.NOT_NULL);
-    }
-
-    public static void reimportWorkspace(@NotNull com.intellij.openapi.project.Project project) {
-        if (!isUnitTestMode()) {
-            new Task.Backgroundable(project, message("bnd.reimport.task"), true) {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    doReimportWorkspace(project);
-                }
-            }.queue();
-        } else {
-            doReimportWorkspace(project);
-        }
-    }
-
-    private static void doReimportWorkspace(com.intellij.openapi.project.Project project) {
-        Workspace workspace = project.getComponent(AmdatuIdeaPlugin.class).getWorkspace();
-        assert workspace != null : project;
-
-        Collection<Project> projects;
-        try {
-            projects = getWorkspaceProjects(workspace);
-        } catch (Exception e) {
-            LOG.error("ws=" + workspace.getBase(), e);
-            return;
-        }
-
-        Runnable task = () -> {
-            BndProjectImporter importer = new BndProjectImporter(project, projects);
-            importer.setupProject();
-            importer.resolve(true);
-        };
-        if (!isUnitTestMode()) {
-            ApplicationManager.getApplication().invokeLater(task, project.getDisposed());
-        } else {
-            task.run();
-        }
     }
 
 }

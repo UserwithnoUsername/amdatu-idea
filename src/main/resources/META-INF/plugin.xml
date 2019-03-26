@@ -16,10 +16,11 @@
     <id>org.amdatu.idea</id>
     <name>Amdatu</name>
     <version>2.1.2-SNAPSHOT</version>
-    <description>The Amdatu IntelliJ plugin adds support for OSGi workspaces using the bnd workspace model.</description>
+    <description>The Amdatu IntelliJ plugin adds support for OSGi workspaces using the bnd workspace model.
+    </description>
     <category>Framework integration</category>
     <vendor>The Amdatu Foundation</vendor>
-    <idea-version since-build="183" />
+    <idea-version since-build="183"/>
 
     <change-notes>
     </change-notes>
@@ -27,10 +28,6 @@
     <depends>com.intellij.modules.java</depends>
 
     <project-components>
-        <component>
-            <interface-class>org.amdatu.idea.AmdatuIdeaNotificationService</interface-class>
-            <implementation-class>org.amdatu.idea.AmdatuIdeaNotificationService</implementation-class>
-        </component>
         <component>
             <interface-class>org.amdatu.idea.RepositoryValidationService</interface-class>
             <implementation-class>org.amdatu.idea.RepositoryValidationServiceImpl</implementation-class>
@@ -43,10 +40,15 @@
             <interface-class>org.amdatu.idea.BaseliningErrorService</interface-class>
             <implementation-class>org.amdatu.idea.BaseliningErrorServiceImpl</implementation-class>
         </component>
+        <component>
+            <interface-class>org.amdatu.idea.PackageInfoService</interface-class>
+            <implementation-class>org.amdatu.idea.PackageInfoService</implementation-class>
+        </component>
     </project-components>
 
     <extensionPoints>
-        <extensionPoint name="lang.bundledescriptor.parser.provider" interface="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider"/>
+        <extensionPoint name="lang.bundledescriptor.parser.provider"
+                        interface="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -61,19 +63,28 @@
 
         <!-- Language -->
         <fileTypeFactory implementation="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorTypeFactory"/>
-        <lang.parserDefinition language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
-        <lang.syntaxHighlighterFactory language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.BundleDescriptorSyntaxHighlighterFactory"/>
-        <annotator language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.HeaderAnnotator"/>
+        <lang.parserDefinition language="BundleDescriptor"
+                               implementationClass="org.amdatu.idea.lang.bundledescriptor.parser.BundleDescriptorParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="BundleDescriptor"
+                                       implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.BundleDescriptorSyntaxHighlighterFactory"/>
+        <annotator language="BundleDescriptor"
+                   implementationClass="org.amdatu.idea.lang.bundledescriptor.highlighting.HeaderAnnotator"/>
         <lang.elementManipulator forClass="org.amdatu.idea.lang.bundledescriptor.psi.HeaderValuePart"
                                  implementationClass="org.amdatu.idea.lang.bundledescriptor.psi.impl.HeaderValuePartManipulator"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BsnCompletionContributor"/>
-        <completion.contributor language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.PackageCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor"
+                                implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BundleDescriptorCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor"
+                                implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BlueprintFeatureCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor"
+                                implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.BsnCompletionContributor"/>
+        <completion.contributor language="BundleDescriptor"
+                                implementationClass="org.amdatu.idea.lang.bundledescriptor.completion.PackageCompletionContributor"/>
 
-        <applicationService serviceImplementation="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserRepository"/>
+        <applicationService
+                serviceImplementation="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserRepository"/>
 
-        <lang.commenter language="BundleDescriptor" implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter" />
+        <lang.commenter language="BundleDescriptor"
+                        implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter"/>
 
         <!-- JPS plugin -->
         <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.1.0.jar"/>
@@ -86,8 +97,6 @@
         <!-- Custom module type supporting bndtools templates-->
         <moduleType id="AMDATU_IDE_MODULE_TYPE" implementationClass="org.amdatu.idea.templating.AmdatuIdeaModuleType"/>
 
-        <toolWindow id="Amdatu" icon="OsmorcIdeaIcons.Bnd" anchor="right" factoryClass="org.amdatu.idea.toolwindow.AmdatuIdeaToolWindowFactory"/>
-
         <!-- Plugin preferences -->
         <applicationService serviceImplementation="org.amdatu.idea.preferences.AmdatuIdeaPreferences"/>
         <applicationConfigurable groupId="language" id="amdatu.ide.preferences" displayName="Amdatu"
@@ -99,9 +108,12 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.amdatu.idea">
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.StandardManifestHeaderParsers"/>
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.BndHeaderParsers"/>
-        <lang.bundledescriptor.parser.provider implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider
+                implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.StandardManifestHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider
+                implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.BndHeaderParsers"/>
+        <lang.bundledescriptor.parser.provider
+                implementation="org.amdatu.idea.lang.bundledescriptor.header.impl.AmdatuBlueprintHeaderParsers"/>
     </extensions>
 
 

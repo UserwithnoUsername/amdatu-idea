@@ -18,7 +18,6 @@ import aQute.bnd.build.Workspace
 import aQute.bnd.http.HttpClient
 import aQute.bnd.osgi.repository.XMLResourceParser
 import aQute.bnd.repository.maven.pom.provider.BndPomRepository
-import aQute.bnd.repository.maven.pom.provider.PomConfiguration
 import aQute.bnd.repository.osgi.OSGiRepository
 import aQute.bnd.service.RepositoryPlugin
 import aQute.bnd.service.url.TaggedData
@@ -29,12 +28,13 @@ import java.net.URI
 import java.time.Duration
 
 interface RepositoryValidationService {
-    fun validateRepositories(workspace: Workspace) : Boolean
+    fun validateRepositories(workspace: Workspace): Boolean
 }
 
 
 class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidationService {
 
+    private val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java)
 
     /**
      * Validate uri's used in as locations for OSGiRepository and FixedIndexedRepo instances in the workspace and report
@@ -95,10 +95,10 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
             if (!File(uri).exists()) {
 
 
-                notificationService().warning("""
-    Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-    File '$uri' doesn't exist.
-    """.trimIndent())
+                amdatuIdeaPlugin.warning("""
+                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
+                            File '$uri' doesn't exist.
+                            """.trimIndent())
                 false
             } else {
                 true
@@ -111,11 +111,11 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
                     .go(uri) as TaggedData
 
             if (send.responseCode !in 200..399) {
-                notificationService().warning("""
-    Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-    Failed location: '$uri'
-    Reason: download failed, http response code '${send.responseCode}'
-    """.trimIndent())
+                amdatuIdeaPlugin.warning("""
+                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
+                            Failed location: '$uri'
+                            Reason: download failed, http response code '${send.responseCode}'
+                            """.trimIndent())
 
                 false
             } else {
@@ -127,13 +127,13 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
 
                     if (parser.errors.isNotEmpty()) {
                         val message = StringBuilder("""
-    Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-    Failed location: '$uri'
-    Reason (from bnd reporter): """.trimIndent())
+                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
+                            Failed location: '$uri'
+                            Reason (from bnd reporter): """.trimIndent())
                         parser.errors.forEach {
                             message.append("\n\t$it")
                         }
-                        notificationService().warning(message.toString())
+                        amdatuIdeaPlugin.warning(message.toString())
                         false
                     } else {
                         true
@@ -141,12 +141,12 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
                 } catch (e: Exception) {
 
                     val message = StringBuilder("""
-    Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-    Failed location: '$uri'
-    Reason: Failed to parse repository index exception: ${e.message}
-    Cached index file: $downloadedFile
-    """.trimIndent())
-                    notificationService().warning(message.toString())
+                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
+                            Failed location: '$uri'
+                            Reason: Failed to parse repository index exception: ${e.message}
+                            Cached index file: $downloadedFile
+                            """.trimIndent())
+                    amdatuIdeaPlugin.warning(message.toString())
                     false
                 }
             }
@@ -165,12 +165,11 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
                         .go(uri) as TaggedData
 
                 if (send.responseCode !in 200..399) {
-                    notificationService()
-                            .warning("""
-    Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-    Failed location: '$uri'
-    Reason: download failed, http response code '${send.responseCode}'
-    """.trimIndent())
+                    amdatuIdeaPlugin.warning("""
+                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
+                            Failed location: '$uri'
+                            Reason: download failed, http response code '${send.responseCode}'
+                            """.trimIndent())
                     false
                 } else {
                     true
@@ -182,18 +181,5 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
         } else {
             true
         }
-
-    }
-
-
-    fun notificationService() = project.getComponent(AmdatuIdeaNotificationService::class.java)
-
-}
-
-private fun BndPomRepository.configuration(): PomConfiguration {
-    return javaClass.getDeclaredField("configuration").let {
-        it.isAccessible = true
-        val value = it.get(this)
-        return@let value as PomConfiguration
     }
 }
