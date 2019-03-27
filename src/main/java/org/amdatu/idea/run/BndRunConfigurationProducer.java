@@ -229,9 +229,20 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
 
     @Override
     public boolean shouldReplace(@NotNull ConfigurationFromContext self, @NotNull ConfigurationFromContext other) {
-        // Replace plain JUnit configurations when there is a bnd BndRunConfigurationBase.Test as the JUnit
-        // configuration won't work in that case.
-        return (self.getConfiguration() instanceof BndRunConfigurationBase.Test) && other.getConfigurationType().getId().equals("JUnit");
+
+        if (self.getConfiguration() instanceof BndRunConfigurationBase.Test) {
+            if (other.getConfigurationType().getId().equals("JUnit")) {
+                // Replace plain JUnit configurations when there is a bnd BndRunConfigurationBase.Test as the JUnit
+                // configuration won't work in that case.
+                return true;
+            }
+
+            if (other.getConfigurationType().getId().equals("osgi.bnd.run")) {
+                // Somehow we end up with configurations of the run type here... have the test type override them
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class Launch extends BndRunConfigurationProducer {
