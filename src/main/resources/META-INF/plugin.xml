@@ -130,6 +130,22 @@
             <add-to-group group-id="amdatu-idea" anchor="last"/>
         </action>
 
+        <!-- Run all tests -->
+        <action id="amdatu.ide.action.run-all-unit-tests" icon="OsmorcIdeaIcons.Bnd"
+                text="Run all unit tests"
+                description="Run all unit tests"
+                class="org.amdatu.idea.actions.RunAllUnitTestsAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+        </action>
+
+        <!-- Run all tests -->
+        <action id="amdatu.ide.action.run-all-integration-tests" icon="OsmorcIdeaIcons.Bnd"
+                text="Run all integration tests"
+                description="Run all integration tests"
+                class="org.amdatu.idea.actions.RunAllIntegrationTestsAction">
+            <add-to-group group-id="amdatu-idea" anchor="last"/>
+        </action>
+
         <!-- Refresh repositories -->
         <action id="amdatu.ide.action.refresh-repositories" icon="OsmorcIdeaIcons.Bnd"
                 text="Refresh repositories"
