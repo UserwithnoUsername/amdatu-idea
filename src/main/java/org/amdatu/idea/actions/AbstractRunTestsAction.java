@@ -231,7 +231,12 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
                 .map(root -> createRunConfiguration(root, project, runConfigurationProducer, configurationIndex.getAndIncrement()))
                 .collect(Collectors.toList());
 
-        Executor executor = DefaultRunExecutor.getRunExecutorInstance();
-        runConfigurations(executor, new ConcurrentLinkedQueue<>(runConfigurations));
+        RunConfigurationSelectDialogWrapper dialog = new RunConfigurationSelectDialogWrapper(runConfigurations);
+        if (dialog.showAndGet()) {
+            List<RunConfiguration> selectedConfigurations = dialog.getSelectedConfigurations();
+
+            Executor executor = DefaultRunExecutor.getRunExecutorInstance();
+            runConfigurations(executor, new ConcurrentLinkedQueue<>(selectedConfigurations));
+        }
     }
 }

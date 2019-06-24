@@ -8,9 +8,9 @@ import org.jdom.Element;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-public class RunAllUnitTestsAction extends AbstractRunTestsAction {
+public class RunUnitTestsAction extends AbstractRunTestsAction {
 
-    public RunAllUnitTestsAction() {
+    public RunUnitTestsAction() {
         super("Unit test", "com.intellij.execution.junit.testDiscovery.JUnitTestDiscoveryConfigurationProducer");
     }
 

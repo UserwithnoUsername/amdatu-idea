@@ -8,9 +8,9 @@ import org.jdom.Element;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-public class RunAllIntegrationTestsAction extends AbstractRunTestsAction {
+public class RunIntegrationTestsAction extends AbstractRunTestsAction {
 
-    public RunAllIntegrationTestsAction() {
+    public RunIntegrationTestsAction() {
         super("Integration test", "org.amdatu.idea.run.BndRunConfigurationProducer$Test");
     }
 
