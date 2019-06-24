@@ -87,7 +87,7 @@
                         implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter"/>
 
         <!-- JPS plugin -->
-        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.1.0.jar"/>
+        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.2.0.jar"/>
 
         <!--  Run -->
         <configurationType implementation="org.amdatu.idea.run.BndRunConfigurationType"/>
