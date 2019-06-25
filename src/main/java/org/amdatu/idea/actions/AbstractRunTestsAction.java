@@ -1,35 +1,43 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.amdatu.idea.actions;
 
 import com.intellij.execution.*;
 import com.intellij.execution.actions.RunConfigurationProducer;
-import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.executors.DefaultRunExecutor;
-import com.intellij.execution.impl.RunManagerImpl;
-import com.intellij.execution.impl.RunnerAndConfigurationSettingsImpl;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionUtil;
 import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.icons.AllIcons;
-import com.intellij.internal.statistic.UsageTrigger;
-import com.intellij.internal.statistic.beans.ConvertUsagesUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.LayeredIcon;
 import com.intellij.ui.content.Content;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -37,122 +45,109 @@ import java.util.stream.Stream;
 
 public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
 
+    static final String OPTION = "option";
+    static final String MODULE = "module";
+    static final String NAME = "name";
+    static final String VALUE = "value";
+
     private final String testType;
     private final String runConfigurationProducerClassName;
 
-    public AbstractRunTestsAction(String testType, String runConfigurationProducerClassName) {
+    AbstractRunTestsAction(String testType, String runConfigurationProducerClassName) {
         this.testType = testType;
         this.runConfigurationProducerClassName = runConfigurationProducerClassName;
     }
 
-    protected void runConfigurations(final Executor executor, final Queue<RunConfiguration> runConfigurations) {
+    private void runConfigurations(final Executor executor, final Queue<RunnerAndConfigurationSettings> runConfigurations) {
         if (runConfigurations.isEmpty()) {
             return;
         }
 
-        final RunConfiguration runConfiguration = runConfigurations.poll();
-        final Project project = runConfiguration.getProject();
-        final RunnerAndConfigurationSettings configuration = new RunnerAndConfigurationSettingsImpl(
-                RunManagerImpl.getInstanceImpl(project), runConfiguration, false);
+        final RunnerAndConfigurationSettings configurationAndSettings = runConfigurations.poll();
+        boolean lastTest = runConfigurations.isEmpty();
+        final Project project = configurationAndSettings.getConfiguration().getProject();
 
         boolean started = false;
         try {
-            final ProgramRunner runner = RunnerRegistry.getInstance().getRunner(executor.getId(), runConfiguration);
+            final ProgramRunner runner = ProgramRunnerUtil.getRunner(executor.getId(), configurationAndSettings);
             if (runner == null) return;
-            if (!checkRunConfiguration(executor, project, configuration)) return;
+            if (!checkRunConfiguration(executor, project, configurationAndSettings)) return;
 
-            runTriggers(executor, configuration);
-            ExecutionEnvironment executionEnvironment = new ExecutionEnvironment(executor, runner, configuration, project);
+            ExecutionEnvironment executionEnvironment = new ExecutionEnvironment(executor, runner, configurationAndSettings, project);
 
-            runner.execute(executionEnvironment, new ProgramRunner.Callback() {
-                @SuppressWarnings("ConstantConditions")
-                @Override
-                public void processStarted(final RunContentDescriptor descriptor) {
-                    if (descriptor == null) {
-                        // start next configuration..
-                        return;
-                    }
+            runner.execute(executionEnvironment, descriptor -> {
+                if (descriptor == null) {
+                    // start next configuration..
+                    return;
+                }
 
-                    final ProcessHandler processHandler = descriptor.getProcessHandler();
-                    if (processHandler != null) {
-                        processHandler.addProcessListener(new ProcessAdapter() {
-                            @SuppressWarnings("ConstantConditions")
-                            @Override
-                            public void startNotified(ProcessEvent processEvent) {
-                                Content content = descriptor.getAttachedContent();
-                                if (content != null) {
-                                    content.setIcon(descriptor.getIcon());
+                final ProcessHandler processHandler = descriptor.getProcessHandler();
+                if (processHandler != null) {
+                    processHandler.addProcessListener(new ProcessAdapter() {
+                        @Override
+                        public void startNotified(@NotNull ProcessEvent processEvent) {
+                            Content content = descriptor.getAttachedContent();
+                            if (content != null) {
+                                content.setIcon(descriptor.getIcon());
 
-                                    // mark all current console tab as pinned
-                                    content.setPinned(true);
+                                // mark all current console tab as pinned
+                                content.setPinned(true);
 
-                                    // mark running process tab with *
-                                    content.setDisplayName(descriptor.getDisplayName() + "*");
-                                }
+                                // mark running process tab with *
+                                content.setDisplayName(descriptor.getDisplayName() + "*");
+                            }
+                        }
+
+                        @Override public void processTerminated(@NotNull final ProcessEvent processEvent) {
+                            onTermination(processEvent, true);
+                        }
+
+                        @Override public void processWillTerminate(@NotNull ProcessEvent processEvent, boolean willBeDestroyed) {
+                            onTermination(processEvent, false);
+                        }
+
+                        private void onTermination(final ProcessEvent processEvent, final boolean terminated) {
+                            if (descriptor.getAttachedContent() == null) {
+                                return;
                             }
 
-                            @Override public void processTerminated(final ProcessEvent processEvent) {
-                                onTermination(processEvent, true);
-                            }
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                final Content content = descriptor.getAttachedContent();
+                                if (content == null) return;
 
-                            @Override public void processWillTerminate(ProcessEvent processEvent, boolean willBeDestroyed) {
-                                onTermination(processEvent, false);
-                            }
+                                // exit code is 0 if the process completed successfully
+                                final boolean completedSuccessfully = (terminated && processEvent.getExitCode() == 0);
 
-                            private void onTermination(final ProcessEvent processEvent, final boolean terminated) {
-                                if (descriptor.getAttachedContent() == null) {
+                                if (completedSuccessfully && content.getManager() != null && !lastTest) {
+                                    content.getManager().removeContent(content, false);
                                     return;
                                 }
 
-                                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        final Content content = descriptor.getAttachedContent();
-                                        if (content == null) return;
-
-                                        // exit code is 0 if the process completed successfully
-                                        final boolean completedSuccessfully = (terminated && processEvent.getExitCode() == 0);
-
-                                        if (completedSuccessfully) {
-                                            // close the tab for the success process and exit - nothing else could be done
-                                            if (content.getManager() != null) {
-                                                content.getManager().removeContent(content, false);
-                                                return;
-                                            }
-                                        }
-
-                                        if (completedSuccessfully) {
-                                            // un-pin the console tab if re-use is allowed and process completed successfully,
-                                            // so the tab could be re-used for other processes
-                                            content.setPinned(false);
-                                        }
-
-                                        // remove the * used to identify running process
-                                        content.setDisplayName(descriptor.getDisplayName());
-
-                                        // add the alert icon in case if process existed with non-0 status
-                                        if (processEvent.getExitCode() != 0) {
-                                            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    content.setIcon(LayeredIcon.create(content.getIcon(), AllIcons.Nodes.TabAlert));
-                                                }
-                                            });
-                                        }
-                                    }
-                                });
-                                if (terminated) {
-                                    runConfigurations(executor, runConfigurations);
+                                if (completedSuccessfully) {
+                                    // un-pin the console tab if re-use is allowed and process completed successfully,
+                                    // so the tab could be re-used for other processes
+                                    content.setPinned(false);
                                 }
 
+                                // remove the * used to identify running process
+                                content.setDisplayName(descriptor.getDisplayName());
+
+                                // add the alert icon in case if process existed with non-0 status
+                                if (processEvent.getExitCode() != 0) {
+                                    ApplicationManager.getApplication().invokeLater(() -> content.setIcon(LayeredIcon.create(content.getIcon(), AllIcons.Nodes.TabAlert)));
+                                }
+                            });
+                            if (terminated) {
+                                runConfigurations(executor, runConfigurations);
                             }
-                        });
-                    }
+
+                        }
+                    });
                 }
             });
             started = true;
         } catch (ExecutionException e) {
-            ExecutionUtil.handleExecutionError(project, executor.getToolWindowId(), configuration.getConfiguration(), e);
+            ExecutionUtil.handleExecutionError(project, executor.getToolWindowId(), configurationAndSettings.getConfiguration(), e);
         } finally {
             if (!started) {
                 // failed to start current, means the chain is broken
@@ -161,14 +156,7 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         }
     }
 
-    protected void runTriggers(Executor executor, RunnerAndConfigurationSettings configuration) {
-        final ConfigurationType configurationType = configuration.getType();
-        if (configurationType != null) {
-            UsageTrigger.trigger("execute." + ConvertUsagesUtil.ensureProperKey(configurationType.getId()) + "." + executor.getId());
-        }
-    }
-
-    protected boolean checkRunConfiguration(Executor executor, Project project, RunnerAndConfigurationSettings configuration) {
+    private boolean checkRunConfiguration(Executor executor, Project project, RunnerAndConfigurationSettings configuration) {
         ExecutionTarget target = ExecutionTargetManager.getActiveTarget(project);
 
         if (!ExecutionTargetManager.canRun(configuration, target)) {
@@ -181,11 +169,9 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         return true;
     }
 
-    abstract Stream<VirtualFile> getRunConfigurationTargets(Project project);
-
-    private RunConfiguration createRunConfiguration(VirtualFile sourceRoot, Project project, RunConfigurationProducer runConfigurationProducer, int index) {
+    private RunnerAndConfigurationSettings createRunConfiguration(Module module, Project project, RunConfigurationProducer runConfigurationProducer, int index) {
         RunManager runManager = RunManager.getInstance(project);
-        String runConfigurationName = testType + " for " + getModuleName(sourceRoot);
+        String runConfigurationName = module.getName();
         RunnerAndConfigurationSettings configurationAndSettings = runManager.findConfigurationByName(runConfigurationName);
         if (configurationAndSettings != null) {
             runManager.removeConfiguration(configurationAndSettings);
@@ -197,7 +183,7 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         RunConfiguration configuration = configurationAndSettings.getConfiguration();
         configuration.writeExternal(element);
 
-        customizeConfiguration(element, sourceRoot);
+        customizeConfiguration(element, module);
 
         // disable make
         if (index > 0) {
@@ -213,30 +199,55 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         }
 
         runManager.addConfiguration(configurationAndSettings);
-        return configuration;
+        return configurationAndSettings;
     }
 
-    abstract void customizeConfiguration(Element element, VirtualFile runConfigurationTarget);
-
-    abstract String getModuleName(VirtualFile runConfigurationTarget);
+    abstract void customizeConfiguration(Element element, Module module);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
+        if (project == null) {
+            return;
+        }
+
         RunConfigurationProducer<?> runConfigurationProducer = RunConfigurationProducer.getProducers(project).stream()
                 .filter(producer -> producer.getClass().getName().equals(runConfigurationProducerClassName))
-                .findFirst().get();
+                .findFirst().orElse(null);
+
+        if (runConfigurationProducer == null) {
+            return;
+        }
+
         AtomicInteger configurationIndex = new AtomicInteger();
-        List<RunConfiguration> runConfigurations = getRunConfigurationTargets(project)
+        List<RunnerAndConfigurationSettings> runConfigurations = getRunConfigurationTargets(project)
                 .map(root -> createRunConfiguration(root, project, runConfigurationProducer, configurationIndex.getAndIncrement()))
+                .sorted(new TestRunConfigurationComparator())
                 .collect(Collectors.toList());
 
-        RunConfigurationSelectDialogWrapper dialog = new RunConfigurationSelectDialogWrapper(runConfigurations);
+        RunConfigurationSelectDialogWrapper dialog = new RunConfigurationSelectDialogWrapper(testType, runConfigurations);
         if (dialog.showAndGet()) {
-            List<RunConfiguration> selectedConfigurations = dialog.getSelectedConfigurations();
+            List<RunnerAndConfigurationSettings> selectedConfigurations = dialog.getSelectedConfigurations();
+            selectedConfigurations.sort(new TestRunConfigurationComparator());
 
             Executor executor = DefaultRunExecutor.getRunExecutorInstance();
             runConfigurations(executor, new ConcurrentLinkedQueue<>(selectedConfigurations));
+        }
+    }
+
+    private Stream<Module> getRunConfigurationTargets(Project project) {
+        return Arrays.stream(ProjectRootManager.getInstance(project).getContentRootsFromAllModules())
+                .map(root -> ModuleUtil.findModuleForFile(root, project))
+                .filter(this::isTestModule);
+    }
+
+    abstract boolean isTestModule(Module module);
+
+    static class TestRunConfigurationComparator implements Comparator<RunnerAndConfigurationSettings> {
+
+        @Override
+        public int compare(RunnerAndConfigurationSettings o1, RunnerAndConfigurationSettings o2) {
+            return o1.getName().compareTo(o2.getName());
         }
     }
 }

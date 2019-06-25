@@ -131,18 +131,20 @@
         </action>
 
         <!-- Run all tests -->
-        <action id="amdatu.ide.action.run-unit-tests" icon="OsmorcIdeaIcons.Bnd"
+        <action id="amdatu.ide.action.run-unit-tests" icon="OsmorcIdeaIcons.BndTest"
                 text="Run unit tests"
                 description="Run unit tests"
                 class="org.amdatu.idea.actions.RunUnitTestsAction">
+            <keyboard-shortcut first-keystroke="control alt U" keymap="$default"/>
             <add-to-group group-id="amdatu-idea" anchor="last"/>
         </action>
 
         <!-- Run all tests -->
-        <action id="amdatu.ide.action.run-integration-tests" icon="OsmorcIdeaIcons.Bnd"
+        <action id="amdatu.ide.action.run-integration-tests" icon="OsmorcIdeaIcons.BndTest"
                 text="Run integration tests"
                 description="Run integration tests"
                 class="org.amdatu.idea.actions.RunIntegrationTestsAction">
+            <keyboard-shortcut first-keystroke="control alt I" keymap="$default"/>x
             <add-to-group group-id="amdatu-idea" anchor="last"/>
         </action>
 
