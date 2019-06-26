@@ -35,6 +35,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
     private final List<RunnerAndConfigurationSettings> runConfigurations;
     private DefaultListModel<JCheckBox> listModel;
     private JSpinner concurrencyCount;
+    private JCheckBox reRunCheckBox;
 
     RunConfigurationSelectDialogWrapper(String testType, List<RunnerAndConfigurationSettings> runConfigurations) {
         super(true);
@@ -57,7 +58,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         return values != null ? Arrays.asList(values) : Collections.emptyList();
     }
 
-    private void storeCurrentSelection(List<String> moduleNames) {
+    public void storeCurrentSelection(List<String> moduleNames) {
         PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
         propertiesComponent.setValues(getSelectionPropertyStorageKey(), moduleNames.toArray(new String[0]));
     }
@@ -72,6 +73,16 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         propertiesComponent.setValue(getConcurrencyPropertyStorageKey(), count, 4);
     }
 
+    private boolean retrieveMarkForRerun() {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        return propertiesComponent.getBoolean(getReRunPropertyStorageKey(), false);
+    }
+
+    private void storeMarkForRerun(boolean mark) {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        propertiesComponent.setValue(getReRunPropertyStorageKey(), mark, false);
+    }
+
     private String getSelectionPropertyStorageKey() {
         return this.getClass().getName() + "_" + testType + "_selection";
     }
@@ -79,6 +90,11 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
     private String getConcurrencyPropertyStorageKey() {
         return this.getClass().getName() + "_" + testType + "_concurrency";
     }
+
+    private String getReRunPropertyStorageKey() {
+        return this.getClass().getName() + "_" + testType + "_rerun";
+    }
+
 
     @Nullable
     @Override
@@ -95,14 +111,29 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         dialogPanel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
+
+        JPanel optionsPanel = new JPanel(new GridLayout(2, 2));
+
         JLabel concurrencyLabel = new JLabel("Amount of tests to run in parallel");
-        bottomPanel.add(concurrencyLabel, BorderLayout.WEST);
+        optionsPanel.add(concurrencyLabel);
         concurrencyCount = new JSpinner(new SpinnerNumberModel(retrieveConcurrencyCount(), 1, 24, 1));
-        bottomPanel.add(concurrencyCount, BorderLayout.CENTER);
-        
+        optionsPanel.add(concurrencyCount);
+        JLabel reRunLabel = new JLabel("Automatically select failed tests for re-run");
+        optionsPanel.add(reRunLabel);
+        reRunCheckBox = new JBCheckBox(null, retrieveMarkForRerun());
+        optionsPanel.add(reRunCheckBox);
+
+        bottomPanel.add(optionsPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
         JButton invert = new JButton("Invert selection");
-        bottomPanel.add(invert, BorderLayout.SOUTH);
+        buttonPanel.add(invert);
+        JButton clear = new JButton("Clear selection");
+        buttonPanel.add(clear);
+
+        bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
         invert.addActionListener(e -> invertSelection());
+        clear.addActionListener(e -> clearSelection());
 
         dialogPanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -122,6 +153,19 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         });
     }
 
+    private void clearSelection() {
+        SwingUtilities.invokeLater(() -> {
+            Enumeration<JCheckBox> enumeration = listModel.elements();
+            int index = 0;
+            while (enumeration.hasMoreElements()) {
+                JCheckBox checkBox = enumeration.nextElement();
+                checkBox.setSelected(false);
+                listModel.set(index, checkBox);
+                index ++;
+            }
+        });
+    }
+
     List<RunnerAndConfigurationSettings> getSelectedConfigurations() {
         List<String> checkedNames = new ArrayList<>();
         Enumeration<JCheckBox> enumeration = listModel.elements();
@@ -133,9 +177,14 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         }
         storeCurrentSelection(checkedNames);
         storeConcurrencyCount(getConcurrencyCount());
+        storeMarkForRerun(markFailedForReRun());
         return runConfigurations.stream()
                 .filter(config -> checkedNames.contains(config.getName()))
                 .collect(Collectors.toList());
+    }
+
+    boolean markFailedForReRun() {
+        return reRunCheckBox.isSelected();
     }
 
     int getConcurrencyCount() {

@@ -269,6 +269,10 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
                             long durationInSeconds = duration / 1000;
                             String statusMessage = failedModules.isEmpty() ? "All tests completed successfully!" : "The following modules had test failures: \n\n" + failedModules.stream().map(name -> "- " + name).collect(Collectors.joining("\n"));
                             Messages.showMessageDialog("Completed " + testType + "(s) for " + selectedConfigurations.size() + " modules in " + durationInSeconds + " seconds. " + statusMessage, "Testing completed!\n", Messages.getInformationIcon());
+
+                            if (!failedModules.isEmpty() && dialog.markFailedForReRun()) {
+                                dialog.storeCurrentSelection(new ArrayList<>(failedModules));
+                            }
                         });
                     } else {
                         System.out.println("Timeout!");
