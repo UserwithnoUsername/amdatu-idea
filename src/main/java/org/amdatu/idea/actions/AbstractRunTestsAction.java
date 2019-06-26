@@ -14,6 +14,7 @@
 
 package org.amdatu.idea.actions;
 
+import com.intellij.compiler.options.CompileStepBeforeRun;
 import com.intellij.execution.*;
 import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.RunConfiguration;
@@ -39,7 +40,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -169,37 +169,50 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         return true;
     }
 
-    private RunnerAndConfigurationSettings createRunConfiguration(Module module, Project project, RunConfigurationProducer runConfigurationProducer, int index) {
+    private RunnerAndConfigurationSettings createRunConfiguration(Module module, Project project, RunConfigurationProducer runConfigurationProducer) {
         RunManager runManager = RunManager.getInstance(project);
         String runConfigurationName = module.getName();
-        RunnerAndConfigurationSettings configurationAndSettings = runManager.findConfigurationByName(runConfigurationName);
-        if (configurationAndSettings != null) {
-            runManager.removeConfiguration(configurationAndSettings);
+        RunnerAndConfigurationSettings existingConfigurationAndSettings = runManager.findConfigurationByName(runConfigurationName);
+        if (existingConfigurationAndSettings != null) {
+            runManager.removeConfiguration(existingConfigurationAndSettings);
         }
 
-        configurationAndSettings = runManager.createConfiguration(runConfigurationName, runConfigurationProducer.getConfigurationFactory());
+        RunnerAndConfigurationSettings configurationAndSettings = runManager.createConfiguration(runConfigurationName, runConfigurationProducer.getConfigurationFactory());
 
         Element element = new Element("configuration");
         RunConfiguration configuration = configurationAndSettings.getConfiguration();
         configuration.writeExternal(element);
 
         customizeConfiguration(element, module);
-
-        // disable make
-        if (index > 0) {
-            Element methodElement = new Element("method");
-            methodElement.setAttribute("v", "2");
-            element.addContent(methodElement);
-        }
-
         configuration.readExternal(element);
-
-        if (index > 0) {
-            configuration.setBeforeRunTasks(Collections.emptyList());
-        }
+        configuration.setBeforeRunTasks(Collections.emptyList());
 
         runManager.addConfiguration(configurationAndSettings);
         return configurationAndSettings;
+    }
+
+    public RunnerAndConfigurationSettings addBuildBeforeRunTask(RunnerAndConfigurationSettings runnerAndConfigurationSettings) {
+        RunManager runManager = RunManager.getInstance(runnerAndConfigurationSettings.getConfiguration().getProject());
+        RunnerAndConfigurationSettings existingConfigurationAndSettings = runManager.findConfigurationByName(runnerAndConfigurationSettings.getName());
+        if (existingConfigurationAndSettings != null) {
+            runManager.removeConfiguration(existingConfigurationAndSettings);
+        }
+
+        Element element = new Element("configuration");
+        RunConfiguration configuration = runnerAndConfigurationSettings.getConfiguration();
+        configuration.writeExternal(element);
+
+        // disable make
+        Element methodElement = new Element("method");
+        methodElement.setAttribute("v", "2");
+        element.addContent(methodElement);
+
+        configuration.readExternal(element);
+
+        configuration.setBeforeRunTasks(Collections.singletonList(new CompileStepBeforeRun.MakeBeforeRunTask()));
+
+        runManager.addConfiguration(runnerAndConfigurationSettings);
+        return runnerAndConfigurationSettings;
     }
 
     abstract void customizeConfiguration(Element element, Module module);
@@ -219,9 +232,8 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
             return;
         }
 
-        AtomicInteger configurationIndex = new AtomicInteger();
         List<RunnerAndConfigurationSettings> runConfigurations = getRunConfigurationTargets(project)
-                .map(root -> createRunConfiguration(root, project, runConfigurationProducer, configurationIndex.getAndIncrement()))
+                .map(root -> createRunConfiguration(root, project, runConfigurationProducer))
                 .sorted(new TestRunConfigurationComparator())
                 .collect(Collectors.toList());
 
@@ -231,6 +243,9 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
             selectedConfigurations.sort(new TestRunConfigurationComparator());
 
             Executor executor = DefaultRunExecutor.getRunExecutorInstance();
+            if (!selectedConfigurations.isEmpty()) {
+                selectedConfigurations.set(0, addBuildBeforeRunTask(selectedConfigurations.get(0)));
+            }
             runConfigurations(executor, new ConcurrentLinkedQueue<>(selectedConfigurations));
         }
     }
