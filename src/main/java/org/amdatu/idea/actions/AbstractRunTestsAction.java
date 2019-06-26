@@ -14,7 +14,6 @@
 
 package org.amdatu.idea.actions;
 
-import com.intellij.compiler.options.CompileStepBeforeRun;
 import com.intellij.execution.*;
 import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.RunConfiguration;
@@ -28,10 +27,14 @@ import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.compiler.CompileContext;
+import com.intellij.openapi.compiler.CompileStatusNotification;
+import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.LayeredIcon;
 import com.intellij.ui.content.Content;
@@ -39,7 +42,10 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,13 +64,36 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         this.runConfigurationProducerClassName = runConfigurationProducerClassName;
     }
 
-    private void runConfigurations(final Executor executor, final Queue<RunnerAndConfigurationSettings> runConfigurations) {
-        if (runConfigurations.isEmpty()) {
-            return;
+    private void runConfigurations(final Executor executor, final Queue<RunnerAndConfigurationSettings> runConfigurations, int concurrentRunners, Map<Integer, Boolean> slotState, CountDownLatch countDownLatch, Set<String> failedModules) {
+        for (int i = 0; i < concurrentRunners; i++) {
+            if (!runConfigurations.isEmpty()) {
+
+                Boolean canRunInSlot = false;
+                synchronized (slotState) {
+                    canRunInSlot = slotState.get(i);
+                    if (canRunInSlot == null) {
+                        canRunInSlot = true;
+                    }
+                    slotState.put(i, false);
+                }
+
+                if (canRunInSlot) {
+                    runConfiguration(executor, runConfigurations, concurrentRunners, i, slotState, countDownLatch, failedModules);
+                }
+            }
+        }
+    }
+
+    private void runConfiguration(final Executor executor, final Queue<RunnerAndConfigurationSettings> runConfigurations, int concurrentRunners, int slot, Map<Integer, Boolean> slotState, CountDownLatch countDownLatch, Set<String> failedModules) {
+        RunnerAndConfigurationSettings runnerAndConfigurationSettings = null;
+        synchronized (runConfigurations) {
+            if (runConfigurations.isEmpty()) {
+                return;
+            }
+            runnerAndConfigurationSettings = runConfigurations.poll();
         }
 
-        final RunnerAndConfigurationSettings configurationAndSettings = runConfigurations.poll();
-        boolean lastTest = runConfigurations.isEmpty();
+        final RunnerAndConfigurationSettings configurationAndSettings = runnerAndConfigurationSettings;
         final Project project = configurationAndSettings.getConfiguration().getProject();
 
         boolean started = false;
@@ -84,65 +113,59 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
                 final ProcessHandler processHandler = descriptor.getProcessHandler();
                 if (processHandler != null) {
                     processHandler.addProcessListener(new ProcessAdapter() {
-                        @Override
-                        public void startNotified(@NotNull ProcessEvent processEvent) {
-                            Content content = descriptor.getAttachedContent();
-                            if (content != null) {
-                                content.setIcon(descriptor.getIcon());
+                          @Override
+                          public void startNotified(@NotNull ProcessEvent processEvent) {
+                              ApplicationManager.getApplication().invokeLater(() -> {
+                                  Content content = descriptor.getAttachedContent();
+                                  if (content != null) {
+                                      content.setIcon(descriptor.getIcon());
 
-                                // mark all current console tab as pinned
-                                content.setPinned(true);
+                                      // mark all current console tab as pinned
+                                      content.setPinned(true);
 
-                                // mark running process tab with *
-                                content.setDisplayName(descriptor.getDisplayName() + "*");
-                            }
-                        }
+                                      // mark running process tab with *
+                                      content.setDisplayName(descriptor.getDisplayName() + "*");
+                                  }
+                              });
+                          }
 
-                        @Override public void processTerminated(@NotNull final ProcessEvent processEvent) {
-                            onTermination(processEvent, true);
-                        }
+                          @Override
+                          public void processTerminated(@NotNull final ProcessEvent processEvent) {
+                              if (descriptor.getAttachedContent() == null) {
+                                  return;
+                              }
 
-                        @Override public void processWillTerminate(@NotNull ProcessEvent processEvent, boolean willBeDestroyed) {
-                            onTermination(processEvent, false);
-                        }
+                              ApplicationManager.getApplication().invokeLater(new Runnable() {
 
-                        private void onTermination(final ProcessEvent processEvent, final boolean terminated) {
-                            if (descriptor.getAttachedContent() == null) {
-                                return;
-                            }
+                                  public void run() {
 
-                            ApplicationManager.getApplication().invokeLater(() -> {
-                                final Content content = descriptor.getAttachedContent();
-                                if (content == null) return;
+                                      final Content content = descriptor.getAttachedContent();
+                                      if (content != null) {
+                                          content.setDisplayName(descriptor.getDisplayName());
 
-                                // exit code is 0 if the process completed successfully
-                                final boolean completedSuccessfully = (terminated && processEvent.getExitCode() == 0);
+                                          final boolean completedSuccessfully = processEvent.getExitCode() == 0;
 
-                                if (completedSuccessfully && content.getManager() != null && !lastTest) {
-                                    content.getManager().removeContent(content, false);
-                                    return;
-                                }
-
-                                if (completedSuccessfully) {
-                                    // un-pin the console tab if re-use is allowed and process completed successfully,
-                                    // so the tab could be re-used for other processes
-                                    content.setPinned(false);
-                                }
-
-                                // remove the * used to identify running process
-                                content.setDisplayName(descriptor.getDisplayName());
-
-                                // add the alert icon in case if process existed with non-0 status
-                                if (processEvent.getExitCode() != 0) {
-                                    ApplicationManager.getApplication().invokeLater(() -> content.setIcon(LayeredIcon.create(content.getIcon(), AllIcons.Nodes.TabAlert)));
-                                }
-                            });
-                            if (terminated) {
-                                runConfigurations(executor, runConfigurations);
-                            }
-
-                        }
-                    });
+                                          if (!completedSuccessfully && content.getManager() != null) {
+                                              // failure
+                                              failedModules.add(descriptor.getDisplayName());
+                                              ApplicationManager.getApplication().invokeLater(() -> content.setIcon(LayeredIcon.create(content.getIcon(), AllIcons.Nodes.TabAlert)));
+                                          } else {
+                                              // success
+                                              if (!runConfigurations.isEmpty()) {
+                                                  // more tests to be executed, release tab
+                                                  content.getManager().removeContent(content, false);
+                                              }
+                                          }
+                                      }
+                                      synchronized (slotState) {
+                                          slotState.put(slot, true);
+                                      }
+                                      countDownLatch.countDown();
+                                      runConfigurations(executor, runConfigurations, concurrentRunners, slotState, countDownLatch, failedModules);
+                                  }
+                              });
+                          }
+                      }); // end process adapter
                 }
             });
             started = true;
@@ -151,7 +174,10 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         } finally {
             if (!started) {
                 // failed to start current, means the chain is broken
-                runConfigurations(executor, runConfigurations);
+                synchronized (slotState) {
+                    slotState.put(slot, true);
+                }
+                runConfigurations(executor, runConfigurations, concurrentRunners, slotState, countDownLatch, failedModules);
             }
         }
     }
@@ -191,30 +217,6 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         return configurationAndSettings;
     }
 
-    public RunnerAndConfigurationSettings addBuildBeforeRunTask(RunnerAndConfigurationSettings runnerAndConfigurationSettings) {
-        RunManager runManager = RunManager.getInstance(runnerAndConfigurationSettings.getConfiguration().getProject());
-        RunnerAndConfigurationSettings existingConfigurationAndSettings = runManager.findConfigurationByName(runnerAndConfigurationSettings.getName());
-        if (existingConfigurationAndSettings != null) {
-            runManager.removeConfiguration(existingConfigurationAndSettings);
-        }
-
-        Element element = new Element("configuration");
-        RunConfiguration configuration = runnerAndConfigurationSettings.getConfiguration();
-        configuration.writeExternal(element);
-
-        // disable make
-        Element methodElement = new Element("method");
-        methodElement.setAttribute("v", "2");
-        element.addContent(methodElement);
-
-        configuration.readExternal(element);
-
-        configuration.setBeforeRunTasks(Collections.singletonList(new CompileStepBeforeRun.MakeBeforeRunTask()));
-
-        runManager.addConfiguration(runnerAndConfigurationSettings);
-        return runnerAndConfigurationSettings;
-    }
-
     abstract void customizeConfiguration(Element element, Module module);
 
     @Override
@@ -243,10 +245,38 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
             selectedConfigurations.sort(new TestRunConfigurationComparator());
 
             Executor executor = DefaultRunExecutor.getRunExecutorInstance();
-            if (!selectedConfigurations.isEmpty()) {
-                selectedConfigurations.set(0, addBuildBeforeRunTask(selectedConfigurations.get(0)));
-            }
-            runConfigurations(executor, new ConcurrentLinkedQueue<>(selectedConfigurations));
+            int concurrentRunners = dialog.getConcurrencyCount();
+
+            Set<String> failedModules = ConcurrentHashMap.newKeySet();
+            CountDownLatch countDownLatch = new CountDownLatch(selectedConfigurations.size());
+            long start = System.currentTimeMillis();
+
+            ApplicationManager.getApplication().invokeLater(() -> {
+                CompilerManager.getInstance(project).make(new CompileStatusNotification() {
+                    @Override
+                    public void finished(boolean aborted, int errors, int warnings, @NotNull CompileContext compileContext) {
+                        runConfigurations(executor, new ConcurrentLinkedQueue<>(selectedConfigurations), concurrentRunners, new ConcurrentHashMap<>(), countDownLatch, failedModules);
+                    }
+                });
+            });
+
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    if (countDownLatch.await(10, TimeUnit.MINUTES)) {
+                        long duration = System.currentTimeMillis() - start;
+                        int errorCount = 0;
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            long durationInSeconds = duration / 1000;
+                            String statusMessage = failedModules.isEmpty() ? "All tests completed successfully!" : "The following modules had test failures: \n\n" + failedModules.stream().map(name -> "- " + name).collect(Collectors.joining("\n"));
+                            Messages.showMessageDialog("Completed " + testType + "(s) for " + selectedConfigurations.size() + " modules in " + durationInSeconds + " seconds. " + statusMessage, "Testing completed!\n", Messages.getInformationIcon());
+                        });
+                    } else {
+                        System.out.println("Timeout!");
+                    }
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            });
         }
     }
 

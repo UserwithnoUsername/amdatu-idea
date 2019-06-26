@@ -34,6 +34,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
     private final String testType;
     private final List<RunnerAndConfigurationSettings> runConfigurations;
     private DefaultListModel<JCheckBox> listModel;
+    private JSpinner concurrencyCount;
 
     RunConfigurationSelectDialogWrapper(String testType, List<RunnerAndConfigurationSettings> runConfigurations) {
         super(true);
@@ -47,22 +48,36 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
             listModel.addElement(checkBox);
         }
         init();
-        setTitle("Select Run Cnfigurations");
+        setTitle("Select Run Configurations");
     }
 
     private List<String> retrievePreviousSelection() {
         PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
-        String[] values = propertiesComponent.getValues(getPropertyStorageKey());
+        String[] values = propertiesComponent.getValues(getSelectionPropertyStorageKey());
         return values != null ? Arrays.asList(values) : Collections.emptyList();
     }
 
     private void storeCurrentSelection(List<String> moduleNames) {
         PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
-        propertiesComponent.setValues(this.getClass().getName() + "_" + testType, moduleNames.toArray(new String[0]));
+        propertiesComponent.setValues(getSelectionPropertyStorageKey(), moduleNames.toArray(new String[0]));
     }
 
-    private String getPropertyStorageKey() {
-        return this.getClass().getName() + "_" + testType;
+    private int retrieveConcurrencyCount() {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        return propertiesComponent.getInt(getConcurrencyPropertyStorageKey(), 4);
+    }
+
+    private void storeConcurrencyCount(int count) {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        propertiesComponent.setValue(getConcurrencyPropertyStorageKey(), count, 4);
+    }
+
+    private String getSelectionPropertyStorageKey() {
+        return this.getClass().getName() + "_" + testType + "_selection";
+    }
+
+    private String getConcurrencyPropertyStorageKey() {
+        return this.getClass().getName() + "_" + testType + "_concurrency";
     }
 
     @Nullable
@@ -78,10 +93,18 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         JBScrollPane scrollPane = new JBScrollPane(list);
         scrollPane.setPreferredSize(new Dimension(600, 500));
         dialogPanel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JLabel concurrencyLabel = new JLabel("Amount of tests to run in parallel");
+        bottomPanel.add(concurrencyLabel, BorderLayout.WEST);
+        concurrencyCount = new JSpinner(new SpinnerNumberModel(retrieveConcurrencyCount(), 1, 24, 1));
+        bottomPanel.add(concurrencyCount, BorderLayout.CENTER);
         
         JButton invert = new JButton("Invert selection");
-        dialogPanel.add(invert, BorderLayout.SOUTH);
+        bottomPanel.add(invert, BorderLayout.SOUTH);
         invert.addActionListener(e -> invertSelection());
+
+        dialogPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         return dialogPanel;
     }
@@ -109,9 +132,14 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
             }
         }
         storeCurrentSelection(checkedNames);
+        storeConcurrencyCount(getConcurrencyCount());
         return runConfigurations.stream()
                 .filter(config -> checkedNames.contains(config.getName()))
                 .collect(Collectors.toList());
+    }
+
+    int getConcurrencyCount() {
+        return (int) concurrencyCount.getValue();
     }
 
 }
