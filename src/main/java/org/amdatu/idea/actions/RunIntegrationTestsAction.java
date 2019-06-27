@@ -29,7 +29,7 @@ public class RunIntegrationTestsAction extends AbstractRunTestsAction {
     }
 
     @Override
-    void customizeConfiguration(Element element, Module module) {
+    void customizeConfiguration(Element element, Module module, String programParameters) {
         // set bnd configuration options
         Element bndRunFileOption = new Element(OPTION);
         bndRunFileOption.setAttribute(NAME, "bndRunFile");
@@ -54,6 +54,13 @@ public class RunIntegrationTestsAction extends AbstractRunTestsAction {
         workingDirectoryOption.setAttribute(NAME, "workingDirectory");
         workingDirectoryOption.setAttribute(VALUE, "$PROJECT_DIR$/" + modulePathName);
         element.addContent(workingDirectoryOption);
+
+        if (programParameters != null) {
+            Element vmArgumentsElement = new Element(OPTION);
+            vmArgumentsElement.setAttribute(NAME, "programParameters");
+            vmArgumentsElement.setAttribute(VALUE, programParameters);
+            element.addContent(vmArgumentsElement);
+        }
     }
 
 }

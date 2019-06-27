@@ -195,7 +195,7 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         return true;
     }
 
-    private RunnerAndConfigurationSettings createRunConfiguration(Module module, Project project, RunConfigurationProducer runConfigurationProducer) {
+    private RunnerAndConfigurationSettings createRunConfiguration(Module module, Project project, RunConfigurationProducer runConfigurationProducer, String programParameters) {
         RunManager runManager = RunManager.getInstance(project);
         String runConfigurationName = module.getName();
         RunnerAndConfigurationSettings existingConfigurationAndSettings = runManager.findConfigurationByName(runConfigurationName);
@@ -209,7 +209,7 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         RunConfiguration configuration = configurationAndSettings.getConfiguration();
         configuration.writeExternal(element);
 
-        customizeConfiguration(element, module);
+        customizeConfiguration(element, module, programParameters);
         configuration.readExternal(element);
         configuration.setBeforeRunTasks(Collections.emptyList());
 
@@ -217,7 +217,7 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
         return configurationAndSettings;
     }
 
-    abstract void customizeConfiguration(Element element, Module module);
+    abstract void customizeConfiguration(Element element, Module module, String programParameters);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -234,18 +234,21 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
             return;
         }
 
-        List<RunnerAndConfigurationSettings> runConfigurations = getRunConfigurationTargets(project)
-                .map(root -> createRunConfiguration(root, project, runConfigurationProducer))
-                .sorted(new TestRunConfigurationComparator())
-                .collect(Collectors.toList());
+        List<Module> modules = getRunConfigurationTargets(project).collect(Collectors.toList());
+        modules.sort(new ModuleComparator());
 
-        RunConfigurationSelectDialogWrapper dialog = new RunConfigurationSelectDialogWrapper(testType, runConfigurations);
+        RunConfigurationSelectDialogWrapper dialog = new RunConfigurationSelectDialogWrapper(testType, modules);
         if (dialog.showAndGet()) {
-            List<RunnerAndConfigurationSettings> selectedConfigurations = dialog.getSelectedConfigurations();
-            selectedConfigurations.sort(new TestRunConfigurationComparator());
+            List<Module> selectedModules = dialog.getSelectedModules();
+            selectedModules.sort(new ModuleComparator());
 
             Executor executor = DefaultRunExecutor.getRunExecutorInstance();
             int concurrentRunners = dialog.getConcurrencyCount();
+
+            List<RunnerAndConfigurationSettings> selectedConfigurations = selectedModules.stream()
+                    .map(root -> createRunConfiguration(root, project, runConfigurationProducer, dialog.getProgramParameters()))
+                    .sorted(new TestRunConfigurationComparator())
+                    .collect(Collectors.toList());
 
             Set<String> failedModules = ConcurrentHashMap.newKeySet();
             CountDownLatch countDownLatch = new CountDownLatch(selectedConfigurations.size());
@@ -264,7 +267,6 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
                 try {
                     if (countDownLatch.await(10, TimeUnit.MINUTES)) {
                         long duration = System.currentTimeMillis() - start;
-                        int errorCount = 0;
                         ApplicationManager.getApplication().invokeLater(() -> {
                             long durationInSeconds = duration / 1000;
                             String statusMessage = failedModules.isEmpty() ? "All tests completed successfully!" : "The following modules had test failures: \n\n" + failedModules.stream().map(name -> "- " + name).collect(Collectors.joining("\n"));
@@ -296,6 +298,14 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
 
         @Override
         public int compare(RunnerAndConfigurationSettings o1, RunnerAndConfigurationSettings o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    }
+
+    static class ModuleComparator implements Comparator<Module> {
+
+        @Override
+        public int compare(Module o1, Module o2) {
             return o1.getName().compareTo(o2.getName());
         }
     }

@@ -14,8 +14,8 @@
 
 package org.amdatu.idea.actions;
 
-import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.CheckBoxList;
 import com.intellij.ui.components.JBCheckBox;
@@ -32,20 +32,21 @@ import java.util.stream.Collectors;
 public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
 
     private final String testType;
-    private final List<RunnerAndConfigurationSettings> runConfigurations;
+    private final List<Module> modules;
     private DefaultListModel<JCheckBox> listModel;
     private JSpinner concurrencyCount;
     private JCheckBox reRunCheckBox;
+    private JTextField programParametersTextField;
 
-    RunConfigurationSelectDialogWrapper(String testType, List<RunnerAndConfigurationSettings> runConfigurations) {
+    RunConfigurationSelectDialogWrapper(String testType, List<Module> modules) {
         super(true);
         this.testType = testType;
-        this.runConfigurations = runConfigurations;
+        this.modules = modules;
         listModel = new DefaultListModel<>();
         List<String> previouslySelectedModuleNames = retrievePreviousSelection();
         boolean selectByDefault = previouslySelectedModuleNames.isEmpty();
-        for (RunnerAndConfigurationSettings runConfiguration : runConfigurations) {
-            JCheckBox checkBox = new JBCheckBox(runConfiguration.getName(), previouslySelectedModuleNames.contains(runConfiguration.getName()) || selectByDefault);
+        for (Module module : modules) {
+            JCheckBox checkBox = new JBCheckBox(module.getName(), previouslySelectedModuleNames.contains(module.getName()) || selectByDefault);
             listModel.addElement(checkBox);
         }
         init();
@@ -83,12 +84,26 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         propertiesComponent.setValue(getReRunPropertyStorageKey(), mark, false);
     }
 
+    private String retrieveProgramParameters() {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        return propertiesComponent.getValue(getProgramParametersPropertyStorageKey(), "");
+    }
+
+    private void storeProgramParameters(String parameters) {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        propertiesComponent.setValue(getProgramParametersPropertyStorageKey(), parameters, "");
+    }
+
     private String getSelectionPropertyStorageKey() {
         return this.getClass().getName() + "_" + testType + "_selection";
     }
 
     private String getConcurrencyPropertyStorageKey() {
         return this.getClass().getName() + "_" + testType + "_concurrency";
+    }
+
+    private String getProgramParametersPropertyStorageKey() {
+        return this.getClass().getName() + "_" + testType + "_program-parameters";
     }
 
     private String getReRunPropertyStorageKey() {
@@ -112,8 +127,12 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
 
-        JPanel optionsPanel = new JPanel(new GridLayout(2, 2));
+        JPanel optionsPanel = new JPanel(new GridLayout(3, 2));
 
+        JLabel programParametersLabel = new JLabel("Program parameters");
+        optionsPanel.add(programParametersLabel);
+        programParametersTextField = new JTextField(retrieveProgramParameters());
+        optionsPanel.add(programParametersTextField);
         JLabel concurrencyLabel = new JLabel("Amount of tests to run in parallel");
         optionsPanel.add(concurrencyLabel);
         concurrencyCount = new JSpinner(new SpinnerNumberModel(retrieveConcurrencyCount(), 1, 24, 1));
@@ -166,7 +185,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         });
     }
 
-    List<RunnerAndConfigurationSettings> getSelectedConfigurations() {
+    List<Module> getSelectedModules() {
         List<String> checkedNames = new ArrayList<>();
         Enumeration<JCheckBox> enumeration = listModel.elements();
         while (enumeration.hasMoreElements()) {
@@ -178,13 +197,18 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         storeCurrentSelection(checkedNames);
         storeConcurrencyCount(getConcurrencyCount());
         storeMarkForRerun(markFailedForReRun());
-        return runConfigurations.stream()
-                .filter(config -> checkedNames.contains(config.getName()))
+        storeProgramParameters(getProgramParameters());
+        return modules.stream()
+                .filter(module -> checkedNames.contains(module.getName()))
                 .collect(Collectors.toList());
     }
 
     boolean markFailedForReRun() {
         return reRunCheckBox.isSelected();
+    }
+
+    String getProgramParameters() {
+        return programParametersTextField.getText();
     }
 
     int getConcurrencyCount() {

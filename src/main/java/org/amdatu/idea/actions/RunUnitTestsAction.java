@@ -54,7 +54,7 @@ public class RunUnitTestsAction extends AbstractRunTestsAction {
     }
 
     @Override
-    void customizeConfiguration(Element element, Module module) {
+    void customizeConfiguration(Element element, Module module, String programParameters) {
         String moduleName = module.getName();
         // set module name
         Element moduleElement = new Element(MODULE);
@@ -66,6 +66,13 @@ public class RunUnitTestsAction extends AbstractRunTestsAction {
         testObjectElement.setAttribute(NAME, "TEST_OBJECT");
         testObjectElement.setAttribute(VALUE, "package");
         element.addContent(testObjectElement);
+
+        if (programParameters != null) {
+            Element vmArgumentsElement = new Element(OPTION);
+            vmArgumentsElement.setAttribute(NAME, "VM_PARAMETERS");
+            vmArgumentsElement.setAttribute(VALUE, programParameters);
+            element.addContent(vmArgumentsElement);
+        }
     }
 
     static class JavaFileVisitor extends VirtualFileVisitor<Boolean> {
