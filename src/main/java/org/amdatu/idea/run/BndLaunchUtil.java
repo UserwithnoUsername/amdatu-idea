@@ -14,15 +14,16 @@
 package org.amdatu.idea.run;
 
 import aQute.bnd.build.ProjectLauncher;
-
 import com.intellij.execution.CantRunException;
 import com.intellij.execution.configurations.JavaParameters;
 import com.intellij.execution.util.JavaParametersUtil;
 import com.intellij.execution.util.ProgramParametersUtil;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
-
+import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
@@ -32,6 +33,12 @@ import java.util.List;
 import java.util.Map;
 
 public class BndLaunchUtil {
+
+    private BndLaunchUtil() {
+        // prevent instantiation
+    }
+
+    private static final Logger LOG = Logger.getInstance(BndLaunchUtil.class);
 
     @NotNull
     static JavaParameters createJavaParameters(@NotNull BndRunConfigurationBase configuration,
@@ -77,5 +84,20 @@ public class BndLaunchUtil {
                             Constants.FRAMEWORK_BOOTDELEGATION, packages)));
         }
 
+    }
+
+    public static boolean isTestModule(Module module) {
+        if (module == null) {
+            return false;
+        }
+
+        AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
+        try {
+            aQute.bnd.build.Project project = amdatuIdeaPlugin.withWorkspace(ws -> ws.getProject(module.getName()));
+            return project.getProperties().containsKey(aQute.bnd.osgi.Constants.TESTCASES);
+        } catch (Exception e) {
+            LOG.warn("isTestModule check failed for module: " + module.getName(), e);
+            return false;
+        }
     }
 }

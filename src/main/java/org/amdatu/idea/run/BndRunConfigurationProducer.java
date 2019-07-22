@@ -13,19 +13,12 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import org.amdatu.idea.AmdatuIdeaConstants;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.runner.RunWith;
-
 import com.intellij.execution.JavaRunConfigurationExtensionManager;
 import com.intellij.execution.Location;
 import com.intellij.execution.actions.ConfigurationContext;
 import com.intellij.execution.actions.ConfigurationFromContext;
 import com.intellij.execution.actions.RunConfigurationProducer;
 import com.intellij.execution.configurations.ConfigurationFactory;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.Ref;
@@ -36,15 +29,16 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.util.PsiTreeUtil;
-
-import aQute.bnd.osgi.Constants;
 import junit.framework.TestCase;
+import org.amdatu.idea.AmdatuIdeaConstants;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.runner.RunWith;
+
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_EXT;
 import static org.amdatu.idea.AmdatuIdeaConstants.BND_RUN_EXT;
 
 public abstract class BndRunConfigurationProducer extends RunConfigurationProducer<BndRunConfigurationBase> {
-
-    private static final Logger LOG = Logger.getInstance(BndRunConfigurationProducer.class);
 
     BndRunConfigurationProducer(@NotNull ConfigurationFactory factory) {
         super(factory);
@@ -73,7 +67,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         }
 
         VirtualFile file = location.getVirtualFile();
-        if ((file == null || file.isDirectory()) && isTestModule(module)) {
+        if ((file == null || file.isDirectory()) && BndLaunchUtil.isTestModule(module)) {
             // For test projects try to find the bnd.bnd file in case there is no file or it's a folder.
             // This can happen for example when the module is right clicked from the project tree.
             // Only for test projects as "normal" projects can't (or should not run from bnd.bnd) but use a bndrun
@@ -90,7 +84,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         configuration.getOptions().setWorkingDirectory(modulePath);
         configuration.getOptions().setPassParentEnvs(true);
 
-        if ((configuration instanceof BndRunConfigurationBase.Launch) && !isTestModule(module)) {
+        if ((configuration instanceof BndRunConfigurationBase.Launch) && !BndLaunchUtil.isTestModule(module)) {
             if (isBndPropertiesFile(file)) {
                 String name;
                 if (BND_RUN_EXT.equals(file.getExtension())) {
@@ -103,7 +97,7 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                 configuration.getOptions().setBndRunFile(file.getPath());
                 return true;
             }
-        } else if (configuration instanceof BndRunConfigurationBase.Test && isTestModule(module)) {
+        } else if (configuration instanceof BndRunConfigurationBase.Test && BndLaunchUtil.isTestModule(module)) {
             if (isBndPropertiesFile(file) && file.getName().equals(AmdatuIdeaConstants.BND_BND)) {
                 configuration.setName(moduleName);
                 configuration.getOptions().setBndRunFile(file.getPath());
@@ -262,18 +256,4 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
                 (BND_EXT.equals(file.getExtension()) || BND_RUN_EXT.equals(file.getExtension()));
     }
 
-    private static boolean isTestModule(Module module) {
-        if (module == null) {
-            return false;
-        }
-
-        AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
-        try {
-            aQute.bnd.build.Project project = amdatuIdeaPlugin.withWorkspace(ws -> ws.getProject(module.getName()));
-            return project.getProperties().containsKey(Constants.TESTCASES);
-        } catch (Exception e) {
-            LOG.warn("isTestModule check failed for module: " + module.getName(), e);
-            return false;
-        }
-    }
 }
