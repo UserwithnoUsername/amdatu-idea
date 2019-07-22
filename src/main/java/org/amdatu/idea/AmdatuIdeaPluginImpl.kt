@@ -37,8 +37,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import org.amdatu.idea.imp.BndProjectImporter
 import java.io.File
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantLock
 
 val AMDATU_IDEA_NOTIFICATION_GROUP = NotificationGroup("Amdatu", NotificationDisplayType.TOOL_WINDOW, true)
 
@@ -79,7 +77,6 @@ interface AmdatuIdeaPlugin {
 
 class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
 
-    private val lock = ReentrantLock();
     private var myWorkspace: Workspace? = null
     private var myWorkspaceModelSync: WorkspaceModelSync? = null
 
@@ -162,16 +159,8 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
     override fun <T> withWorkspace(workspaceFunction: (workspace: Workspace) -> T): T {
         myWorkspace
                 ?.let {
-                    val locked = lock.tryLock(30, TimeUnit.SECONDS)
-                    if (locked) {
-                        try {
-                            return workspaceFunction.invoke(it)
-                        } finally {
-                            lock.unlock()
-                        }
-                    } else {
-                        throw IllegalStateException("Failed to acquire workspace lock")
-                    }
+
+                    return it.writeLocked { workspaceFunction.invoke(it) }
                 }
                 ?: throw notInitializedException()
     }
