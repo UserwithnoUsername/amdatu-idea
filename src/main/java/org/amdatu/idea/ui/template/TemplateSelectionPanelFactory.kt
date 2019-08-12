@@ -14,12 +14,9 @@
 package org.amdatu.idea.ui.template
 
 import com.intellij.icons.AllIcons
-import com.intellij.internal.statistic.eventLog.initStateEventTrackers
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
-import com.intellij.ui.layout.CCFlags
-import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.IconUtil

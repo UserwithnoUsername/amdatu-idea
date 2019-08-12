@@ -20,10 +20,7 @@
     </description>
     <category>Framework integration</category>
     <vendor>The Amdatu Foundation</vendor>
-    <idea-version since-build="183"/>
-
-    <change-notes>
-    </change-notes>
+    <idea-version since-build="183.2153.8"/>
 
     <depends>com.intellij.modules.java</depends>
 
@@ -41,7 +38,6 @@
             <implementation-class>org.amdatu.idea.BaseliningErrorServiceImpl</implementation-class>
         </component>
         <component>
-            <interface-class>org.amdatu.idea.PackageInfoService</interface-class>
             <implementation-class>org.amdatu.idea.PackageInfoService</implementation-class>
         </component>
     </project-components>
@@ -87,7 +83,7 @@
                         implementationClass="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorCommenter"/>
 
         <!-- JPS plugin -->
-        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.2.0.jar"/>
+        <compileServer.plugin classpath="jps-plugin.jar;biz.aQute.bnd-4.2.0.jar" />
 
         <!--  Run -->
         <configurationType implementation="org.amdatu.idea.run.BndRunConfigurationType"/>

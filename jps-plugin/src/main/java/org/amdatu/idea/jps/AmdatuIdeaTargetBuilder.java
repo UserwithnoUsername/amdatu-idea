@@ -87,7 +87,7 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
             }
 
         } catch (Exception e) {
-            context.processMessage(new CompilerMessage(AmdatuIdeaTargetBuilder.ID, e));
+            context.processMessage(CompilerMessage.createInternalBuilderError(AmdatuIdeaTargetBuilder.ID, e));
             return;
         }
 

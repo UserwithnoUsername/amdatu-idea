@@ -14,21 +14,16 @@
 
 package org.amdatu.idea.jps;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.builders.BuildRootDescriptor;
-import org.jetbrains.jps.builders.BuildRootIndex;
-import org.jetbrains.jps.builders.BuildTarget;
-import org.jetbrains.jps.builders.BuildTargetRegistry;
-import org.jetbrains.jps.builders.ModuleBasedTarget;
-import org.jetbrains.jps.builders.TargetOutputIndex;
+import org.jetbrains.jps.builders.*;
 import org.jetbrains.jps.builders.impl.BuildRootDescriptorImpl;
 import org.jetbrains.jps.builders.storage.BuildDataPaths;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -38,14 +33,10 @@ import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.module.JpsModule;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.util.containers.ContainerUtil;
-
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Builder;
+import java.io.File;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRootDescriptor> {
 
@@ -72,7 +63,7 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
         BuildTargetRegistry.ModuleTargetSelector selector = BuildTargetRegistry.ModuleTargetSelector.PRODUCTION;
 
-        Collection<BuildTarget<?>> dependencies = ContainerUtil.newHashSet();
+        Collection<BuildTarget<?>> dependencies = new HashSet<>();
         dependencies.addAll(targetRegistry.getModuleBasedTargets(getModule(), selector));
 
         Project project = bndWorkspace.getProject(getModule().getName());
@@ -99,7 +90,7 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
     @Override
     public List<BuildRootDescriptor> computeRootDescriptors(JpsModel model, ModuleExcludeIndex index,
                                                             IgnoredFileIndex ignoredFileIndex, BuildDataPaths dataPaths) {
-        List<BuildRootDescriptor> rootDescriptors = ContainerUtil.newArrayList();
+        List<BuildRootDescriptor> rootDescriptors = new ArrayList<>();
 
         try (Project project = bndWorkspace.getProject(getModule().getName())){
             rootDescriptors.add(new BuildRootDescriptorImpl(this, project.getPropertiesFile()));
@@ -119,7 +110,7 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
                         name = name.substring(1, name.length() - 1).trim();
                     }
 
-                    String parts[] = INCLUDE_RESOURCE_SOURCE_DEST_SPLIT.split(name);
+                    String[] parts = INCLUDE_RESOURCE_SOURCE_DEST_SPLIT.split(name);
                     String source = parts[0];
                     if (parts.length == 2)
                         source = parts[1];

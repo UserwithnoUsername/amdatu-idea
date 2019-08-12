@@ -14,13 +14,11 @@
 
 package org.amdatu.idea.jps;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Attrs;
+import aQute.bnd.osgi.Constants;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.builders.BuildTargetLoader;
@@ -29,12 +27,8 @@ import org.jetbrains.jps.model.JpsModel;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.serialization.JpsModelSerializationDataService;
 
-import com.intellij.openapi.diagnostic.Logger;
-
-import aQute.bnd.build.Project;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Attrs;
-import aQute.bnd.osgi.Constants;
+import java.io.File;
+import java.util.*;
 
 public class AmdatuIdeaModuleBasedTargetType extends ModuleBasedBuildTargetType<AmdatuIdeaModuleBasedBuildTarget> {
 

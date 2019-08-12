@@ -15,18 +15,18 @@
 package org.amdatu.idea.lang.bundledescriptor.header.impl;
 
 import aQute.bnd.osgi.Constants;
-import com.intellij.util.containers.ContainerUtil;
 import org.amdatu.idea.lang.bundledescriptor.header.HeaderParser;
 import org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class BndHeaderParsers implements HeaderParserProvider {
     private final Map<String, HeaderParser> myParsers;
 
     public BndHeaderParsers() {
-        myParsers = ContainerUtil.newHashMap();
+        myParsers = new HashMap<>();
         for (String header : Constants.headers) {
             myParsers.put(header, StandardHeaderParser.INSTANCE);
         }

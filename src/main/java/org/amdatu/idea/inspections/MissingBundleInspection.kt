@@ -74,7 +74,7 @@ class MissingBundleInspection : LocalInspectionTool() {
                 .map { container ->
                     val headerValuePartFinder = PlatformPatterns.psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
                     val test = PsiTreeUtil.collectElements(headerPsi) {
-                        headerValuePartFinder.accepts(it) && it?.text?.trim()?.startsWith(container.bundleSymbolicName) ?: false
+                        headerValuePartFinder.accepts(it) && it.text?.trim()?.startsWith(container.bundleSymbolicName) ?: false
                     }.firstOrNull() ?: headerPsi
 
                     if (container.error != null) {

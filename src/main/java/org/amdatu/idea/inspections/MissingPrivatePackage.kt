@@ -22,7 +22,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.openapi.application.ApplicationManager.getApplication
 import com.intellij.openapi.util.Computable
 import com.intellij.patterns.PlatformPatterns.psiElement
-import com.intellij.psi.*
+import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType
 import org.amdatu.idea.lang.bundledescriptor.psi.Header
@@ -68,7 +68,7 @@ class MissingPrivatePackage : LocalInspectionTool() {
 
                         val headerValuePartFinder = psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
                         val test = PsiTreeUtil.collectElements(privatePackageHeaderPsi) {
-                            headerValuePartFinder.accepts(it) && it?.text?.startsWith(packageInfo.fqn) ?: false
+                            headerValuePartFinder.accepts(it) && it.text?.startsWith(packageInfo.fqn) ?: false
                         }.firstOrNull() ?: privatePackageHeaderPsi
 
                         manager.createProblemDescriptor(test,

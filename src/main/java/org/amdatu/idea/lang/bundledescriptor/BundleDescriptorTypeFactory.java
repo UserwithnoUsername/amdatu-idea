@@ -19,14 +19,10 @@ import com.intellij.openapi.fileTypes.FileTypeFactory;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public class BundleDescriptorTypeFactory extends FileTypeFactory {
 
     public final static LanguageFileType BUNDLE_DESCRIPTOR_FILE_TYPE = new BundleDescriptorFileType();
-    private static final String EXTENSIONS = Stream.of("bnd", "bndrun")
-                    .collect(Collectors.joining(FileTypeConsumer.EXTENSION_DELIMITER));
+    private static final String EXTENSIONS = String.join(FileTypeConsumer.EXTENSION_DELIMITER, "bnd", "bndrun");
 
     @Override
     public void createFileTypes(@NotNull FileTypeConsumer consumer) {

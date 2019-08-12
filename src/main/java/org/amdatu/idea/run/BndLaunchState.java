@@ -13,13 +13,8 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import java.io.File;
-import java.util.Map;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.BndExtensionsKt;
-import org.jetbrains.annotations.NotNull;
-
+import aQute.bnd.build.ProjectLauncher;
+import aQute.bnd.build.Run;
 import com.intellij.debugger.ui.HotSwapUI;
 import com.intellij.debugger.ui.HotSwapVetoableListener;
 import com.intellij.execution.CantRunException;
@@ -41,11 +36,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileAttributes;
 import com.intellij.openapi.util.io.FileSystemUtil;
-import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.messages.MessageBusConnection;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.BndExtensionsKt;
+import org.jetbrains.annotations.NotNull;
 
-import aQute.bnd.build.ProjectLauncher;
-import aQute.bnd.build.Run;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.intellij.openapi.util.Pair.pair;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
@@ -53,13 +52,13 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
     private static final Logger LOG = Logger.getInstance(BndLaunchState.class);
     private static final Pair<Long, Long> MISSING_BUNDLE = pair(0L, 0L);
 
-    private static final Map<String, NotificationGroup> ourNotificationGroups = ContainerUtil.newHashMap();
+    private static final Map<String, NotificationGroup> ourNotificationGroups = new HashMap<>();
 
     private final BndRunConfigurationBase.Launch myConfiguration;
     private final Project myProject;
     private final NotificationGroup myNotifications;
     private ProjectLauncher myLauncher;
-    private final Map<String, Pair<Long, Long>> myBundleStamps = ContainerUtil.newHashMap();
+    private final Map<String, Pair<Long, Long>> myBundleStamps = new HashMap<>();
 
     BndLaunchState(@NotNull ExecutionEnvironment environment,
                    @NotNull BndRunConfigurationBase.Launch configuration) {

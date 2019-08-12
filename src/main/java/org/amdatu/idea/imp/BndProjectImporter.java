@@ -15,28 +15,15 @@
  */
 package org.amdatu.idea.imp;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.jar.Manifest;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
-
+import aQute.bnd.build.Container;
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectBuilder;
+import aQute.bnd.build.Workspace;
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Builder;
+import aQute.bnd.osgi.Constants;
+import aQute.bnd.osgi.Instructions;
+import aQute.bnd.osgi.Jar;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.compiler.impl.javaCompiler.javac.JavacConfiguration;
 import com.intellij.ide.highlighter.ModuleFileType;
@@ -52,27 +39,11 @@ import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModificator;
-import com.intellij.openapi.roots.CompilerModuleExtension;
-import com.intellij.openapi.roots.ContentEntry;
-import com.intellij.openapi.roots.DependencyScope;
-import com.intellij.openapi.roots.ExportableOrderEntry;
-import com.intellij.openapi.roots.JdkOrderEntry;
-import com.intellij.openapi.roots.LanguageLevelModuleExtension;
-import com.intellij.openapi.roots.LanguageLevelProjectExtension;
-import com.intellij.openapi.roots.LibraryOrderEntry;
-import com.intellij.openapi.roots.ModifiableRootModel;
-import com.intellij.openapi.roots.ModuleJdkOrderEntry;
-import com.intellij.openapi.roots.ModuleOrderEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ModuleRootModel;
-import com.intellij.openapi.roots.ModuleRootModificationUtil;
-import com.intellij.openapi.roots.ModuleSourceOrderEntry;
-import com.intellij.openapi.roots.OrderEntry;
-import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.impl.ModifiableModelCommitter;
-import com.intellij.openapi.roots.impl.libraries.ProjectLibraryTable;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
+import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.FileUtilRt;
@@ -84,17 +55,20 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
-
-import aQute.bnd.build.Container;
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectBuilder;
-import aQute.bnd.build.Workspace;
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Builder;
-import aQute.bnd.osgi.Constants;
-import aQute.bnd.osgi.Instructions;
-import aQute.bnd.osgi.Jar;
 import kotlin.Unit;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jps.model.java.compiler.JpsJavaCompilerOptions;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
 public class BndProjectImporter {
@@ -252,9 +226,9 @@ public class BndProjectImporter {
 
         ApplicationManager.getApplication().runWriteAction(() -> {
             LanguageLevel projectLevel = LanguageLevelProjectExtension.getInstance(myProject).getLanguageLevel();
-            Map<Project, ModifiableRootModel> rootModels = ContainerUtil.newHashMap();
+            Map<Project, ModifiableRootModel> rootModels = new HashMap<>();
             ModifiableModuleModel moduleModel = ModuleManager.getInstance(myProject).getModifiableModel();
-            LibraryTable.ModifiableModel libraryModel = ProjectLibraryTable.getInstance(myProject).getModifiableModel();
+            LibraryTable.ModifiableModel libraryModel = LibraryTablesRegistrar.getInstance().getLibraryTable(myProject).getModifiableModel();
             try {
                 // Remove modules that no longer exist
                 for (Module module : moduleModel.getModules()) {
@@ -484,13 +458,13 @@ public class BndProjectImporter {
                                  LibraryTable.ModifiableModel libraryModel,
                                  ModifiableRootModel rootModel,
                                  Project project) throws Exception {
-        List<String> warnings = ContainerUtil.newArrayList();
+        List<String> warnings = new ArrayList<>();
 
         Collection<Container> boot = project.getBootclasspath();
         Set<Container> bootSet = Collections.emptySet();
         if (!boot.isEmpty()) {
             setDependencies(moduleModel, libraryModel, rootModel, project, boot, false, bootSet, warnings);
-            bootSet = ContainerUtil.newHashSet(boot);
+            bootSet = new HashSet<>(boot);
 
             OrderEntry[] entries = rootModel.getOrderEntries();
             if (entries.length > 2) {
