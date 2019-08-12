@@ -13,27 +13,12 @@
 // limitations under the License.
 package org.amdatu.idea.run;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.BndExtensionsKt;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import aQute.bnd.build.Project;
+import aQute.bnd.build.ProjectLauncher;
+import aQute.bnd.build.ProjectTester;
+import aQute.bnd.service.EclipseJUnitTester;
 import com.intellij.coverage.CoverageExecutor;
-import com.intellij.execution.CantRunException;
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.Executor;
-import com.intellij.execution.JavaRunConfigurationExtensionManager;
-import com.intellij.execution.RunConfigurationExtension;
+import com.intellij.execution.*;
 import com.intellij.execution.configurations.JavaCommandLineState;
 import com.intellij.execution.configurations.JavaParameters;
 import com.intellij.execution.executors.DefaultDebugExecutor;
@@ -50,12 +35,7 @@ import com.intellij.execution.testframework.sm.runner.GeneralTestEventsProcessor
 import com.intellij.execution.testframework.sm.runner.OutputToGeneralTestEventsConverter;
 import com.intellij.execution.testframework.sm.runner.SMTRunnerConsoleProperties;
 import com.intellij.execution.testframework.sm.runner.SMTestLocator;
-import com.intellij.execution.testframework.sm.runner.events.TestFailedEvent;
-import com.intellij.execution.testframework.sm.runner.events.TestFinishedEvent;
-import com.intellij.execution.testframework.sm.runner.events.TestOutputEvent;
-import com.intellij.execution.testframework.sm.runner.events.TestStartedEvent;
-import com.intellij.execution.testframework.sm.runner.events.TestSuiteFinishedEvent;
-import com.intellij.execution.testframework.sm.runner.events.TestSuiteStartedEvent;
+import com.intellij.execution.testframework.sm.runner.events.*;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -64,11 +44,22 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.containers.ContainerUtil;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.BndExtensionsKt;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import aQute.bnd.build.Project;
-import aQute.bnd.build.ProjectLauncher;
-import aQute.bnd.build.ProjectTester;
-import aQute.bnd.service.EclipseJUnitTester;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.intellij.openapi.util.Pair.pair;
 import static com.intellij.util.io.URLUtil.SCHEME_SEPARATOR;
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
@@ -93,9 +84,7 @@ public class BndTestState extends JavaCommandLineState {
             AmdatuIdeaPlugin amdatuIdeaPlugin = myConfiguration.getProject().getComponent(AmdatuIdeaPlugin.class);
             BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
 
-            Project project = amdatuIdeaPlugin.withWorkspace(workspace -> {
-                return workspace.getProject(configurationOptions.getModuleName());
-            });
+            Project project = amdatuIdeaPlugin.withWorkspace(workspace -> workspace.getProject(configurationOptions.getModuleName()));
 
             if (DefaultDebugExecutor.EXECUTOR_ID.equals(getEnvironment().getExecutor().getId())) {
                 BndLaunchUtil.addBootDelegation(project, "com.intellij.rt.debugger.agent");
@@ -306,7 +295,7 @@ public class BndTestState extends JavaCommandLineState {
                     myReason = Proto.ERROR;
                     myFailingTest = line;
                 } else if (Proto.TRACE.equals(line)) {
-                    myTrace = ContainerUtil.newArrayListWithCapacity(20);
+                    myTrace = new ArrayList<>(20);
                 } else if (line.startsWith(Proto.TEST_END)) {
                     processTestEnd(line);
                 } else if (line.startsWith(Proto.DONE)) {

@@ -25,7 +25,6 @@
 package org.amdatu.idea.lang.bundledescriptor.header;
 
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.util.NotNullLazyValue;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;

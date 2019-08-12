@@ -18,17 +18,17 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @State(name = "AmdatuIdeaPreferences", storages = @Storage("amdatu-idea.xml"))
 public class AmdatuIdeaPreferences implements PersistentStateComponent<AmdatuIdeaPreferences> {
 
-    private List<String> myTemplateRepositoryUrls = ContainerUtil.newArrayList();
+    private List<String> myTemplateRepositoryUrls = new ArrayList<>();
 
     public AmdatuIdeaPreferences() {
         myTemplateRepositoryUrls.add("https://raw.githubusercontent.com/bndtools/bundle-hub/master/index.xml.gz");
