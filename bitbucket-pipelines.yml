@@ -7,6 +7,8 @@ pipelines:
           - gradle
         script:
           - bash ./gradlew buildPlugin --stacktrace
+        after-script:
+          - ls -lR /root/.gradle/caches/modules-2/files-2.1/com.jetbrains/jbre/
   branches:
     master:
       - step:
