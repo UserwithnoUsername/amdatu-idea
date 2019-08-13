@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.21"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41"
     }
 }
 plugins {
@@ -24,6 +24,10 @@ allprojects {
 
     runIde {
         jvmArgs = ['-Dcompiler.process.debug.port=54321']
+    }
+
+    buildSearchableOptions {
+        workingDir '/'
     }
 }
 
