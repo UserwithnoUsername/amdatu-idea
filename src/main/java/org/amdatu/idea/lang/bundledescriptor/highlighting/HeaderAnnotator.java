@@ -38,11 +38,6 @@ import org.jetbrains.annotations.NotNull;
  * @author Robert F. Beeger (robert@beeger.net)
  */
 public class HeaderAnnotator implements Annotator {
-    private final HeaderParserRepository myRepository;
-
-    public HeaderAnnotator(@NotNull HeaderParserRepository repository) {
-        myRepository = repository;
-    }
 
     @Override
     public void annotate(@NotNull PsiElement psiElement, @NotNull AnnotationHolder holder) {
@@ -54,7 +49,7 @@ public class HeaderAnnotator implements Annotator {
                                 BundleDescriptorBundle.message("header.name.invalid"));
             }
             else {
-                HeaderParser headerParser = myRepository.getHeaderParser(name);
+                HeaderParser headerParser = HeaderParserRepository.getInstance().getHeaderParser(name);
                 if (headerParser != null) {
                     headerParser.annotate(header, holder);
                 }
