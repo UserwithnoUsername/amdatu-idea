@@ -290,8 +290,9 @@ public class BndProjectImporter {
         rootModel.inheritSdk();
 
         ContentEntry contentEntry = rootModel.addContentEntry(url(project.getBase()));
+        boolean testProject = project.getProperties().containsKey(aQute.bnd.osgi.Constants.TESTCASES);
         for (File src : project.getSourcePath()) {
-            contentEntry.addSourceFolder(url(src), false);
+            contentEntry.addSourceFolder(url(src), testProject);
         }
         File testSrc = project.getTestSrc();
         if (testSrc != null) {
@@ -308,7 +309,11 @@ public class BndProjectImporter {
         compilerExt.inheritCompilerOutputPath(false);
         compilerExt.setExcludeOutput(true);
         compilerExt.setCompilerOutputPath(url(project.getSrcOutput()));
-        compilerExt.setCompilerOutputPathForTests(url(project.getTestOutput()));
+        if (testProject) {
+            compilerExt.setCompilerOutputPathForTests(url(project.getSrcOutput()));
+        } else {
+            compilerExt.setCompilerOutputPathForTests(url(project.getTestOutput()));
+        }
 
         String targetLevel = project.getProperty(Constants.JAVAC_TARGET);
         CompilerConfiguration.getInstance(myProject).setBytecodeTargetLevel(module, targetLevel);

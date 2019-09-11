@@ -23,12 +23,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiReference;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.ProjectScope;
@@ -38,6 +33,7 @@ import org.amdatu.idea.lang.bundledescriptor.header.HeaderParser;
 import org.amdatu.idea.lang.bundledescriptor.psi.Header;
 import org.amdatu.idea.lang.bundledescriptor.psi.HeaderValue;
 import org.amdatu.idea.lang.bundledescriptor.psi.HeaderValuePart;
+import org.amdatu.idea.run.BndLaunchUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class ClassReferenceParser extends StandardHeaderParser {
@@ -57,7 +53,8 @@ public class ClassReferenceParser extends StandardHeaderParser {
             provider = new JavaClassReferenceProvider() {
                 @Override
                 public GlobalSearchScope getScope(@NotNull Project project) {
-                    return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module);
+                    boolean includeTests = BndLaunchUtil.isTestModule(module);
+                    return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module, includeTests);
                 }
             };
         }
@@ -83,8 +80,9 @@ public class ClassReferenceParser extends StandardHeaderParser {
 
         Project project = header.getProject();
         Module module = ModuleUtilCore.findModuleForPsiElement(header);
+        boolean includeTests = BndLaunchUtil.isTestModule(module);
         GlobalSearchScope scope = module != null ?
-                        module.getModuleWithDependenciesAndLibrariesScope(false) :
+                        module.getModuleWithDependenciesAndLibrariesScope(includeTests) :
                         ProjectScope.getAllScope(project);
         PsiClass aClass = JavaPsiFacade.getInstance(project).findClass(className, scope);
         if (aClass == null) {

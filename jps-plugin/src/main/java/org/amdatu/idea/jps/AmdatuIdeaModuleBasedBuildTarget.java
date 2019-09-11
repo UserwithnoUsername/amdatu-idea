@@ -19,6 +19,7 @@ import aQute.bnd.build.ProjectBuilder;
 import aQute.bnd.build.Workspace;
 import aQute.bnd.header.Parameters;
 import aQute.bnd.osgi.Builder;
+import aQute.bnd.osgi.Constants;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
@@ -61,15 +62,22 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
 
     @Override
     public Collection<BuildTarget<?>> computeDependencies(BuildTargetRegistry targetRegistry, TargetOutputIndex outputIndex) {
-        BuildTargetRegistry.ModuleTargetSelector selector = BuildTargetRegistry.ModuleTargetSelector.PRODUCTION;
-
-        Collection<BuildTarget<?>> dependencies = new HashSet<>();
-        dependencies.addAll(targetRegistry.getModuleBasedTargets(getModule(), selector));
-
         Project project = bndWorkspace.getProject(getModule().getName());
+
+        BuildTargetRegistry.ModuleTargetSelector selector;
+        if (project.getProperties().containsKey(Constants.TESTCASES)) {
+            selector = BuildTargetRegistry.ModuleTargetSelector.ALL;
+        } else {
+            selector = BuildTargetRegistry.ModuleTargetSelector.PRODUCTION;
+        }
+
+        Collection<BuildTarget<?>> dependencies = new HashSet<>(targetRegistry.getModuleBasedTargets(getModule(), selector));
+
         try {
 
-            List<String> dependson = project.getDependson().stream().map(Project::getName).collect(Collectors.toList());
+            List<String> dependson = project.getDependson().stream()
+                    .map(Project::getName)
+                    .collect(Collectors.toList());
             if (!dependson.isEmpty()) {
                 targetRegistry.getAllTargets(AmdatuIdeaModuleBasedTargetType.INSTANCE)
                         .stream()
