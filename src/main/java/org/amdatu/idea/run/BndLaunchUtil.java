@@ -94,7 +94,7 @@ public class BndLaunchUtil {
         AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
         try {
             aQute.bnd.build.Project project = amdatuIdeaPlugin.withWorkspace(ws -> ws.getProject(module.getName()));
-            return project.getProperties().containsKey(aQute.bnd.osgi.Constants.TESTCASES);
+            return project != null && project.getProperties().containsKey(aQute.bnd.osgi.Constants.TESTCASES);
         } catch (Exception e) {
             LOG.warn("isTestModule check failed for module: " + module.getName(), e);
             return false;

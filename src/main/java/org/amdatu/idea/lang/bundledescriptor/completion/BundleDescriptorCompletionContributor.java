@@ -58,7 +58,7 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
         context.commitDocument();
     };
 
-    public BundleDescriptorCompletionContributor(@NotNull final HeaderParserRepository repository) {
+    public BundleDescriptorCompletionContributor() {
         extend(CompletionType.BASIC,
                         psiElement(BundleDescriptorTokenType.HEADER_NAME)
                                         .withLanguage(BundleDescriptorLanguage.INSTANCE),
@@ -72,7 +72,7 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
                                 // using the default matcher. This doesn't go well with bnd's instructions and leads to
                                 // '--instruction' to be inserted instead of '-instruction'
                                 resultSet = resultSet.withPrefixMatcher(new PlainPrefixMatcher(findPrefix(parameters)));
-                                for (String header : repository.getAllHeaderNames()) {
+                                for (String header : HeaderParserRepository.getInstance().getAllHeaderNames()) {
                                     resultSet.addElement(LookupElementBuilder.create(header)
                                                     .withInsertHandler(HEADER_INSERT_HANDLER));
                                 }

@@ -20,6 +20,7 @@ import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
+import org.amdatu.idea.run.BndLaunchUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +33,7 @@ public class RunUnitTestsAction extends AbstractRunTestsAction {
     }
 
     boolean isTestModule(Module module) {
-        return Arrays.stream(ModuleRootManager.getInstance(module).getContentEntries())
+        return !BndLaunchUtil.isTestModule(module) && Arrays.stream(ModuleRootManager.getInstance(module).getContentEntries())
                 .flatMap(entry -> Arrays.stream(entry.getSourceFolders()))
                 .anyMatch(this::isTestFolder);
     }
