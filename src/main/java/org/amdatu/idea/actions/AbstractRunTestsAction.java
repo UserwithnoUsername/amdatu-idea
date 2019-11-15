@@ -244,11 +244,17 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
 
             Executor executor = DefaultRunExecutor.getRunExecutorInstance();
             int concurrentRunners = dialog.getConcurrencyCount();
+            int iterations = dialog.getIterationCount();
 
-            List<RunnerAndConfigurationSettings> selectedConfigurations = selectedModules.stream()
+            List<RunnerAndConfigurationSettings> distinctConfigurations = selectedModules.stream()
                     .map(root -> createRunConfiguration(root, project, runConfigurationProducer, dialog.getProgramParameters()))
                     .sorted(new TestRunConfigurationComparator())
                     .collect(Collectors.toList());
+
+            List<RunnerAndConfigurationSettings> selectedConfigurations = new ArrayList<>();
+            for (int i = 0; i < iterations; i++) {
+                selectedConfigurations.addAll(distinctConfigurations);
+            }
 
             Set<String> failedModules = ConcurrentHashMap.newKeySet();
             CountDownLatch countDownLatch = new CountDownLatch(selectedConfigurations.size());
@@ -277,7 +283,10 @@ public abstract class AbstractRunTestsAction extends AmdatuIdeaAction {
                             }
                         });
                     } else {
-                        System.out.println("Timeout!");
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            String statusMessage = "Timeout while waiting for tests to complete.";
+                            Messages.showMessageDialog(statusMessage, "Error waiting for tests to complete", Messages.getErrorIcon());
+                        });
                     }
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();

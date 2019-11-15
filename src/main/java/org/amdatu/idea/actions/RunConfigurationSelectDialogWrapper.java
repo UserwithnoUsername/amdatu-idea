@@ -35,6 +35,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
     private final List<Module> modules;
     private DefaultListModel<JCheckBox> listModel;
     private JSpinner concurrencyCount;
+    private JSpinner iterationCount;
     private JCheckBox reRunCheckBox;
     private JTextField programParametersTextField;
 
@@ -74,6 +75,16 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         propertiesComponent.setValue(getConcurrencyPropertyStorageKey(), count, 4);
     }
 
+    private int retrieveIterationCount() {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        return propertiesComponent.getInt(getIterationsPropertyStorageKey(), 1);
+    }
+
+    private void storeIterationCount(int count) {
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        propertiesComponent.setValue(getIterationsPropertyStorageKey(), count, 1);
+    }
+
     private boolean retrieveMarkForRerun() {
         PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
         return propertiesComponent.getBoolean(getReRunPropertyStorageKey(), false);
@@ -102,6 +113,10 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         return this.getClass().getName() + "_" + testType + "_concurrency";
     }
 
+    private String getIterationsPropertyStorageKey() {
+        return this.getClass().getName() + "_" + testType + "_iterations";
+    }
+
     private String getProgramParametersPropertyStorageKey() {
         return this.getClass().getName() + "_" + testType + "_program-parameters";
     }
@@ -127,7 +142,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
 
-        JPanel optionsPanel = new JPanel(new GridLayout(3, 2));
+        JPanel optionsPanel = new JPanel(new GridLayout(4, 2));
 
         JLabel programParametersLabel = new JLabel("Program parameters");
         optionsPanel.add(programParametersLabel);
@@ -137,6 +152,10 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         optionsPanel.add(concurrencyLabel);
         concurrencyCount = new JSpinner(new SpinnerNumberModel(retrieveConcurrencyCount(), 1, 24, 1));
         optionsPanel.add(concurrencyCount);
+        JLabel iterationLabel = new JLabel("Iteration count");
+        optionsPanel.add(iterationLabel);
+        iterationCount = new JSpinner(new SpinnerNumberModel(retrieveIterationCount(), 1, 24, 1));
+        optionsPanel.add(iterationCount);
         JLabel reRunLabel = new JLabel("Automatically select failed tests for re-run");
         optionsPanel.add(reRunLabel);
         reRunCheckBox = new JBCheckBox(null, retrieveMarkForRerun());
@@ -196,6 +215,7 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
         }
         storeCurrentSelection(checkedNames);
         storeConcurrencyCount(getConcurrencyCount());
+        storeIterationCount(getIterationCount());
         storeMarkForRerun(markFailedForReRun());
         storeProgramParameters(getProgramParameters());
         return modules.stream()
@@ -213,6 +233,10 @@ public class RunConfigurationSelectDialogWrapper extends DialogWrapper {
 
     int getConcurrencyCount() {
         return (int) concurrencyCount.getValue();
+    }
+
+    int getIterationCount() {
+        return (int) iterationCount.getValue();
     }
 
 }
