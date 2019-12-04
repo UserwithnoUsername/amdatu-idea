@@ -15,20 +15,20 @@
 package org.amdatu.idea.inspections
 
 import com.intellij.codeInspection.InspectionToolProvider
+import com.intellij.codeInspection.LocalInspectionTool
 
 class AmdatuIdeaInspectionToolProvider : InspectionToolProvider {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun getInspectionClasses(): Array<Class<Any>> {
+    override fun getInspectionClasses(): Array<Class<out LocalInspectionTool>> {
         return arrayOf(
-                ExportedPackageWithoutVersion::class.java as Class<Any>,
-                MissingExportedPackage::class.java as Class<Any>,
-                MissingPrivatePackage::class.java as Class<Any>,
-                MissingBundleInspection::class.java as Class<Any>,
-                BundleVersionBaselining::class.java as Class<Any>,
-                PackageInfoJavaPackageVersion::class.java as Class<Any>,
-                PackageInfoPackageVersion::class.java as Class<Any>
-                )
+                ExportedPackageWithoutVersion::class.java,
+                MissingExportedPackage::class.java,
+                MissingPrivatePackage::class.java,
+                MissingBundleInspection::class.java,
+                BundleVersionBaselining::class.java,
+                PackageInfoJavaPackageVersion::class.java,
+                PackageInfoPackageVersion::class.java
+        )
     }
 
 }
