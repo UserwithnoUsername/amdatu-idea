@@ -65,7 +65,6 @@ public abstract class BndRunConfigurationProducer extends RunConfigurationProduc
         if (moduleDir == null) {
             return false;
         }
-
         VirtualFile file = location.getVirtualFile();
         if ((file == null || file.isDirectory()) && BndLaunchUtil.isTestModule(module)) {
             // For test projects try to find the bnd.bnd file in case there is no file or it's a folder.
