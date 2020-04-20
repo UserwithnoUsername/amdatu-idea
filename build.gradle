@@ -42,7 +42,7 @@ repositories {
 // When updating the bnd version used make sure to alsp update the org.bndtools.templating jar in the libs folder as this
 // embeds some bnd classes. Using different versions can cause issues caused by having multiple versions of the same class
 // on the classpath.
-ext.bndVersion = '4.2.0'
+ext.bndVersion = '4.3.1'
 
 dependencies {
     compile "biz.aQute.bnd:biz.aQute.bnd:${bndVersion}",
