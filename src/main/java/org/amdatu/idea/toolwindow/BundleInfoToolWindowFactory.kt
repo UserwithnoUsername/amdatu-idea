@@ -29,8 +29,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import com.intellij.openapi.wm.ToolWindowAnchor
-import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ToolWindow
+import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.content.ContentFactory
@@ -38,7 +38,6 @@ import com.intellij.ui.layout.CCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.tree.AbstractTreeModel
-import icons.OsmorcIdeaIcons
 import org.amdatu.idea.AmdatuIdeaConstants
 import org.amdatu.idea.AmdatuIdeaPlugin
 import java.io.File
@@ -50,15 +49,15 @@ import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-class BundleInfoToolWindow(val project: Project) {
+class BundleInfoToolWindowFactory : ToolWindowFactory {
 
     private val calculatedImportsTreeModel = CalculatedImportsTreeModel()
     private val calculatedImportsTree = Tree(calculatedImportsTreeModel)
-    private val projectFileIndex = ProjectFileIndex.getInstance(project)
     private val calculateImportsBtn = JButton("Calculate imports")
     private var file: VirtualFile? = null
 
-    init {
+    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        toolWindow.stripeTitle = "Bundle info"
         calculatedImportsTree.apply {
             isEditable = false
             isRootVisible = false
@@ -89,15 +88,11 @@ class BundleInfoToolWindow(val project: Project) {
         }
 
         calculateImportsBtn.addActionListener {
-            updateToolWindow()
+            updateToolWindow(project)
         }
 
-        val toolWindowManager = ToolWindowManager.getInstance(project)
-
         val content = ContentFactory.SERVICE.getInstance().createContent(createBundleInfoPanel(), "Calculated imports  ", false)
-        val toolWindow = toolWindowManager.registerToolWindow("amdatu.idea.toolwindow.bundle-info", false, ToolWindowAnchor.BOTTOM, project, true)
-        toolWindow.stripeTitle = "Bundle info"
-        toolWindow.icon = OsmorcIdeaIcons.Bnd
+
         toolWindow.contentManager.addContent(content)
 
 
@@ -138,11 +133,11 @@ class BundleInfoToolWindow(val project: Project) {
         })
     }
 
-    private fun updateToolWindow() {
+    private fun updateToolWindow(project: Project) {
         val f = file ?: return
         object : Task.Backgroundable(project, "Calculating imports", false) {
             override fun run(indicator: ProgressIndicator) {
-                getBuilderForFile(f)?.use { builder ->
+                getBuilderForFile(project, f)?.use { builder ->
                     calculatedImportsTreeModel.setImports(null)
                     calculatedImportsTree.updateUI()
 
@@ -190,7 +185,8 @@ class BundleInfoToolWindow(val project: Project) {
         return classes
     }
 
-    private fun getBuilderForFile(file: VirtualFile): Builder? {
+    private fun getBuilderForFile(project: Project, file: VirtualFile): Builder? {
+        val projectFileIndex = ProjectFileIndex.getInstance(project)
         val moduleForFile = projectFileIndex.getModuleForFile(file) ?: return null
         val bndProject = project.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { ws -> ws.getProject(moduleForFile.name) } ?: return null
 

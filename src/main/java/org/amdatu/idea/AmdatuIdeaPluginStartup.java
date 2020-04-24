@@ -14,21 +14,16 @@
 
 package org.amdatu.idea;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
-import org.amdatu.idea.toolwindow.BundleInfoToolWindow;
-import org.amdatu.idea.toolwindow.RepositoriesPanel;
-import org.jetbrains.annotations.NotNull;
-
 import com.intellij.diagnostic.errordialog.PluginConflictDialog;
-import com.intellij.ide.highlighter.ModuleFileType;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static com.intellij.openapi.extensions.PluginId.getId;
 
@@ -39,15 +34,8 @@ public class AmdatuIdeaPluginStartup implements StartupActivity {
         checkOsmorcNotActive();
 
         AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
-
-        String rootDir = project.getBasePath();
-        String imlPath = rootDir + File.separator + project.getName() + ModuleFileType.DOT_DEFAULT_EXTENSION;
-
-        if (amdatuIdeaPlugin.isBndWorkspace() && new File(imlPath).isFile()) {
+        if (new BndWorkspaceCondition().value(project)) {
             amdatuIdeaPlugin.initialize();
-
-            new BundleInfoToolWindow(project);
-            new RepositoriesPanel(project);
 
             // TODO: Fix update check
 //            new CheckForBlueprintUpdate().checkForUpdate(project);

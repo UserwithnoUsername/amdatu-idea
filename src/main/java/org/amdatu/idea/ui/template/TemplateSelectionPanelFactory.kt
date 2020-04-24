@@ -104,7 +104,7 @@ class TemplateSelectionPanelFactory {
         return panel {
 
             row {
-                scrollPane(templateTree, growX, growY, pushX )
+                scrollPane(templateTree)
             }
             row {
                 descriptionPane(growX, pushX)
