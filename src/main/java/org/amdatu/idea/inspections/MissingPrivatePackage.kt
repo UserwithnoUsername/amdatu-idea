@@ -52,10 +52,10 @@ class MissingPrivatePackage : LocalInspectionTool() {
         val (_, module, _, _, builder) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
-        return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
+        return getApplication().runReadAction(Computable {
             val privatePackages = PackageUtil.getModulePackageInfo(module, builder.privatePackage)
 
-            val privatePackageHeader = psiElement<Header>(Header::class.java)
+            val privatePackageHeader = psiElement(Header::class.java)
                     .withName(Constants.PRIVATE_PACKAGE, Constants.PRIVATEPACKAGE)
             val privatePackageHeaderPsi = PsiTreeUtil
                     .collectElements(file, privatePackageHeader::accepts)

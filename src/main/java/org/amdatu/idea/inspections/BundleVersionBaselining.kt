@@ -51,7 +51,7 @@ class BundleVersionBaselining : LocalInspectionTool() {
 
         val bundleSuggestion = baseliningErrorService.getBundleSuggestion(file.virtualFile) ?: return null
 
-        val bundleVersionHeader = PlatformPatterns.psiElement<Header>(Header::class.java).withName(Constants.BUNDLE_VERSION)
+        val bundleVersionHeader = PlatformPatterns.psiElement(Header::class.java).withName(Constants.BUNDLE_VERSION)
         val addMarkerTo = PsiTreeUtil.collectElements(file, bundleVersionHeader::accepts).firstOrNull() ?: file
 
         val headerValuePartFinder = PlatformPatterns.psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)

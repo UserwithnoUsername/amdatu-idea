@@ -19,20 +19,17 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.psi.JavaCodeFragmentFactory
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.EditorTextField
-import com.intellij.ui.layout.CCFlags
-import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import org.osgi.service.metatype.AttributeDefinition
 import org.osgi.service.metatype.ObjectClassDefinition
 import java.awt.Dimension
-import java.util.*
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 typealias PropertyChangeListener = (id: String, value: List<Any>) -> Unit
 
-val DEFAULT_CONTEXT_ATTRS: List<String> = Arrays.asList("basePackageDir", "basePackageName", "srcDir", "testSrcDir")
+val DEFAULT_CONTEXT_ATTRS: List<String> = listOf("basePackageDir", "basePackageName", "srcDir", "testSrcDir")
 
 class MetaTypeEditPanelFactory(private val myProject: Project) {
 
@@ -152,13 +149,13 @@ class MetaTypeEditPanelFactory(private val myProject: Project) {
         val defaultComboBoxModel = DefaultComboBoxModel<Option>()
         var selected = 0
         for ((index, optionValue) in attributeDefinition.optionValues.withIndex()) {
-            defaultComboBoxModel.addElement(Option(optionValue, attributeDefinition.optionLabels.getOrElse(index, { optionValue })))
+            defaultComboBoxModel.addElement(Option(optionValue, attributeDefinition.optionLabels.getOrElse(index) { optionValue }))
             if (optionValue == defaultValue) {
                 selected = index
             }
         }
 
-        return ComboBox<Option>(defaultComboBoxModel).apply {
+        return ComboBox(defaultComboBoxModel).apply {
             selectedIndex = selected
             addActionListener {
                 propertyChangeListener(attributeDefinition.id, listOf((selectedItem as Option).key))

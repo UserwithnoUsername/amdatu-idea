@@ -158,7 +158,7 @@ class SelectStep(private val myModel: CreateConfigurationTemplateModel) : Wizard
         myModel.metaDataList.flatMap { it.designates }
                 .forEach { designateModel.addElement(it as Designate) }
 
-        val designateComboBox = ComboBox<Designate>(designateModel)
+        val designateComboBox = ComboBox(designateModel)
         designateComboBox.renderer = object : ColoredListCellRenderer<Designate>() {
             override fun customizeCellRenderer(list: JList<out Designate>, value: Designate?, index: Int, selected: Boolean, hasFocus: Boolean) {
 

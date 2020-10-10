@@ -86,8 +86,7 @@ private fun applyTemplate(template: Template, dir: File, map: Map<String,List<An
     }
 
     for ((relativePath, resource) in resourceMap.entries()) {
-        val type = resource.type
-        when (type) {
+        when (val type = resource.type) {
             ResourceType.Folder -> {
                 val folder = File(dir, relativePath)
                 createFolder(folder)

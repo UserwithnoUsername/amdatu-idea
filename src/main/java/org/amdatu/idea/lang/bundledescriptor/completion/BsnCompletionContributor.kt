@@ -35,7 +35,7 @@ class BsnCompletionContributor : CompletionContributor() {
 
     private fun getPlace(name: String): PsiElementPattern.Capture<PsiElement> {
         return psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
-                .withSuperParent(2, psiElement<Header>(Header::class.java)
+                .withSuperParent(2, psiElement(Header::class.java)
                         .withName(StandardPatterns.string().startsWith(name)))
     }
 
@@ -59,8 +59,8 @@ class BsnCompletionContributor : CompletionContributor() {
             val added = Parameters(p[DUMMY_PROPERTY_KEY] as String).keys
             amdatuIdePlugin.withWorkspace { workspace ->
                 workspace.allProjects
-                        .flatMap {
-                            it.getBuilder(null)
+                        .flatMap { project ->
+                            project.getBuilder(null)
                                     .subBuilders
                                     .filter { !workspaceBundlesWithExportedPackagesOnly || it.exportPackage.isNotEmpty() } // Ignore bundles that don't export anything
                                     .filter { !added.contains(it.bsn) } // Remove already added bundles

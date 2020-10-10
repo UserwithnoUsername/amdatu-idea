@@ -18,12 +18,11 @@ import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.openapi.project.Project
 import org.amdatu.idea.BaseliningPackageSuggestion
-import java.lang.IllegalArgumentException
 
-class UpdatePackageInfoPackageVersion(val baseliningPackageSuggestion: BaseliningPackageSuggestion) : LocalQuickFix {
+class UpdatePackageInfoPackageVersion(private val baseliningPackageSuggestion: BaseliningPackageSuggestion) : LocalQuickFix {
 
     init {
-        if (!baseliningPackageSuggestion.source.name.equals("packageinfo")) {
+        if (baseliningPackageSuggestion.source.name != "packageinfo") {
             throw IllegalArgumentException("UpdatePackageInfoPackageVersion can only be used on a packageinfo file")
         }
     }

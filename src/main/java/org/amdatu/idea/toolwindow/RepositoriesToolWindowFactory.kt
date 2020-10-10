@@ -35,7 +35,7 @@ import javax.swing.tree.TreePath
 
 val LOG = Logger.getInstance(RepositoriesToolWindowFactory::class.java)
 
-class RepositoriesToolWindowFactory() : ToolWindowFactory {
+class RepositoriesToolWindowFactory : ToolWindowFactory {
 
     override fun isApplicable(project: Project): Boolean {
         return project.getComponent(AmdatuIdeaPlugin::class.java)?.isBndWorkspace() == true
@@ -48,7 +48,7 @@ class RepositoriesToolWindowFactory() : ToolWindowFactory {
     }
 
 
-    fun createRepositoriesPanel(project: Project): JPanel {
+    private fun createRepositoriesPanel(project: Project): JPanel {
         val searchField = JTextField()
         val searchButton = JButton("Search")
         val repositoriesTreeModel = RepositoriesTreeModel(project, searchField)

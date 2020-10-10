@@ -34,7 +34,6 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import org.amdatu.idea.imp.BndProjectImporter
 import java.io.File
 
@@ -126,11 +125,11 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
         val messageBusConnection = project.messageBus.connect()
         val workspaceModelSync = WorkspaceModelSync(project, this)
         myWorkspaceModelSync = workspaceModelSync
-        messageBusConnection.subscribe<BulkFileListener>(VirtualFileManager.VFS_CHANGES, workspaceModelSync)
+        messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, workspaceModelSync)
 
         messageBusConnection.subscribe(BatchFileChangeListener.TOPIC, object : BatchFileChangeListener {
 
-            var batchListenerPause = false;
+            var batchListenerPause = false
 
             override fun batchChangeStarted(p: Project, activityName: String?) {
                 if (p == project) {

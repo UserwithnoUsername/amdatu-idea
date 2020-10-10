@@ -22,7 +22,7 @@ import com.intellij.openapi.project.Project
 import org.amdatu.idea.BaseliningBundleSuggestion
 import java.io.IOException
 
-class UpdateBundleVersion(val baseliningBundleSuggestion: BaseliningBundleSuggestion) : LocalQuickFix {
+class UpdateBundleVersion(private val baseliningBundleSuggestion: BaseliningBundleSuggestion) : LocalQuickFix {
 
     override fun getName(): String {
         return "Update Bundle-Version to ${baseliningBundleSuggestion.suggestedVersion}"

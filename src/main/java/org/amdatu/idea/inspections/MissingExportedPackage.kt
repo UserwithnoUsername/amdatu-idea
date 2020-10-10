@@ -52,8 +52,8 @@ class MissingExportedPackage : LocalInspectionTool() {
         val (_, module, _, _, builder) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
-        return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
-            val exportPackageHeader = psiElement<Header>(Header::class.java).withName(Constants.EXPORT_PACKAGE)
+        return getApplication().runReadAction(Computable {
+            val exportPackageHeader = psiElement(Header::class.java).withName(Constants.EXPORT_PACKAGE)
             val exportPackageHeaderPsi = PsiTreeUtil.collectElements(file, exportPackageHeader::accepts).firstOrNull()
                     ?: file
             val packages = PackageUtil.getModulePackageInfo(module, builder.exportPackage)

@@ -49,7 +49,7 @@ class UpdateConfigurationProjectAction : AnAction() {
         val templates = templateLoader.findTemplates(project, "workspace")
 
         val wizardModel = TemplateWizardModel(project, templates)
-        val wizardDialog = WizardDialog<TemplateWizardModel>(project, false, wizardModel)
+        val wizardDialog = WizardDialog(project, false, wizardModel)
         if (wizardDialog.showAndGet()) {
             val template = wizardModel.template ?: return
 
@@ -106,10 +106,10 @@ class SelectTemplateStep(
 
         var panel = myPanel
         if (panel === null) {
-            panel = TemplateSelectionPanelFactory().create(myTemplates, { selectedTemplate ->
+            panel = TemplateSelectionPanelFactory().create(myTemplates) { selectedTemplate ->
                 myWizardModel.template = selectedTemplate
                 updateState(state)
-            })
+            }
             myPanel = panel
         }
 

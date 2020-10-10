@@ -34,7 +34,7 @@ class PackageCompletionContributor : CompletionContributor() {
 
     private fun getPlace(name: String): PsiElementPattern.Capture<PsiElement> {
         return PlatformPatterns.psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
-                .withSuperParent(2, PlatformPatterns.psiElement<Header>(Header::class.java)
+                .withSuperParent(2, PlatformPatterns.psiElement(Header::class.java)
                         .withName(StandardPatterns.string().startsWith(name)))
     }
 

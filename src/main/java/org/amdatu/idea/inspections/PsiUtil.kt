@@ -66,7 +66,7 @@ class PsiUtil {
         private fun getModuleForPsiFile(psiFile: PsiFile): Module? {
             val module = ProjectFileIndex.getInstance(psiFile.project).getModuleForFile(psiFile.virtualFile)
             if (module == null) {
-                logger.debug({ "Failed to get module for PsiFile: $psiFile" })
+                logger.debug { "Failed to get module for PsiFile: $psiFile" }
             }
             return module
         }
@@ -75,7 +75,7 @@ class PsiUtil {
             val amdatuIdePlugin = psiFile.project.getComponent(AmdatuIdeaPlugin::class.java)
 
             if (amdatuIdePlugin == null) {
-                logger.debug({ "AmdatuIdeaPlugin component not available for project: ${psiFile.project}" })
+                logger.debug { "AmdatuIdeaPlugin component not available for project: ${psiFile.project}" }
             }
 
             return amdatuIdePlugin

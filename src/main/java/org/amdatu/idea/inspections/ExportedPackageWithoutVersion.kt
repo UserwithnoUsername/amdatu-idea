@@ -56,10 +56,10 @@ class ExportedPackageWithoutVersion : LocalInspectionTool() {
         val (_, module, _, _, builder) =
                 PsiUtil.getBndBuilderContextForPsiFile(file) ?: return null
 
-        return getApplication().runReadAction(Computable<Array<ProblemDescriptor>> {
+        return getApplication().runReadAction(Computable {
             val array = arrayListOf<ProblemDescriptor>()
 
-            val exportPackageHeader = psiElement<Header>(Header::class.java).withName(Constants.EXPORT_PACKAGE)
+            val exportPackageHeader = psiElement(Header::class.java).withName(Constants.EXPORT_PACKAGE)
             val exportPackageHeaderPsi = PsiTreeUtil.collectElements(file, exportPackageHeader::accepts).firstOrNull()
                     ?: file
             val packages = PackageUtil.getModulePackageInfo(module, builder.exportPackage)
@@ -69,9 +69,9 @@ class ExportedPackageWithoutVersion : LocalInspectionTool() {
                     .map { packageInfo ->
 
                         val headerValuePartFinder = psiElement(BundleDescriptorTokenType.HEADER_VALUE_PART)
-                        val test = PsiTreeUtil.collectElements(exportPackageHeaderPsi, {
+                        val test = PsiTreeUtil.collectElements(exportPackageHeaderPsi) {
                             headerValuePartFinder.accepts(it) && it.text?.startsWith(packageInfo.fqn) ?: false
-                        }).firstOrNull() ?: exportPackageHeaderPsi
+                        }.firstOrNull() ?: exportPackageHeaderPsi
 
                         manager.createProblemDescriptor(test,
                                 "Package '${packageInfo.fqn}' has no version specified",

@@ -20,10 +20,10 @@ import com.intellij.openapi.project.Project
 import org.amdatu.idea.BaseliningPackageSuggestion
 import java.io.IOException
 
-class UpdatePackageInfoJavaPackageVersion(val baseliningPackageSuggestion: BaseliningPackageSuggestion) : LocalQuickFix {
+class UpdatePackageInfoJavaPackageVersion(private val baseliningPackageSuggestion: BaseliningPackageSuggestion) : LocalQuickFix {
 
     init {
-        if (!baseliningPackageSuggestion.source.name.equals("package-info.java")) {
+        if (baseliningPackageSuggestion.source.name != "package-info.java") {
             throw IllegalArgumentException("UpdatePackageInfoPackageVersion can only be used on package-info.java")
         }
     }

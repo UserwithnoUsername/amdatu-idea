@@ -31,7 +31,7 @@ class CheckForBlueprintUpdate : AmdatuIdeaAction() {
         checkForUpdate(project)
     }
 
-    fun checkForUpdate(project: Project) {
+    private fun checkForUpdate(project: Project) {
         val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
         amdatuIdeaPlugin.withWorkspace { workspace ->
 

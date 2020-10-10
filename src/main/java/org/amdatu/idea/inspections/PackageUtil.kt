@@ -107,7 +107,7 @@ class PackageUtil {
         private fun getSubPackages(psiPackage: PsiPackage, globalSearchScope: GlobalSearchScope): List<PsiPackage> {
             val subPackages = psiPackage.getSubPackages(globalSearchScope)
             val list = mutableListOf(psiPackage)
-            if (!subPackages.isEmpty()) {
+            if (subPackages.isNotEmpty()) {
                 list.addAll(subPackages.flatMap { getSubPackages(it, globalSearchScope) })
             }
             return list

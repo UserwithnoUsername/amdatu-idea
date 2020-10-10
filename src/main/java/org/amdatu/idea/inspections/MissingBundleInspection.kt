@@ -66,7 +66,7 @@ class MissingBundleInspection : LocalInspectionTool() {
     }
 
     private fun createProblemDescriptors(headerName: String, file: PsiFile, bndProject: Project, onlyAvailableInBaselineRepo: Set<String>, manager: InspectionManager): List<ProblemDescriptor> {
-        val header = PlatformPatterns.psiElement<Header>(Header::class.java).withName(headerName)
+        val header = PlatformPatterns.psiElement(Header::class.java).withName(headerName)
         val headerPsi = PsiTreeUtil.collectElements(file, header::accepts).firstOrNull() ?: file
 
         return bndProject.getBundles(Strategy.LOWEST, bndProject.mergeProperties(headerName), headerName)

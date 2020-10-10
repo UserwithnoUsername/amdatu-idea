@@ -55,7 +55,7 @@ class GenerateIndexAction : AmdatuIdeaAction() {
                             .index(indexFile)
 
                     project.getComponent(AmdatuIdeaPlugin::class.java)
-                            .info("Generated repository index: " + indexFile.toString())
+                            .info("Generated repository index: $indexFile")
                     LocalFileSystem.getInstance().refreshIoFiles(listOf(indexFile.parentFile), false, true, null)
                 }
             }.queue()

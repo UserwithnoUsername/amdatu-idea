@@ -81,8 +81,8 @@ class TemplateSelectionPanelFactory {
             templateTree.expandRow(i)
         }
 
-        templateTree.addTreeSelectionListener {
-            val selected = it.path.lastPathComponent
+        templateTree.addTreeSelectionListener { selectionEvent ->
+            val selected = selectionEvent.path.lastPathComponent
             if (selected is Template) {
                 val helpText = selected.helpContent
                         ?.toURL()
@@ -161,7 +161,7 @@ class TemplateSelectionPanelFactory {
         private val myLatestTemplatesMap = myTemplateMap.mapValues { (_, templates) ->
             templates
                     .groupBy { it.name }
-                    .mapValues { it.value.sortedByDescending { it.version }.first() }
+                    .mapValues { template -> template.value.maxBy { it.version }!! }
                     .values
                     .toList()
         }

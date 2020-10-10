@@ -156,11 +156,11 @@ class BundleInfoToolWindowFactory : ToolWindowFactory {
                         null
                     } else {
                         packages
-                                .map {
-                                    val importingClasses = findImportingClasses(it.key.fqn, builder)
+                                .map { entry ->
+                                    val importingClasses = findImportingClasses(entry.key.fqn, builder)
                                             .sortedWith(compareBy { it.fqn })
                                             .map { Class(it.fqn, it.isAbstract, it.isAnnotation, it.isEnum, it.isInterface) }
-                                    Package(it.key.fqn, it.value, importingClasses)
+                                    Package(entry.key.fqn, entry.value, importingClasses)
                                 }
                                 .sortedWith(compareBy { it.fqn })
                     }
