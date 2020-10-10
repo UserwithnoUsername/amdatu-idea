@@ -37,6 +37,9 @@ val LOG = Logger.getInstance(RepositoriesToolWindowFactory::class.java)
 
 class RepositoriesToolWindowFactory() : ToolWindowFactory {
 
+    override fun isApplicable(project: Project): Boolean {
+        return project.getComponent(AmdatuIdeaPlugin::class.java)?.isBndWorkspace() == true
+    }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val content = ContentFactory.SERVICE.getInstance().createContent(createRepositoriesPanel(project), "Repositories", false)

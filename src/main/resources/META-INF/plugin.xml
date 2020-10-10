@@ -20,7 +20,7 @@
     </description>
     <category>Framework integration</category>
     <vendor>The Amdatu Foundation</vendor>
-    <idea-version since-build="193.2153.8"/>
+    <idea-version since-build="201.6668.113"/>
 
     <depends>com.intellij.modules.java</depends>
 
@@ -62,16 +62,16 @@
                 icon="OsmorcIdeaIcons.Bnd"
                 canCloseContents="false"
                 anchor="right"
-                factoryClass="org.amdatu.idea.toolwindow.RepositoriesToolWindowFactory"
-                conditionClass="org.amdatu.idea.BndWorkspaceCondition"></toolWindow>
+                factoryClass="org.amdatu.idea.toolwindow.RepositoriesToolWindowFactory">
+        </toolWindow>
 
         <toolWindow
                 id="Bundle info"
                 icon="OsmorcIdeaIcons.Bnd"
                 canCloseContents="false"
                 anchor="bottom"
-                factoryClass="org.amdatu.idea.toolwindow.BundleInfoToolWindowFactory"
-                conditionClass="org.amdatu.idea.BndWorkspaceCondition"></toolWindow>
+                factoryClass="org.amdatu.idea.toolwindow.BundleInfoToolWindowFactory">
+        </toolWindow>
 
         <!-- Language -->
         <fileTypeFactory implementation="org.amdatu.idea.lang.bundledescriptor.BundleDescriptorTypeFactory"/>

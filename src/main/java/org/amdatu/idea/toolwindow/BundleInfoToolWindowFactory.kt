@@ -56,6 +56,10 @@ class BundleInfoToolWindowFactory : ToolWindowFactory {
     private val calculateImportsBtn = JButton("Calculate imports")
     private var file: VirtualFile? = null
 
+    override fun isApplicable(project: Project): Boolean {
+        return project.getComponent(AmdatuIdeaPlugin::class.java)?.isBndWorkspace() == true
+    }
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         toolWindow.stripeTitle = "Bundle info"
         calculatedImportsTree.apply {
