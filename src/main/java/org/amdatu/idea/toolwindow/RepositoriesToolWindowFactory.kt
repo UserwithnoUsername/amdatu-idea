@@ -111,7 +111,9 @@ class RepositoriesToolWindowFactory() : ToolWindowFactory {
         private val myRoot = DefaultMutableTreeNode(0)
 
         init {
-            refreshRepositories()
+            if (myProject.getComponent(AmdatuIdeaPlugin::class.java)?.isInitialized() == true) {
+                refreshRepositories()
+            }
         }
 
         fun refreshRepositories() {

@@ -44,6 +44,8 @@ interface AmdatuIdeaPlugin {
 
     fun isBndWorkspace(): Boolean
 
+    fun isInitialized() : Boolean
+
     fun initialize()
 
     fun <T> withWorkspace(workspaceFunction: (workspace: Workspace) -> T): T
@@ -156,10 +158,13 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
         return project.isBndWorkspaceProject()
     }
 
+    override fun isInitialized(): Boolean {
+        return myWorkspace != null
+    }
+
     override fun <T> withWorkspace(workspaceFunction: (workspace: Workspace) -> T): T {
         myWorkspace
                 ?.let {
-
                     return it.writeLocked { workspaceFunction.invoke(it) }
                 }
                 ?: throw notInitializedException()
