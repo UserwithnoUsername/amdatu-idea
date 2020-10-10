@@ -62,6 +62,7 @@ class CheckForBlueprintUpdate : AmdatuIdeaAction() {
 
                 osGiRepository.findProviders(listOf(requirement))
                         .getOrDefault(requirement, emptyList())
+                        .asSequence()
                         .filter { cap -> cap.attributes["blueprintVersion"] != null }
                         .map { cap -> cap.attributes["blueprintVersion"] as String }
                         .filter { version -> version != "snapshot" }

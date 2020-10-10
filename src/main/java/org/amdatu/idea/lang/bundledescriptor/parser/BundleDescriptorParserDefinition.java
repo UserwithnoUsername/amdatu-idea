@@ -96,9 +96,8 @@ public class BundleDescriptorParserDefinition implements ParserDefinition {
         return new BundleDescriptorFileImpl(viewProvider);
     }
 
-    @SuppressWarnings("SpellCheckingInspection")
     @Override
-    public SpaceRequirements spaceExistanceTypeBetweenTokens(ASTNode left, ASTNode right) {
+    public SpaceRequirements spaceExistenceTypeBetweenTokens(ASTNode left, ASTNode right) {
         return left.getPsi() instanceof Header || right.getPsi() instanceof Header ?
                         SpaceRequirements.MUST_LINE_BREAK : SpaceRequirements.MUST_NOT;
     }

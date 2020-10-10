@@ -36,6 +36,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileAttributes;
 import com.intellij.openapi.util.io.FileSystemUtil;
+import com.intellij.task.ProjectTaskContext;
 import com.intellij.util.messages.MessageBusConnection;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.BndExtensionsKt;
@@ -176,7 +177,7 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
     }
 
     @Override
-    public boolean shouldHotSwap(CompileContext context) {
+    public boolean shouldHotSwap(@NotNull ProjectTaskContext context) {
         return false;
     }
 }

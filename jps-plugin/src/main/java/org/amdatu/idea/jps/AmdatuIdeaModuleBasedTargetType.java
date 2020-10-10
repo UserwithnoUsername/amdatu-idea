@@ -79,7 +79,7 @@ public class AmdatuIdeaModuleBasedTargetType extends ModuleBasedBuildTargetType<
     }
 
     private boolean shouldBuild(Project bndProject) {
-        Boolean noBundles = Boolean.valueOf(bndProject.get(Constants.NOBUNDLES, "false"));
+        boolean noBundles = Boolean.parseBoolean(bndProject.get(Constants.NOBUNDLES, "false"));
         return !noBundles;
     }
 

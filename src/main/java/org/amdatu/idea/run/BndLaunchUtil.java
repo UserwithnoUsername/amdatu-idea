@@ -22,12 +22,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.util.containers.ContainerUtil;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.i18n.OsmorcBundle;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +63,7 @@ public class BndLaunchUtil {
     }
 
     private static List<String> asList(Collection<String> c) {
-        return c instanceof List ? (List<String>) c : ContainerUtil.newArrayList(c);
+        return c instanceof List ? (List<String>) c : new ArrayList<>(c);
     }
 
     public static String message(Throwable t) {

@@ -24,13 +24,7 @@
  */
 package org.amdatu.idea.lang.bundledescriptor.completion;
 
-import com.intellij.codeInsight.completion.CompletionContributor;
-import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionProvider;
-import com.intellij.codeInsight.completion.CompletionResultSet;
-import com.intellij.codeInsight.completion.CompletionType;
-import com.intellij.codeInsight.completion.InsertHandler;
-import com.intellij.codeInsight.completion.PlainPrefixMatcher;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.editor.EditorModificationUtil;
@@ -94,7 +88,6 @@ public class BundleDescriptorCompletionContributor extends CompletionContributor
         final int offset = parameters.getOffset();
         TextRange range = position.getTextRange();
         assert range.containsOffset(offset) : position + "; " + offset + " not in " + range;
-        //noinspection deprecation
 
         String substr = position.getText().substring(0, offset - position.getTextRange().getStartOffset());
         if (substr.length() == 0 || Character.isWhitespace(substr.charAt(substr.length() - 1)))
