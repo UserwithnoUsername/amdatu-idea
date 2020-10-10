@@ -14,19 +14,15 @@
 
 package org.amdatu.idea.actions.index;
 
+import com.intellij.ui.CollectionListModel;
+import com.intellij.ui.ColoredListCellRenderer;
+import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.io.File;
 import java.util.List;
-
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
-import org.jetbrains.annotations.NotNull;
-
-import com.intellij.ui.CollectionListModel;
-import com.intellij.ui.ColoredListCellRenderer;
 
 public class GenerateIndexForm {
     private JTextField myBaseDir;
