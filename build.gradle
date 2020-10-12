@@ -16,11 +16,6 @@ version '2.3.3-SNAPSHOT'
 
 allprojects {
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
     apply plugin: "org.jetbrains.intellij"
 
     intellij {
@@ -38,7 +33,7 @@ apply plugin: 'kotlin'
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
 }
 repositories {

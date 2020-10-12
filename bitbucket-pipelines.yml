@@ -1,4 +1,4 @@
-image: amdatu/build-jdk-slim:11.05
+image: amdatu/build-jdk8u171-slim
 pipelines:
   default:
     - step:
