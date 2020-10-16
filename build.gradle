@@ -44,13 +44,14 @@ repositories {
 // When updating the bnd version used make sure to alsp update the org.bndtools.templating jar in the libs folder as this
 // embeds some bnd classes. Using different versions can cause issues caused by having multiple versions of the same class
 // on the classpath.
-ext.bndVersion = '4.3.1'
+ext.bndVersion = '5.2.0'
 
 dependencies {
     compile "biz.aQute.bnd:biz.aQute.bnd:${bndVersion}",
+            "org.bndtools:org.bndtools.templating:${bndVersion}",
+            'org.apache.felix:org.apache.felix.metatype:1.2.2',
             "eu.maxschuster:dataurl:2.0.0",
             "org.osgi:osgi.core:7.0.0",
-            project('jps-plugin'),
-            fileTree(dir: 'lib', include: ['*.jar'])
+            project('jps-plugin')
 
 }
