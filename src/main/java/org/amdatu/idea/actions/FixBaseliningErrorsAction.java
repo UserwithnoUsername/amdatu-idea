@@ -13,48 +13,43 @@
  */
 package org.amdatu.idea.actions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.BaseliningBundleSuggestion;
-import org.amdatu.idea.BaseliningErrorService;
-import org.amdatu.idea.BaseliningPackageSuggestion;
-import org.amdatu.idea.BaseliningSuggestion;
-import org.amdatu.idea.inspections.quickfix.UpdateBundleVersion;
-import org.amdatu.idea.inspections.quickfix.UpdatePackageInfoJavaPackageVersion;
-import org.amdatu.idea.inspections.quickfix.UpdatePackageInfoPackageVersion;
-
-import com.intellij.compiler.impl.CompilerErrorTreeView;
-import com.intellij.ide.errorTreeView.ErrorTreeElement;
-import com.intellij.ide.errorTreeView.ErrorViewStructure;
-import com.intellij.ide.errorTreeView.GroupingElement;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiPackage;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
-import com.intellij.ui.content.MessageView;
+import org.amdatu.idea.*;
+import org.amdatu.idea.inspections.quickfix.UpdateBundleVersion;
+import org.amdatu.idea.inspections.quickfix.UpdatePackageInfoJavaPackageVersion;
+import org.amdatu.idea.inspections.quickfix.UpdatePackageInfoPackageVersion;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FixBaseliningErrorsAction extends AmdatuIdeaAction {
 
+    public static final String FIX_BASELINING_ERRORS = "Fix baselining errors";
+
     @Override
-    public void update(AnActionEvent e) {
+    public void update(@NotNull AnActionEvent e) {
         super.update(e);
-        List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
-        e.getPresentation().setEnabled(suggestions.size() > 0);
-        e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
+        if (e.getProject() != null) {
+            List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
+            e.getPresentation().setEnabled(!suggestions.isEmpty());
+            e.getPresentation().setText("Fix " + suggestions.size() + " baselining errors");
+        }
     }
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent e) {
         Project currentProject = e.getProject();
+        if (currentProject == null) {
+            return;
+        }
+
         AmdatuIdeaPlugin plugin = currentProject.getComponent(AmdatuIdeaPlugin.class);
-        boolean enableModuleUpdater = plugin.pauseWorkspaceModelSync("Fix baselining errors");
+        boolean enableModuleUpdater = plugin.pauseWorkspaceModelSync(FIX_BASELINING_ERRORS);
         AtomicInteger count = new AtomicInteger();
         List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
         try {
@@ -79,53 +74,16 @@ public class FixBaseliningErrorsAction extends AmdatuIdeaAction {
             });
         } finally {
             if (enableModuleUpdater) {
-                plugin.resumeWorkspaceModelSync("Fix baselining errors");
+                plugin.resumeWorkspaceModelSync(FIX_BASELINING_ERRORS);
             }
-            Messages.showMessageDialog(currentProject, "Baselining  " + suggestions.size() + " errors found and " + count + " fixed", "Fix baselining errors", Messages.getInformationIcon());
+            Messages.showMessageDialog(currentProject, "Baselining  " + suggestions.size() + " errors found and " + count + " fixed", FIX_BASELINING_ERRORS, Messages.getInformationIcon());
         }
     }
 
+    @NotNull
     private List<BaseliningSuggestion> getSuggestions(Project project) {
-
         BaseliningErrorService baseliningErrorService = project.getComponent(BaseliningErrorService.class);
-
-        List<BaseliningSuggestion> suggestions = new ArrayList<>();
-        MessageView messageView = MessageView.SERVICE.getInstance(project);
-        ContentManager contentManager = messageView.getContentManager();
-        Content[] contents = contentManager.getContents();
-        if (contents.length > 0 && contents[0].getComponent() instanceof CompilerErrorTreeView) {
-            CompilerErrorTreeView view = (CompilerErrorTreeView) contents[0].getComponent();
-            ErrorViewStructure errorViewStructure = view.getErrorViewStructure();
-            Object root = errorViewStructure.getRootElement();
-            ErrorTreeElement[] childElements = errorViewStructure.getChildElements(root);
-
-            for (ErrorTreeElement childElement : childElements) {
-                if (childElement instanceof GroupingElement) {
-                    GroupingElement groupingElement = (GroupingElement) childElement;
-                    for (ErrorTreeElement messageChild : errorViewStructure.getChildElements(groupingElement)) {
-                        for (String text : messageChild.getText()) {
-                            VirtualFile file = groupingElement.getFile();
-                            if (isBundleVersionMessage(text)) {
-                                BaseliningSuggestion suggestion = baseliningErrorService.parseBundleVersionSuggestion(file, text);
-                                suggestions.add(suggestion);
-                            } else if (isPackageVersionMessage(text)) {
-                                org.amdatu.idea.BaseliningPackageSuggestion suggestion = baseliningErrorService.parsePackageVersionSuggestion(file, text);
-                                suggestions.add(suggestion);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return suggestions;
-    }
-
-    private boolean isPackageVersionMessage(String message) {
-        return message.contains("Baseline mismatch for package");
-    }
-
-    private boolean isBundleVersionMessage(String message) {
-        return message.contains("The bundle version") && message.contains("is too low");
+        return baseliningErrorService.getAllSuggestions();
     }
 
 }
