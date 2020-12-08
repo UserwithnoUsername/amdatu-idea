@@ -20,7 +20,7 @@ allprojects {
 
     intellij {
         plugins = ['java', 'coverage']
-        version '2020.2'
+        version '2020.3'
     }
 
     runIde {
