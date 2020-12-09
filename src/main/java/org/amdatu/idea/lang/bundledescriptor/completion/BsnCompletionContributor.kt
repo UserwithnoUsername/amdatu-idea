@@ -42,6 +42,7 @@ class BsnCompletionContributor : CompletionContributor() {
     init {
         extend(CompletionType.BASIC, getPlace(Constants.BUILDPATH), BundleCompletionProvider(true))
         extend(CompletionType.BASIC, getPlace(Constants.RUNBUNDLES), BundleCompletionProvider(false))
+        extend(CompletionType.BASIC, getPlace(Constants.TESTPATH), BundleCompletionProvider(false))
     }
 
     class BundleCompletionProvider(private val workspaceBundlesWithExportedPackagesOnly: Boolean) : CompletionProvider<CompletionParameters>() {

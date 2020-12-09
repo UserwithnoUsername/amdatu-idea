@@ -30,10 +30,9 @@ data class BaseliningPackageSuggestion(val source: VirtualFile, val suggestedVer
 
 
 interface BaseliningErrorService {
+    fun getAllSuggestions() : List<BaseliningSuggestion>
     fun getBundleSuggestion(file: VirtualFile): BaseliningBundleSuggestion?
     fun getPackageSuggestion(file: VirtualFile): BaseliningPackageSuggestion?
-    fun parseBundleVersionSuggestion(source: VirtualFile, warning: String): BaseliningBundleSuggestion
-    fun parsePackageVersionSuggestion(source: VirtualFile, warning: String): BaseliningPackageSuggestion?
 }
 
 class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService, CompilationStatusListener {
@@ -52,6 +51,11 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
 
     override fun getPackageSuggestion(file: VirtualFile): BaseliningPackageSuggestion? {
         return packageSuggestions[file]
+    }
+
+    override fun getAllSuggestions(): List<BaseliningSuggestion> {
+        return bundleSuggestions.map { it.value }
+                .plus(packageSuggestions.map { it.value } )
     }
 
     override fun compilationFinished(aborted: Boolean, errors: Int, warnings: Int, compileContext: CompileContext) {
@@ -79,12 +83,12 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
                 .forEach { warning ->
                     parsePackageVersionSuggestion(warning.virtualFile, warning.message)?.let { suggestion ->
                         packageSuggestions[suggestion.source] = suggestion
-                    }
+                      }
                 }
 
     }
 
-    override fun parseBundleVersionSuggestion(source: VirtualFile, warning: String): BaseliningBundleSuggestion {
+    private fun parseBundleVersionSuggestion(source: VirtualFile, warning: String): BaseliningBundleSuggestion {
         val message = warning.lines().first()
 
         val suggestionMarker = "must be at least "
@@ -96,7 +100,7 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
         return BaseliningBundleSuggestion(source, currentVersion, suggestedVersion)
     }
 
-    override fun parsePackageVersionSuggestion(source: VirtualFile, warning: String): BaseliningPackageSuggestion? {
+    private fun parsePackageVersionSuggestion(source: VirtualFile, warning: String): BaseliningPackageSuggestion? {
         val message = warning.lines().first()
         val patternString = ".*package ([.0-9a-zA-Z]*),.*suggest (.*) or.*"
         val pattern = Pattern.compile(patternString, Pattern.DOTALL)
