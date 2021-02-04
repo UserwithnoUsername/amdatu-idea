@@ -2,10 +2,6 @@ jar.setArchiveFileName("jps-plugin.jar")
 
 repositories {
     mavenCentral()
-    // TODO: remove once 4.3.0 is released
-    maven {
-        url 'https://bndtools.jfrog.io/bndtools/libs-snapshot'
-    }
 }
 
 dependencies {
