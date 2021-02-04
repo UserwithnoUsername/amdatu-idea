@@ -44,7 +44,6 @@ import com.intellij.openapi.roots.impl.ModifiableModelCommitter;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.FileUtilRt;
 import com.intellij.openapi.util.text.StringUtil;
@@ -55,6 +54,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.util.PathUtil;
 import com.intellij.util.containers.ContainerUtil;
+import gnu.trove.THashMap;
 import kotlin.Unit;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -88,9 +88,13 @@ public class BndProjectImporter {
         }
 
         private int weight(OrderEntry e) {
-            return e instanceof JdkOrderEntry ? 2 :
-                    e instanceof ModuleSourceOrderEntry ? 0 :
-                            1;
+            if (e instanceof JdkOrderEntry) {
+                return 2;
+            } else if (e instanceof ModuleSourceOrderEntry) {
+                return 0;
+            } else {
+                return 1;
+            }
         }
     };
 
@@ -100,7 +104,7 @@ public class BndProjectImporter {
 
     private final com.intellij.openapi.project.Project myProject;
     private final Collection<Project> myProjects;
-    private final Map<String, String> mySourcesMap = ContainerUtil.newTroveMap(FileUtil.PATH_HASHING_STRATEGY);
+    private final Map<String, String> mySourcesMap = new THashMap<>(FileUtil.PATH_HASHING_STRATEGY);
 
     public BndProjectImporter(@NotNull com.intellij.openapi.project.Project project,
                               @NotNull Collection<Project> toImport) {
@@ -191,7 +195,8 @@ public class BndProjectImporter {
             findSources(project.getBootclasspath());
             findSources(project.getBuildpath());
             findSources(project.getTestpath());
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            LOG.warn("Exception occurred trying to find sources for project " +  project.getName(), e);
         }
     }
 
@@ -245,26 +250,19 @@ public class BndProjectImporter {
 
                 // Create modules
                 for (Project project : myProjects) {
-                    try {
-                        rootModels.put(project, createModule(moduleModel, project, projectLevel));
-                        createExportedContentLibraries(project, libraryModel);
-                    } catch (Exception e) {
-                        LOG.error(e);  // should not happen, since project.prepare() is already called
-                    }
+                    rootModels.put(project, createModule(moduleModel, project, projectLevel));
+                    createExportedContentLibraries(project, libraryModel);
                 }
                 // Set dependencies for modules
                 for (Project project : myProjects) {
-                    try {
-                        setDependencies(moduleModel, libraryModel, rootModels.get(project), project);
-                    } catch (Exception e) {
-                        LOG.error(e);  // should not happen, since project.prepare() is already called
-                    }
+                    setDependencies(moduleModel, libraryModel, rootModels.get(project), project);
                 }
-
                 cleanupUnusedLibraries(moduleModel, rootModels, libraryModel);
-            } finally {
+
                 libraryModel.commit();
                 ModifiableModelCommitter.multiCommit(rootModels.values(), moduleModel);
+            } catch (Exception e) {
+                LOG.error("Failed to create project structure ", e);
             }
         });
     }
@@ -446,16 +444,15 @@ public class BndProjectImporter {
                 .flatMap(modifiableModuleModel -> Arrays.stream(modifiableModuleModel.getOrderEntries())
                         .filter(LibraryOrderEntry.class::isInstance)
                         .map(LibraryOrderEntry.class::cast)
-                        .map(LibraryOrderEntry::getLibrary)
-                        .filter(Objects::nonNull)
-                        .map(Library::getName))
+                        .map(LibraryOrderEntry::getLibraryName))
                 .collect(Collectors.toSet());
 
         toDispose.forEach(ModifiableRootModel::dispose);
 
         Arrays.stream(libraryModel.getLibraries())
                 .filter(library -> !usedLibraryNames.contains(library.getName()))
-                .filter(library -> library.getName() != null && library.getName().startsWith(BND_LIB_PREFIX))
+                .filter(library -> library.getName() != null)
+                .filter(library -> library.getName().startsWith(BND_LIB_PREFIX) || library.getName().startsWith(BND_EXPORTED_CONTENTS_PREFIX))
                 .forEach(libraryModel::removeLibrary);
     }
 
@@ -515,7 +512,7 @@ public class BndProjectImporter {
                           LibraryTable.ModifiableModel libraryModel,
                           ModifiableRootModel rootModel,
                           Container dependency,
-                          DependencyScope scope) throws IllegalArgumentException {
+                          DependencyScope scope) {
         File file = dependency.getFile();
         String bsn = dependency.getBundleSymbolicName();
         String version = dependency.getVersion();
@@ -707,11 +704,6 @@ public class BndProjectImporter {
 
     private static String url(File file) {
         return VfsUtil.getUrlForLibraryRoot(file);
-    }
-
-    @NotNull
-    private static Collection<Project> getWorkspaceProjects(@NotNull Workspace workspace) throws Exception {
-        return ContainerUtil.filter(workspace.getAllProjects(), Condition.NOT_NULL);
     }
 
 }
