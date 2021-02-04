@@ -25,11 +25,11 @@ allprojects {
 
     intellij {
         plugins = ['java', 'coverage']
-        version '2020.3'
+        version '2020.3.2'
     }
 
     runIde {
-        jvmArgs = ['-Dcompiler.process.debug.port=54321']
+        jvmArgs = ['-Dcompiler.process.debug.port=54321', '-Xms128m', '-Xmx2048m']
     }
 }
 
