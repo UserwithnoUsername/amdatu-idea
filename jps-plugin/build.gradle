@@ -1,4 +1,4 @@
-jar.archiveName = "jps-plugin.jar"
+jar.setArchiveFileName("jps-plugin.jar")
 
 repositories {
     mavenCentral()
