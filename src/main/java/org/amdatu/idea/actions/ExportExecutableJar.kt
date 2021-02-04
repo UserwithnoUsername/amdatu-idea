@@ -19,6 +19,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VirtualFile
 import org.amdatu.idea.AmdatuIdeaPlugin
 
 class ExportExecutableJar : AmdatuIdeaAction() {
@@ -33,7 +34,7 @@ class ExportExecutableJar : AmdatuIdeaAction() {
 
             val targetFile = FileChooserFactory.getInstance()
                     .createSaveFileDialog(FileSaverDescriptor("Export executable jar", "todo"), project)
-                    .save(null, virtualFile.nameWithoutExtension + ".jar") ?: return@withWorkspace
+                    .save(null as VirtualFile?, virtualFile.nameWithoutExtension + ".jar") ?: return@withWorkspace
 
             bndProject.export(virtualFile.path, true, targetFile.file)
         }
