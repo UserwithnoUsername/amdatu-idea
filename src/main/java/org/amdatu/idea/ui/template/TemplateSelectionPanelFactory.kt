@@ -161,7 +161,7 @@ class TemplateSelectionPanelFactory {
         private val myLatestTemplatesMap = myTemplateMap.mapValues { (_, templates) ->
             templates
                     .groupBy { it.name }
-                    .mapValues { template -> template.value.maxBy { it.version }!! }
+                    .mapValues { template -> template.value.maxByOrNull { it.version }!! }
                     .values
                     .toList()
         }

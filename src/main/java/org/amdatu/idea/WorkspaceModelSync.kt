@@ -182,7 +182,7 @@ class WorkspaceModelSync(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaP
                             importer.resolve(true)
 
                         }
-                        val workspaceRefreshedNotifier = myProject.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
+                        val workspaceRefreshedNotifier = project.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
                         workspaceRefreshedNotifier.workspaceRefreshed()
                         amdatuIdeaPlugin.info("Workspace refreshed in ${System.currentTimeMillis() - start} ms.") {
                             it.setTitle("Workspace refresh successful")
@@ -213,7 +213,7 @@ class WorkspaceModelSync(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaP
                             importer.resolve(true)
                         }
 
-                        val workspaceRefreshedNotifier = myProject.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
+                        val workspaceRefreshedNotifier = project.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
                         workspaceRefreshedNotifier.workspaceRefreshed()
                         amdatuIdeaPlugin.info("Project re-imported in ${System.currentTimeMillis() - start} ms.") {
                             it.setTitle("Project re-imported")
@@ -251,11 +251,11 @@ class WorkspaceModelSync(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaP
                             }.toList()
                             // TODO: We used to always re-import all known projects there might be a reason for that, but if there is we can simplify a bit more as we don't need the list of projects in that case.
                             // TODO: And the trigger with a list of modules could also go in that case
-                            val bndProjectImporter = BndProjectImporter(myProject, projectsToImport)
+                            val bndProjectImporter = BndProjectImporter(project, projectsToImport)
                             bndProjectImporter.resolve(true)
                         }
 
-                        val workspaceRefreshedNotifier = myProject.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
+                        val workspaceRefreshedNotifier = project.messageBus.syncPublisher(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED)
                         workspaceRefreshedNotifier.workspaceRefreshed()
                         amdatuIdeaPlugin.info("Modules ${action.modulesToImport} re-imported in ${System.currentTimeMillis() - start} ms.") {
                             it.setTitle("Modules re-imported")
