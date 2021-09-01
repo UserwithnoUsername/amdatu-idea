@@ -17,6 +17,7 @@ import aQute.bnd.build.Run
 import aQute.bnd.osgi.Jar
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -64,8 +65,7 @@ class CreateConfigurationAction : AmdatuIdeaAction() {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
         val project = e.project ?: return
-        val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
-
+        val amdatuIdeaPlugin = project.service<AmdatuIdeaPlugin>()
 
         val launcher = amdatuIdeaPlugin.withWorkspace { workspace -> Run.createRun(workspace, File(virtualFile.path)).projectLauncher }
 

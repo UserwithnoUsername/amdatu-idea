@@ -19,10 +19,10 @@ import aQute.bnd.repository.osgi.OSGiRepository
 import com.intellij.notification.Notification
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.amdatu.idea.AmdatuIdeaPlugin
 import org.osgi.resource.Namespace
-import java.util.*
 
 class CheckForBlueprintUpdate : AmdatuIdeaAction() {
 
@@ -32,7 +32,7 @@ class CheckForBlueprintUpdate : AmdatuIdeaAction() {
     }
 
     private fun checkForUpdate(project: Project) {
-        val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        val amdatuIdeaPlugin = project.service<AmdatuIdeaPlugin>()
         amdatuIdeaPlugin.withWorkspace { workspace ->
 
             if (!workspace.getFile("cnf/ext/blueprint.bnd").exists()) {

@@ -14,15 +14,11 @@
 
 package org.amdatu.idea.templating;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import aQute.bnd.build.Workspace;
+import aQute.bnd.osgi.resource.CapReqBuilder;
+import aQute.bnd.repository.osgi.OSGiRepository;
+import aQute.bnd.service.RepositoryPlugin;
+import com.intellij.openapi.project.Project;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.preferences.AmdatuIdeaPreferences;
 import org.bndtools.templating.Template;
@@ -34,12 +30,9 @@ import org.osgi.resource.Namespace;
 import org.osgi.resource.Requirement;
 import org.osgi.service.repository.Repository;
 
-import com.intellij.openapi.project.Project;
-
-import aQute.bnd.build.Workspace;
-import aQute.bnd.osgi.resource.CapReqBuilder;
-import aQute.bnd.repository.osgi.OSGiRepository;
-import aQute.bnd.service.RepositoryPlugin;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RepoTemplateLoader {
 
@@ -51,7 +44,7 @@ public class RepoTemplateLoader {
 
     public List<Template> findTemplates(Project project, String templateType) {
         if (project != null) {
-            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
+            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
             if (amdatuIdeaPlugin.isBndWorkspace()) {
                 return amdatuIdeaPlugin.withWorkspace(workspace -> doLoadTemplates(templateType, workspace));
             }

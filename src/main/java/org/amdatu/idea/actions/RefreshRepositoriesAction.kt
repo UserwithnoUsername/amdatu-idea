@@ -17,12 +17,13 @@ package org.amdatu.idea.actions
 import aQute.bnd.service.Refreshable
 import aQute.bnd.service.RepositoryPlugin
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import org.amdatu.idea.AmdatuIdeaPlugin
 
 class RefreshRepositoriesAction : AmdatuIdeaAction() {
 
     override fun actionPerformed(event: AnActionEvent) {
-        val amdatuIdeaPlugin = event.project?.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        val amdatuIdeaPlugin = event.project?.service<AmdatuIdeaPlugin>() ?: return
         amdatuIdeaPlugin.withWorkspace { workspace ->
 
             workspace.getPlugins(RepositoryPlugin::class.java)

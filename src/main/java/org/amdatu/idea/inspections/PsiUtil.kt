@@ -18,6 +18,7 @@ import aQute.bnd.build.Project
 import aQute.bnd.build.Workspace
 import aQute.bnd.osgi.Builder
 import aQute.bnd.osgi.Constants
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.roots.ProjectFileIndex
@@ -40,7 +41,7 @@ class PsiUtil {
 
         fun getBndBuilderContextForPsiFile(psiFile: PsiFile): BndBuilderContext? {
             val module = getModuleForPsiFile(psiFile) ?: return null
-            return getAmdatuIdePlugin(psiFile)?.withWorkspace { workspace ->
+            return getAmdatuIdePlugin(psiFile).withWorkspace { workspace ->
 
                 val bndProject = getBndProject(workspace, module) ?: return@withWorkspace null
 
@@ -71,14 +72,8 @@ class PsiUtil {
             return module
         }
 
-        private fun getAmdatuIdePlugin(psiFile: PsiFile): AmdatuIdeaPlugin? {
-            val amdatuIdePlugin = psiFile.project.getComponent(AmdatuIdeaPlugin::class.java)
-
-            if (amdatuIdePlugin == null) {
-                logger.debug { "AmdatuIdeaPlugin component not available for project: ${psiFile.project}" }
-            }
-
-            return amdatuIdePlugin
+        private fun getAmdatuIdePlugin(psiFile: PsiFile): AmdatuIdeaPlugin {
+            return psiFile.project.service()
         }
 
         private inline fun Logger.debug(lazyMessage: () -> String) {

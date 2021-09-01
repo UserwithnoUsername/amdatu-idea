@@ -17,6 +17,7 @@ package org.amdatu.idea
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.projectView.ProjectViewNode
 import com.intellij.ide.projectView.ProjectViewNodeDecorator
+import com.intellij.openapi.components.service
 import com.intellij.packageDependencies.ui.PackageDependenciesNode
 import com.intellij.psi.PsiDirectory
 import com.intellij.ui.ColoredTreeCellRenderer
@@ -38,7 +39,7 @@ class AmdatuIdeaProjectViewNodeDecorator : ProjectViewNodeDecorator {
         val psiDirectory = node.value as PsiDirectory
         val project = node.project ?: return
 
-        val packageInfoService = project.getComponent(PackageInfoService::class.java) ?: return
+        val packageInfoService = project.service<PackageInfoService>() ?: return
 
         when (packageInfoService.packageStatus(psiDirectory)){
             PackageStatus.EXPORTED -> data.setIcon(OsmorcIdeaIcons.ExportedPackage)

@@ -19,6 +19,7 @@ import aQute.bnd.osgi.Constants
 import aQute.lib.utf8properties.UTF8Properties
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.components.service
 import com.intellij.patterns.PlatformPatterns.psiElement
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.patterns.StandardPatterns
@@ -50,7 +51,7 @@ class BsnCompletionContributor : CompletionContributor() {
         override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet) {
             if (shouldComplete(parameters)) return
 
-            val amdatuIdePlugin = parameters.position.project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+            val amdatuIdePlugin = parameters.position.project.service<AmdatuIdeaPlugin>()
 
             // Use bnd's UTF8Properties to read the contents of the full instruction, this properties implementation
             // strips some characters like the newlines escaped with a '\\'

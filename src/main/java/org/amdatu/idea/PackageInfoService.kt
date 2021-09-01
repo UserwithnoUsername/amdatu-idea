@@ -17,6 +17,8 @@ package org.amdatu.idea
 import aQute.bnd.osgi.Instructions
 import com.intellij.ide.projectView.ProjectView
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
@@ -28,9 +30,9 @@ enum class PackageStatus { EXPORTED, PRIVATE, NOT_INCLUDED }
 
 data class PackageInfo(val qualifiedName: String, val state: PackageStatus)
 
-class PackageInfoService(project: Project) {
+@Service
+class PackageInfoService(private val myProject: Project) {
 
-    private val myProject: Project = project
     private val myPackageStatusMap: MutableMap<PsiDirectory, PackageInfo> = mutableMapOf()
 
     init {
@@ -63,7 +65,7 @@ class PackageInfoService(project: Project) {
                     continue
                 }
 
-                val bndProject = myProject.getComponent(AmdatuIdeaPlugin::class.java).withWorkspace { workspace -> workspace.getProject(module.name) }  ?: continue
+                val bndProject = myProject.service<AmdatuIdeaPlugin>().withWorkspace { workspace -> workspace.getProject(module.name) }  ?: continue
 
                 val exportPackageInstructions = Instructions()
                 val privatePackageInstructions = Instructions()

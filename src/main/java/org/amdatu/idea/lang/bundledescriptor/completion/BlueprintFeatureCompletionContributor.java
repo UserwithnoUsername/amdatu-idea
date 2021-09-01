@@ -14,22 +14,7 @@
 
 package org.amdatu.idea.lang.bundledescriptor.completion;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import org.amdatu.idea.AmdatuIdeaConstants;
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType;
-import org.amdatu.idea.lang.bundledescriptor.psi.Header;
-import org.jetbrains.annotations.NotNull;
-
-import com.intellij.codeInsight.completion.CompletionContributor;
-import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionProvider;
-import com.intellij.codeInsight.completion.CompletionResultSet;
-import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -38,6 +23,16 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
+import org.amdatu.idea.AmdatuIdeaConstants;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.lang.bundledescriptor.psi.BundleDescriptorTokenType;
+import org.amdatu.idea.lang.bundledescriptor.psi.Header;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static org.amdatu.idea.AmdatuIdeaConstants.BLUEPRINT_FEATURE;
@@ -80,7 +75,7 @@ public class BlueprintFeatureCompletionContributor extends CompletionContributor
                         @NotNull CompletionResultSet resultSet) {
 
             Project project = parameters.getPosition().getProject();
-            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
+            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
 
             ProjectFileIndex projectFileIndex = ProjectFileIndex.getInstance(project);
             Module module = projectFileIndex.getModuleForFile(parameters.getOriginalFile().getVirtualFile());

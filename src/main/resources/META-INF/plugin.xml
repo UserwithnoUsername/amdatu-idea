@@ -24,24 +24,6 @@
 
     <depends>com.intellij.modules.java</depends>
 
-    <project-components>
-        <component>
-            <interface-class>org.amdatu.idea.RepositoryValidationService</interface-class>
-            <implementation-class>org.amdatu.idea.RepositoryValidationServiceImpl</implementation-class>
-        </component>
-        <component>
-            <interface-class>org.amdatu.idea.AmdatuIdeaPlugin</interface-class>
-            <implementation-class>org.amdatu.idea.AmdatuIdeaPluginImpl</implementation-class>
-        </component>
-        <component>
-            <interface-class>org.amdatu.idea.BaseliningErrorService</interface-class>
-            <implementation-class>org.amdatu.idea.BaseliningErrorServiceImpl</implementation-class>
-        </component>
-        <component>
-            <implementation-class>org.amdatu.idea.PackageInfoService</implementation-class>
-        </component>
-    </project-components>
-
     <extensionPoints>
         <extensionPoint name="lang.bundledescriptor.parser.provider"
                         interface="org.amdatu.idea.lang.bundledescriptor.header.HeaderParserProvider"/>
@@ -117,6 +99,13 @@
         <!-- Project view -->
         <projectViewNodeDecorator implementation="org.amdatu.idea.AmdatuIdeaProjectViewNodeDecorator"/>
 
+
+        <projectService serviceInterface="org.amdatu.idea.AmdatuIdeaPlugin"
+                serviceImplementation="org.amdatu.idea.AmdatuIdeaPluginImpl"/>
+        <projectService serviceInterface="org.amdatu.idea.BaseliningErrorService"
+                serviceImplementation="org.amdatu.idea.BaseliningErrorServiceImpl" />
+
+        <notificationGroup displayType="TOOL_WINDOW" id="Amdatu" />
     </extensions>
 
     <extensions defaultExtensionNs="org.amdatu.idea">

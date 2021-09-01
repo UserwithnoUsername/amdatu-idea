@@ -25,8 +25,7 @@ public class BndWorkspaceCondition implements Condition<Project> {
     @Override
     public boolean value(Project project) {
 
-        AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
-
+        AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
 
         String rootDir = project.getBasePath();
         String imlPath = rootDir + File.separator + project.getName() + ModuleFileType.DOT_DEFAULT_EXTENSION;

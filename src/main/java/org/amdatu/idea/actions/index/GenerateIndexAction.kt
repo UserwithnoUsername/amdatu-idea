@@ -17,6 +17,7 @@ package org.amdatu.idea.actions.index
 import aQute.bnd.osgi.repository.SimpleIndexer
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task.Backgroundable
 import com.intellij.openapi.project.Project
@@ -54,7 +55,7 @@ class GenerateIndexAction : AmdatuIdeaAction() {
                             .compress(compressed)
                             .index(indexFile)
 
-                    project.getComponent(AmdatuIdeaPlugin::class.java)
+                    project.service<AmdatuIdeaPlugin>()
                             .info("Generated repository index: $indexFile")
                     LocalFileSystem.getInstance().refreshIoFiles(listOf(indexFile.parentFile), false, true, null)
                 }

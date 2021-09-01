@@ -18,6 +18,7 @@ import com.intellij.openapi.compiler.CompilationStatusListener
 import com.intellij.openapi.compiler.CompileContext
 import com.intellij.openapi.compiler.CompilerMessageCategory
 import com.intellij.openapi.compiler.CompilerTopics
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -125,7 +126,7 @@ class BaseliningErrorServiceImpl(val project: Project) : BaseliningErrorService,
      */
     private fun fixSourceFile(virtualFile: VirtualFile, pkg: String): VirtualFile {
         if (virtualFile.name.endsWith(".bnd")) {
-            val bndProject: aQute.bnd.build.Project= project.getComponent(AmdatuIdeaPlugin::class.java)
+            val bndProject: aQute.bnd.build.Project= project.service<AmdatuIdeaPlugin>()
                     .withWorkspace { workspace ->  workspace.getProjectFromFile(File(virtualFile.path).parentFile) }
 
             for (sourceDir in bndProject.sourcePath) {

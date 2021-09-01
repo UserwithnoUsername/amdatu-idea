@@ -23,9 +23,10 @@ import com.intellij.ui.LayeredIcon;
 import com.intellij.util.IconUtil;
 import icons.OsmorcIdeaIcons;
 import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.Icon;
+import javax.swing.*;
 
 import static org.amdatu.idea.i18n.OsmorcBundle.message;
 
@@ -65,13 +66,19 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
 
         @Override
         public boolean isApplicable(@NotNull Project project) {
-            return project.getComponent(AmdatuIdeaPlugin.class).isBndWorkspace();
+            return project.getService(AmdatuIdeaPlugin.class).isBndWorkspace();
         }
     }
 
     private static class LaunchFactory extends FactoryBase {
         LaunchFactory(@NotNull ConfigurationType type) {
             super(type, message("bnd.run.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Application));
+        }
+
+        @Override
+        public @NotNull
+        @NonNls String getId() {
+            return getClass().getSimpleName();
         }
 
         @NotNull
@@ -91,6 +98,12 @@ public class BndRunConfigurationType extends ConfigurationTypeBase {
     private static class TestFactory extends FactoryBase {
         TestFactory(@NotNull ConfigurationType type) {
             super(type, message("bnd.test.configuration.name"), createLayeredIcon(AllIcons.RunConfigurations.Junit));
+        }
+
+        @Override
+        public @NotNull
+        @NonNls String getId() {
+            return getClass().getSimpleName();
         }
 
         @NotNull

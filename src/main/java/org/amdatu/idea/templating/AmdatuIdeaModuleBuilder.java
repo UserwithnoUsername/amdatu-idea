@@ -13,16 +13,6 @@
  */
 package org.amdatu.idea.templating;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.amdatu.idea.AmdatuIdeaPlugin;
-import org.amdatu.idea.imp.BndProjectImporter;
-import org.bndtools.templating.Template;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import com.intellij.ide.util.projectWizard.JavaModuleBuilder;
 import com.intellij.ide.util.projectWizard.ModuleWizardStep;
 import com.intellij.ide.util.projectWizard.WizardContext;
@@ -36,6 +26,15 @@ import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.util.Key;
+import org.amdatu.idea.AmdatuIdeaPlugin;
+import org.amdatu.idea.imp.BndProjectImporter;
+import org.bndtools.templating.Template;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
 
@@ -106,7 +105,7 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
             ModuleRootModificationUtil.setSdkInherited(module);
         }
         else {
-            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin.class);
+            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
             amdatuIdeaPlugin.withWorkspace(workspace -> {
                 try {
                     workspace.refresh();

@@ -16,13 +16,14 @@ package org.amdatu.idea.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import org.amdatu.idea.AmdatuIdeaPlugin
 
 abstract class AmdatuIdeaAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         super.update(e)
-        val amdatuIdeaPlugin = e.project?.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        val amdatuIdeaPlugin = e.project?.service<AmdatuIdeaPlugin>() ?: return
         e.presentation.isVisible = amdatuIdeaPlugin.isBndWorkspace()
     }
 }

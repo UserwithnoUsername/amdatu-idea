@@ -18,6 +18,7 @@ import com.intellij.codeInspection.InspectionManager
 import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.codeInspection.ProblemHighlightType
+import com.intellij.openapi.components.service
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -47,7 +48,7 @@ class PackageInfoJavaPackageVersion : LocalInspectionTool() {
             return null
         }
 
-        val baseliningErrorService = file.project.getComponent(BaseliningErrorService::class.java)
+        val baseliningErrorService = file.project.service<BaseliningErrorService>()
 
         val packageSuggestion = baseliningErrorService.getPackageSuggestion(file.virtualFile) ?: return null
 

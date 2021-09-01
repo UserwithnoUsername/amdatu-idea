@@ -27,14 +27,8 @@ import java.io.File
 import java.net.URI
 import java.time.Duration
 
-interface RepositoryValidationService {
-    fun validateRepositories(workspace: Workspace): Boolean
-}
 
-
-class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidationService {
-
-    private val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java)
+class RepositoryValidator(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaPlugin) {
 
     /**
      * Validate uri's used in as locations for OSGiRepository and FixedIndexedRepo instances in the workspace and report
@@ -47,7 +41,7 @@ class RepositoryValidationServiceImpl(val project: Project) : RepositoryValidati
      *
      * @param workspace Amdatu idea plugin instance
      */
-    override fun validateRepositories(workspace: Workspace): Boolean {
+     fun validateRepositories(workspace: Workspace, ): Boolean {
         val client = workspace.getPlugin(HttpClient::class.java)
 
         val osgiReposOk: Boolean = workspace.getPlugins(OSGiRepository::class.java)

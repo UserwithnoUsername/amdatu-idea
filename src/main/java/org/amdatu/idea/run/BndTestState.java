@@ -81,7 +81,7 @@ public class BndTestState extends JavaCommandLineState {
     @Override
     protected JavaParameters createJavaParameters() throws ExecutionException {
         try {
-            AmdatuIdeaPlugin amdatuIdeaPlugin = myConfiguration.getProject().getComponent(AmdatuIdeaPlugin.class);
+            AmdatuIdeaPlugin amdatuIdeaPlugin = myConfiguration.getProject().getService(AmdatuIdeaPlugin.class);
             BndRunConfigurationOptions configurationOptions = myConfiguration.getOptions();
 
             Project project = amdatuIdeaPlugin.withWorkspace(workspace -> workspace.getProject(configurationOptions.getModuleName()));

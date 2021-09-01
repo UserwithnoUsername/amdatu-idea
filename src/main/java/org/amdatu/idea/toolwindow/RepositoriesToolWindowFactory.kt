@@ -16,6 +16,7 @@ package org.amdatu.idea.toolwindow
 
 import aQute.bnd.service.RepositoryPlugin
 import aQute.bnd.version.Version
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
@@ -38,7 +39,7 @@ val LOG = Logger.getInstance(RepositoriesToolWindowFactory::class.java)
 class RepositoriesToolWindowFactory : ToolWindowFactory {
 
     override fun isApplicable(project: Project): Boolean {
-        return project.getComponent(AmdatuIdeaPlugin::class.java)?.isBndWorkspace() == true
+        return project.service<AmdatuIdeaPlugin>().isBndWorkspace()
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -114,13 +115,13 @@ class RepositoriesToolWindowFactory : ToolWindowFactory {
         private val myRoot = DefaultMutableTreeNode(0)
 
         init {
-            if (myProject.getComponent(AmdatuIdeaPlugin::class.java)?.isInitialized() == true) {
+            if (myProject.service<AmdatuIdeaPlugin>().isInitialized()) {
                 refreshRepositories()
             }
         }
 
         fun refreshRepositories() {
-            myProject.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { workspace ->
+            myProject.service<AmdatuIdeaPlugin>().withWorkspace { workspace ->
                 repositoryPlugins.clear()
                 repoBundlesCache.clear()
                 repositoryPlugins.addAll(workspace

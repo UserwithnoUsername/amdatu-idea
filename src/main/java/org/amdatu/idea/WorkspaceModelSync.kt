@@ -151,7 +151,7 @@ class WorkspaceModelSync(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaP
 
                             workspace.plugins
 
-                            if (!workspace.validateRepositories(project, indicator)) {
+                            if (!workspace.validateRepositories(project, amdatuIdeaPlugin, indicator)) {
                                 amdatuIdeaPlugin.error("Repository validation failed, could not read from one or more repositories.") {
                                     it.setTitle("Workspace refresh failed")
                                 }

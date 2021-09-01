@@ -91,7 +91,7 @@ public class BndLaunchUtil {
             return false;
         }
 
-        AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getComponent(AmdatuIdeaPlugin.class);
+        AmdatuIdeaPlugin amdatuIdeaPlugin = module.getProject().getService(AmdatuIdeaPlugin.class);
         try {
             aQute.bnd.build.Project project = amdatuIdeaPlugin.withWorkspace(ws -> ws.getProject(module.getName()));
             return project != null && project.getProperties().containsKey(aQute.bnd.osgi.Constants.TESTCASES);

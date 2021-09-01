@@ -16,6 +16,7 @@ package org.amdatu.idea.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
@@ -43,7 +44,7 @@ class UpdateConfigurationProjectAction : AnAction() {
 
         val project = e.project ?: return
 
-        val amdatuIdeaPlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        val amdatuIdeaPlugin = project.service<AmdatuIdeaPlugin>()
 
         val templateLoader = RepoTemplateLoader()
         val templates = templateLoader.findTemplates(project, "workspace")

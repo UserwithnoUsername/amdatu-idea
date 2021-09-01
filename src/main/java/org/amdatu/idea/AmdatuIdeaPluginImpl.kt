@@ -22,12 +22,14 @@ import aQute.bnd.repository.osgi.OSGiRepository
 import aQute.bnd.service.RepositoryPlugin
 import aQute.service.reporter.Report
 import com.intellij.ide.file.BatchFileChangeListener
+import com.intellij.ide.highlighter.ModuleFileType
 import com.intellij.notification.Notification
-import com.intellij.notification.NotificationDisplayType
 import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
@@ -37,7 +39,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import org.amdatu.idea.imp.BndProjectImporter
 import java.io.File
 
-val AMDATU_IDEA_NOTIFICATION_GROUP = NotificationGroup("Amdatu", NotificationDisplayType.TOOL_WINDOW, true)
+val AMDATU_IDEA_NOTIFICATION_GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("Amdatu")
 
 interface AmdatuIdeaPlugin {
 
@@ -81,6 +83,15 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
     private var myWorkspace: Workspace? = null
     private var myWorkspaceModelSync: WorkspaceModelSync? = null
 
+    init {
+        val rootDir = project.basePath
+        val imlPath = rootDir + File.separator + project.name + ModuleFileType.DOT_DEFAULT_EXTENSION
+
+        if (isBndWorkspace() && File(imlPath).isFile ) {
+            initialize()
+        }
+    }
+
     override fun initialize() {
         if (!project.isBndWorkspaceProject()) {
             throw IllegalStateException("Not a bnd workspace")
@@ -94,7 +105,7 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
                 val workspace = Workspace(File(project.guessProjectDir()!!.path))
                 workspace.plugins // Just get the plugins once to trigger initialization
 
-                workspace.validateRepositories(project, indicator)
+                workspace.validateRepositories(project, this@AmdatuIdeaPluginImpl, indicator)
 
                 workspace.errors.stream()
                         .map<Report.Location> { msg ->
@@ -263,11 +274,12 @@ class AmdatuIdeaPluginImpl(val project: Project) : AmdatuIdeaPlugin {
 
 }
 
-fun Workspace.validateRepositories(project: Project, indicator: ProgressIndicator): Boolean {
+fun Workspace.validateRepositories(project: Project, amdatuIdeaPlugin: AmdatuIdeaPlugin, indicator: ProgressIndicator): Boolean {
     indicator.text = "Refreshing Repositories"
     val plugins = getPlugins(RepositoryPlugin::class.java)
     var ok = true
 
+    indicator.isIndeterminate = false
     for (i in plugins.indices) {
         val plugin = plugins[i]
 
@@ -285,7 +297,7 @@ fun Workspace.validateRepositories(project: Project, indicator: ProgressIndicato
 
                             override fun actionPerformed(e: AnActionEvent) {
                                 action.value.run()
-                                project.getComponent(AmdatuIdeaPlugin::class.java)?.refreshWorkspace()
+                                project.service<AmdatuIdeaPlugin>().refreshWorkspace()
                             }
                         }
 
@@ -311,7 +323,8 @@ fun Workspace.validateRepositories(project: Project, indicator: ProgressIndicato
 
         indicator.fraction = i.toDouble() / plugins.size.toDouble()
     }
-    ok = ok and project.getComponent(RepositoryValidationService::class.java).validateRepositories(this)
+
+    ok = ok and RepositoryValidator(project, amdatuIdeaPlugin).validateRepositories(this)
     return ok
 }
 

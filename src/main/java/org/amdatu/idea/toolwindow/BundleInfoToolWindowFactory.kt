@@ -19,6 +19,7 @@ import aQute.bnd.osgi.Builder
 import aQute.bnd.osgi.Clazz
 import aQute.bnd.osgi.Constants
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.progress.ProgressIndicator
@@ -57,7 +58,7 @@ class BundleInfoToolWindowFactory : ToolWindowFactory {
     private var file: VirtualFile? = null
 
     override fun isApplicable(project: Project): Boolean {
-        return project.getComponent(AmdatuIdeaPlugin::class.java)?.isBndWorkspace() == true
+        return project.service<AmdatuIdeaPlugin>().isBndWorkspace()
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -192,7 +193,7 @@ class BundleInfoToolWindowFactory : ToolWindowFactory {
     private fun getBuilderForFile(project: Project, file: VirtualFile): Builder? {
         val projectFileIndex = ProjectFileIndex.getInstance(project)
         val moduleForFile = projectFileIndex.getModuleForFile(file) ?: return null
-        val bndProject = project.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { ws -> ws.getProject(moduleForFile.name) } ?: return null
+        val bndProject = project.service<AmdatuIdeaPlugin>().withWorkspace { ws -> ws.getProject(moduleForFile.name) } ?: return null
 
         return if (bndProject.get(Constants.SUB) == null || file.name == "bnd.bnd") {
             bndProject.getBuilder(null)

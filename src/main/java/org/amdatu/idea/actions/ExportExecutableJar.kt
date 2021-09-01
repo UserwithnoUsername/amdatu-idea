@@ -16,6 +16,7 @@ package org.amdatu.idea.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.roots.ProjectFileIndex
@@ -27,7 +28,7 @@ class ExportExecutableJar : AmdatuIdeaAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
         val project = e.project ?: return
-        project.getComponent(AmdatuIdeaPlugin::class.java)?.withWorkspace { workspace ->
+        project.service<AmdatuIdeaPlugin>().withWorkspace { workspace ->
             val moduleForFile = ProjectFileIndex.getInstance(project).getModuleForFile(virtualFile) ?: return@withWorkspace
 
             val bndProject = workspace.getProject(moduleForFile.name)

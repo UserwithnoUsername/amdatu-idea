@@ -15,12 +15,13 @@
 package org.amdatu.idea.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import org.amdatu.idea.AmdatuIdeaPlugin
 
 class RefreshWorkspaceAction : AmdatuIdeaAction() {
 
     override fun actionPerformed(event: AnActionEvent) {
-        val amdatuIdeaPlugin = event.project?.getComponent(AmdatuIdeaPlugin::class.java) ?: return
+        val amdatuIdeaPlugin = event.project?.service<AmdatuIdeaPlugin>() ?: return
 
         if (amdatuIdeaPlugin.isBndWorkspace()) {
             amdatuIdeaPlugin.refreshWorkspace()

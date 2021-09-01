@@ -14,8 +14,8 @@
 
 package org.amdatu.idea.preferences;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
@@ -35,7 +35,7 @@ public class AmdatuIdeaPreferences implements PersistentStateComponent<AmdatuIde
     }
 
     public static AmdatuIdeaPreferences getInstance() {
-        return ServiceManager.getService(AmdatuIdeaPreferences.class);
+        return ApplicationManager.getApplication().getService(AmdatuIdeaPreferences.class);
     }
 
     @Nullable

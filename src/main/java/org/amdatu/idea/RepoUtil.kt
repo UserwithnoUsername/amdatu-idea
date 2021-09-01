@@ -16,13 +16,14 @@ package org.amdatu.idea
 
 import aQute.bnd.osgi.Constants
 import aQute.bnd.service.RepositoryPlugin
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 
 val LOG = Logger.getInstance("org.amdatu.idea.RepoUtil")
 
 fun getBundles(project: Project): Set<String> {
-    val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return emptySet()
+    val amdatuIdePlugin = project.service<AmdatuIdeaPlugin>()
 
     return amdatuIdePlugin
             .withWorkspace { workspace -> workspace.getPlugins(RepositoryPlugin::class.java) }
@@ -32,7 +33,7 @@ fun getBundles(project: Project): Set<String> {
 }
 
 fun getBundlesOnlyAvailableInBaselineRepo(project: Project): Set<String> {
-    val amdatuIdePlugin = project.getComponent(AmdatuIdeaPlugin::class.java) ?: return emptySet()
+    val amdatuIdePlugin = project.service<AmdatuIdeaPlugin>()
 
     return amdatuIdePlugin.withWorkspace { workspace ->
         val baselineRepoName = workspace.get(Constants.BASELINEREPO)

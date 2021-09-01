@@ -87,7 +87,7 @@ public class BndLaunchState extends JavaCommandLineState implements CompilationS
         }
 
         try {
-            AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getComponent(AmdatuIdeaPlugin.class);
+            AmdatuIdeaPlugin amdatuIdeaPlugin = myProject.getService(AmdatuIdeaPlugin.class);
             ProjectLauncher launcher = amdatuIdeaPlugin.withWorkspace(workspace -> {
                 try {
                     Run run = Run.createRun(workspace, runFile);

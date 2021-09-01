@@ -48,7 +48,7 @@ public class FixBaseliningErrorsAction extends AmdatuIdeaAction {
             return;
         }
 
-        AmdatuIdeaPlugin plugin = currentProject.getComponent(AmdatuIdeaPlugin.class);
+        AmdatuIdeaPlugin plugin = currentProject.getService(AmdatuIdeaPlugin.class);
         boolean enableModuleUpdater = plugin.pauseWorkspaceModelSync(FIX_BASELINING_ERRORS);
         AtomicInteger count = new AtomicInteger();
         List<BaseliningSuggestion> suggestions = getSuggestions(e.getProject());
@@ -82,7 +82,7 @@ public class FixBaseliningErrorsAction extends AmdatuIdeaAction {
 
     @NotNull
     private List<BaseliningSuggestion> getSuggestions(Project project) {
-        BaseliningErrorService baseliningErrorService = project.getComponent(BaseliningErrorService.class);
+        BaseliningErrorService baseliningErrorService = project.getService(BaseliningErrorService.class);
         return baseliningErrorService.getAllSuggestions();
     }
 

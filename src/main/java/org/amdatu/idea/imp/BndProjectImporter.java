@@ -177,12 +177,13 @@ public class BndProjectImporter {
                 LOG.warn(e);
                 return false;
             } finally {
-                myProject.getComponent(AmdatuIdeaPlugin.class).report(project, true);
+                myProject.getService(AmdatuIdeaPlugin.class).report(project, true);
             }
 
             findSources(project);
 
             if (indicator != null) {
+                indicator.setIndeterminate(false);
                 indicator.setFraction((double) (++progress) / myProjects.size());
             }
         }
@@ -685,7 +686,7 @@ public class BndProjectImporter {
                 String text = message("bnd.import.warn.text", project.getName(),
                         "<br>" + StringUtil.join(warnings, "<br>"));
 
-                myProject.getComponent(AmdatuIdeaPlugin.class)
+                myProject.getService(AmdatuIdeaPlugin.class)
                         .warning(text, notification -> {
                             notification.setTitle(message("bnd.import.warn.title"));
                             return Unit.INSTANCE;
