@@ -103,6 +103,9 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
             assert rootDir != null : project;
             ModuleRootModificationUtil.addContentRoot(module, rootDir);
             ModuleRootModificationUtil.setSdkInherited(module);
+
+            AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
+            amdatuIdeaPlugin.initialize();
         }
         else {
             AmdatuIdeaPlugin amdatuIdeaPlugin = project.getService(AmdatuIdeaPlugin.class);
