@@ -15,7 +15,7 @@
 <idea-plugin>
     <id>org.amdatu.idea</id>
     <name>Amdatu</name>
-    <version>3.0.1</version>
+    <version>3.0.2-SNAPSHOT</version>
     <description>The Amdatu IntelliJ plugin adds support for OSGi workspaces using the bnd workspace model.
     </description>
     <category>Framework integration</category>
