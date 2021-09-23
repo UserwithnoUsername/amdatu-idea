@@ -100,7 +100,10 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
 
         if (myWizardContext.isCreatingNewProject()) {
             String rootDir = project.getBasePath();
-            assert rootDir != null : project;
+            if (rootDir == null) {
+                throw new IllegalStateException("rootDir must not be null for project " + project.getName());
+            }
+
             ModuleRootModificationUtil.addContentRoot(module, rootDir);
             ModuleRootModificationUtil.setSdkInherited(module);
 
