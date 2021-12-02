@@ -85,9 +85,8 @@ public class AmdatuIdeaModuleBasedBuildTarget extends ModuleBasedTarget<BuildRoo
                         .forEach(dependencies::add);
 
             }
-
         } catch (Exception e) {
-            LOGGER.error("Failed to compute dependecies", e);
+            LOGGER.error("Failed to compute dependencies", e);
             throw new RuntimeException(e);
         }
 
