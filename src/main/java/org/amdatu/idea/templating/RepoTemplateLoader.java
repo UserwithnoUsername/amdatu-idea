@@ -18,6 +18,7 @@ import aQute.bnd.build.Workspace;
 import aQute.bnd.osgi.resource.CapReqBuilder;
 import aQute.bnd.repository.osgi.OSGiRepository;
 import aQute.bnd.service.RepositoryPlugin;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.preferences.AmdatuIdeaPreferences;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 
 public class RepoTemplateLoader {
 
+    private static final Logger LOG = Logger.getInstance(RepoTemplateLoader.class);
     private static final String NS_TEMPLATE = "org.bndtools.template";
 
     // TODO This should not be initialized here
@@ -92,7 +94,6 @@ public class RepoTemplateLoader {
         if (blueprintVersion != null ) {
             if (blueprintVersion.equals("latest")) {
                 templateRepositoryUrls.add("https://repository.amdatu.org/amdatu-blueprint/latest.xml");
-
             } else {
                 templateRepositoryUrls.add(String.format("https://repository.amdatu.org/amdatu-blueprint/%s/repo/index.xml.gz", blueprintVersion));
             }
@@ -122,19 +123,26 @@ public class RepoTemplateLoader {
                 .addDirective(Namespace.REQUIREMENT_FILTER_DIRECTIVE, filterStr)
                 .buildSyntheticRequirement();
 
-        return repository.findProviders(Collections.singleton(requirement))
-                .getOrDefault(requirement, Collections.emptyList())
-                .stream()
-                .map(capability -> {
-                    String engineId = (String) capability.getAttributes().get("engine");
-                    TemplateEngine engine;
-                    if ("mustache".equals(engineId)) {
-                        engine = this.engine;
-                    } else {
-                        engine = myStringTemplateEngine;
-                    }
-                    return new CapabilityBasedTemplate(capability, engine, (RepositoryPlugin) repository);
-                });
 
+
+        try {
+            return repository.findProviders(Collections.singleton(requirement))
+                    .getOrDefault(requirement, Collections.emptyList())
+                    .stream()
+                    .map(capability -> {
+                        String engineId = (String) capability.getAttributes().get("engine");
+                        TemplateEngine engine;
+                        if ("mustache".equals(engineId)) {
+                            engine = this.engine;
+                        } else {
+                            engine = myStringTemplateEngine;
+                        }
+                        return new CapabilityBasedTemplate(capability, engine, (RepositoryPlugin) repository);
+                    });
+        } catch (Exception e) {
+            LOG.error("Failed to load templates from repository " + repository, e);
+            return Stream.empty();
+
+        }
     }
 }
