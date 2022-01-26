@@ -15,17 +15,8 @@
 package org.amdatu.idea
 
 import aQute.bnd.build.Workspace
-import aQute.bnd.http.HttpClient
-import aQute.bnd.osgi.repository.XMLResourceParser
-import aQute.bnd.repository.maven.pom.provider.BndPomRepository
-import aQute.bnd.repository.osgi.OSGiRepository
 import aQute.bnd.service.RepositoryPlugin
-import aQute.bnd.service.url.TaggedData
-import aQute.lib.io.IO
 import com.intellij.openapi.project.Project
-import java.io.File
-import java.net.URI
-import java.time.Duration
 
 
 class RepositoryValidator(val project: Project, val amdatuIdeaPlugin: AmdatuIdeaPlugin) {
@@ -34,146 +25,25 @@ class RepositoryValidator(val project: Project, val amdatuIdeaPlugin: AmdatuIdea
      * Validate uri's used in as locations for OSGiRepository and FixedIndexedRepo instances in the workspace and report
      * issues.
      *
-     * This wil report issues when
-     *  * File not found
-     *  * Problems downloading
-     *  * Problems with parsing the file
-     *
      * @param workspace Amdatu idea plugin instance
      */
      fun validateRepositories(workspace: Workspace, ): Boolean {
-        val client = workspace.getPlugin(HttpClient::class.java)
-
-        val osgiReposOk: Boolean = workspace.getPlugins(OSGiRepository::class.java)
+        val osgiReposOk: Boolean = workspace.getPlugins(RepositoryPlugin::class.java)
                 .map { repositoryPlugin ->
-
-                    repositoryPlugin.location.split(",")
-                            .map { uriString ->
-
-                                val uri = URI.create(uriString)
-
-                                try {
-                                    validateRepoLocationUri(uri, repositoryPlugin, client)
-                                } catch (e: Exception) {
-                                    LOG.error("Exception in repo uri validation: $uri", e)
-                                    false
-                                }
-                            }
-                            .all { it }
-                }
-                .all { it }
-
-
-        val bndPomReposOk = workspace.getPlugins(BndPomRepository::class.java)
-                .map { repositoryPlugin ->
-                    val bndPomRepository = repositoryPlugin as BndPomRepository
-
-                    val configuration = bndPomRepository.configuration()
-                    configuration.releaseUrls().split(",")
-                            .map { uriString ->
-                                val uri = URI.create(uriString)
-                                validateMavenUri(uri, repositoryPlugin, client)
-                            }
-                            .all { it }
-                }
-                .all { it }
-
-        return osgiReposOk && bndPomReposOk
-    }
-
-
-    private fun validateRepoLocationUri(uri: URI, repositoryPlugin: RepositoryPlugin, client: HttpClient): Boolean {
-
-
-        return if (uri.scheme == null || uri.scheme.toLowerCase() == "file") {
-            if (!File(uri).exists()) {
-
-
-                amdatuIdeaPlugin.warning("""
-                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-                            File '$uri' doesn't exist.
-                            """.trimIndent())
-                false
-            } else {
-                true
-            }
-        } else if (uri.toURL().protocol.startsWith("http")) {
-
-            val send: TaggedData = client.build()
-                    .useCache(Duration.ofDays(365).toMillis()) // Use cached files, for a year the repo will trigger refreshing them
-                    .get(TaggedData::class.java)
-                    .go(uri) as TaggedData
-
-            if (send.responseCode !in 200..399) {
-                amdatuIdeaPlugin.warning("""
-                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-                            Failed location: '$uri'
-                            Reason: download failed, http response code '${send.responseCode}'
-                            """.trimIndent())
-
-                false
-            } else {
-                val downloadedFile = send.file
-
-                try {
-                    val parser = XMLResourceParser(IO.stream(downloadedFile), repositoryPlugin.name, 0, mutableSetOf(), uri)
-                    parser.parse()
-
-                    if (parser.errors.isNotEmpty()) {
-                        val message = StringBuilder("""
-                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-                            Failed location: '$uri'
-                            Reason (from bnd reporter): """.trimIndent())
-                        parser.errors.forEach {
-                            message.append("\n\t$it")
-                        }
-                        amdatuIdeaPlugin.warning(message.toString())
-                        false
+                    val status = repositoryPlugin.status
+                    if (status != null) {
+                        amdatuIdeaPlugin.warning("""
+                                Repository has errors: '${repositoryPlugin.name}'.
+                                Status: $status
+                                """.trimIndent())
+                         false
                     } else {
                         true
                     }
-                } catch (e: Exception) {
-
-                    val message = StringBuilder("""
-                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-                            Failed location: '$uri'
-                            Reason: Failed to parse repository index exception: ${e.message}
-                            Cached index file: $downloadedFile
-                            """.trimIndent())
-                    amdatuIdeaPlugin.warning(message.toString())
-                    false
                 }
-            }
-        } else {
-            true
-        }
+            .all { it }
+
+        return osgiReposOk
     }
 
-    private fun validateMavenUri(uri: URI, repositoryPlugin: RepositoryPlugin, client: HttpClient): Boolean {
-        return if (uri.toURL().protocol.startsWith("http")) {
-            try {
-
-                val send: TaggedData = client.build()
-                        .useCache(Duration.ofDays(365).toMillis()) // Use cached files, for a year the repo will trigger refreshing them
-                        .get(TaggedData::class.java)
-                        .go(uri) as TaggedData
-
-                if (send.responseCode !in 200..399) {
-                    amdatuIdeaPlugin.warning("""
-                            Failed to load repository index file for repo: '${repositoryPlugin.name}'.
-                            Failed location: '$uri'
-                            Reason: download failed, http response code '${send.responseCode}'
-                            """.trimIndent())
-                    false
-                } else {
-                    true
-                }
-            } catch (e: Exception) {
-                LOG.error("Exception in repo uri validation: $uri", e)
-                false
-            }
-        } else {
-            true
-        }
-    }
 }
