@@ -124,8 +124,15 @@ public class BndProjectImporter {
     }
 
     public void setupProject(Workspace workspace) {
+        String bndJavaOptions = workspace.getProperty("java.options", "");
+
         LanguageLevel sourceLevel = LanguageLevel.parse(workspace.getProperty(Constants.JAVAC_SOURCE));
         if (sourceLevel != null) {
+
+            if (bndJavaOptions.contains("--enable-preview") && sourceLevel.getPreviewLevel() != null) {
+                sourceLevel = sourceLevel.getPreviewLevel();
+            }
+
             LanguageLevelProjectExtension.getInstance(myProject).setLanguageLevel(sourceLevel);
         }
 
@@ -137,7 +144,7 @@ public class BndProjectImporter {
 
         javacOptions.DEBUGGING_INFO = booleanProperty(workspace.getProperty("javac.debug", "true"));
         javacOptions.DEPRECATION = booleanProperty(workspace.getProperty("java.deprecation"));
-        javacOptions.ADDITIONAL_OPTIONS_STRING = workspace.getProperty("java.options", "");
+        javacOptions.ADDITIONAL_OPTIONS_STRING = bndJavaOptions;
     }
 
     public void resolve(boolean refresh) {
@@ -197,7 +204,7 @@ public class BndProjectImporter {
             findSources(project.getBuildpath());
             findSources(project.getTestpath());
         } catch (Exception e) {
-            LOG.warn("Exception occurred trying to find sources for project " +  project.getName(), e);
+            LOG.warn("Exception occurred trying to find sources for project " + project.getName(), e);
         }
     }
 
@@ -300,6 +307,13 @@ public class BndProjectImporter {
         contentEntry.addExcludeFolder(url(project.getTarget()));
 
         LanguageLevel sourceLevel = LanguageLevel.parse(project.getProperty(Constants.JAVAC_SOURCE));
+        if (sourceLevel != null) {
+            String bndJavaOptions = project.getProperty("java.options", "");
+            if (bndJavaOptions.contains("--enable-preview") && sourceLevel.getPreviewLevel() != null) {
+                sourceLevel = sourceLevel.getPreviewLevel();
+            }
+        }
+
         if (sourceLevel == projectLevel)
             sourceLevel = null;
         rootModel.getModuleExtension(LanguageLevelModuleExtension.class).setLanguageLevel(sourceLevel);
