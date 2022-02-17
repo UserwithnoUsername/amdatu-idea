@@ -74,9 +74,9 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
 
 
             try (Project project = target.getBndWorkspace().getProject(target.getModule().getName())) {
+                context.processMessage(new ProgressMessage(format("Building project: %s", project.getName())));
                 project.build();
 
-                context.processMessage(new ProgressMessage(format("Building project: %s", project.getName())));
                 project.getWarnings().stream()
                         .map(message -> toCompilerMessage(BuildMessage.Kind.WARNING, message, project))
                         .forEach(context::processMessage);
@@ -85,7 +85,6 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
                         .map(message -> toCompilerMessage(BuildMessage.Kind.ERROR, message, project))
                         .forEach(context::processMessage);
             }
-
         } catch (Exception e) {
             context.processMessage(CompilerMessage.createInternalBuilderError(AmdatuIdeaTargetBuilder.ID, e));
             return;
@@ -102,6 +101,10 @@ public class AmdatuIdeaTargetBuilder extends TargetBuilder<BuildRootDescriptor, 
         if (location != null) {
             path = location.file;
             line = location.line + 1; // Line numbers in bnd are 0 based
+        }
+
+        if (path == null && processor.getPropertiesFile() != null){
+            path = processor.getPropertiesFile().getAbsolutePath();
         }
         return new CompilerMessage(AmdatuIdeaTargetBuilder.ID, kind, message, path, -1, -1, -1, line, -1);
     }
