@@ -3,9 +3,8 @@ jar.setArchiveFileName("jps-plugin.jar")
 repositories {
     mavenCentral()
 }
-
 dependencies {
-    compile "biz.aQute.bnd:biz.aQute.bnd:${bndVersion}"
+    compileOnly "biz.aQute.bnd:biz.aQute.bnd:${bndVersion}"
 }
 
 java {

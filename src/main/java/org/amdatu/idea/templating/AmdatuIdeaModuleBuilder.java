@@ -26,12 +26,14 @@ import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.util.Key;
+import icons.OsmorcIdeaIcons;
 import org.amdatu.idea.AmdatuIdeaPlugin;
 import org.amdatu.idea.imp.BndProjectImporter;
 import org.bndtools.templating.Template;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +74,16 @@ public class AmdatuIdeaModuleBuilder extends JavaModuleBuilder {
     public ModuleWizardStep[] createWizardSteps(@NotNull WizardContext wizardContext,
                     @NotNull ModulesProvider modulesProvider) {
         return new ModuleWizardStep[] { new AmdatuIdeaModuleTemplateParamsStep(wizardContext) };
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return true;
+    }
+
+    @Override
+    public Icon getNodeIcon() {
+        return OsmorcIdeaIcons.Bnd;
     }
 
     @Nullable
