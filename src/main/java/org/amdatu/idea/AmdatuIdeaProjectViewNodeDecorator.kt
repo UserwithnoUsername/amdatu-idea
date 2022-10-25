@@ -41,7 +41,7 @@ class AmdatuIdeaProjectViewNodeDecorator : ProjectViewNodeDecorator {
 
         val packageInfoService = project.service<PackageInfoService>() ?: return
 
-        when (packageInfoService.packageStatus(psiDirectory)){
+        when (packageInfoService.packageStatus(psiDirectory)) {
             PackageStatus.EXPORTED -> data.setIcon(OsmorcIdeaIcons.ExportedPackage)
             PackageStatus.PRIVATE -> data.setIcon(OsmorcIdeaIcons.PrivatePackage)
             PackageStatus.NOT_INCLUDED -> if (psiDirectory.children.firstOrNull { it !is PsiDirectory } != null) {
@@ -49,6 +49,8 @@ class AmdatuIdeaProjectViewNodeDecorator : ProjectViewNodeDecorator {
                 // from being annotated in the non flattened view
                 data.setIcon(OsmorcIdeaIcons.NotIncludedPackage)
             }
+
+            else -> {}
         }
     }
 

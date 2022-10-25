@@ -20,7 +20,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.search.GlobalSearchScope
@@ -36,17 +38,24 @@ class PackageInfoService(private val myProject: Project) {
     private val myPackageStatusMap: MutableMap<PsiDirectory, PackageInfo> = mutableMapOf()
 
     init {
-        updatePackageStateMap()
+        object : Task.Backgroundable(myProject, "Updating package info", false) {
+            override fun run(progressIndicator: ProgressIndicator) {
+                ApplicationManager.getApplication().runReadAction {
+                    updatePackageStateMap()
+                }
+            }
+        }.queue()
+
 
         val connection = myProject.messageBus.connect()
         connection.subscribe(WorkspaceRefreshedNotifier.WORKSPACE_REFRESHED,
-                WorkspaceRefreshedNotifier {
-                    ProgressManager.getInstance().runProcess({
-                        ApplicationManager.getApplication().runReadAction {
-                            updatePackageStateMap()
-                        }
-                    }, null)
-                })
+            WorkspaceRefreshedNotifier {
+                ProgressManager.getInstance().runProcess({
+                    ApplicationManager.getApplication().runReadAction {
+                        updatePackageStateMap()
+                    }
+                }, null)
+            })
     }
 
     fun packageStatus(psiDirectory: PsiDirectory): PackageStatus? {
@@ -65,7 +74,8 @@ class PackageInfoService(private val myProject: Project) {
                     continue
                 }
 
-                val bndProject = myProject.service<AmdatuIdeaPlugin>().withWorkspace { workspace -> workspace.getProject(module.name) }  ?: continue
+                val bndProject = myProject.service<AmdatuIdeaPlugin>()
+                    .withWorkspace { workspace -> workspace.getProject(module.name) } ?: continue
 
                 val exportPackageInstructions = Instructions()
                 val privatePackageInstructions = Instructions()
@@ -88,9 +98,9 @@ class PackageInfoService(private val myProject: Project) {
 
                     if (directories.size == 1) {
                         val exportedPackage = !exportPackageInstructions.isEmpty() && exportPackageInstructions
-                                .matches(psiPackage.qualifiedName)
+                            .matches(psiPackage.qualifiedName)
                         val privatePackage = !privatePackageInstructions.isEmpty() && privatePackageInstructions
-                                .matches(psiPackage.qualifiedName)
+                            .matches(psiPackage.qualifiedName)
 
 
                         val status = when {
