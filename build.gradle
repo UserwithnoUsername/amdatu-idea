@@ -11,7 +11,7 @@ plugins {
 }
 
 group 'org.amdatu.idea'
-version '4.0.0-SNAPSHOT'
+version '4.0.0'
 
 
 allprojects {
