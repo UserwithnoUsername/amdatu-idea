@@ -104,7 +104,7 @@ public class BndProjectImporter {
 
     private final com.intellij.openapi.project.Project myProject;
     private final Collection<Project> myProjects;
-    private final Map<String, String> mySourcesMap = new THashMap<>(FileUtil.PATH_HASHING_STRATEGY);
+    private final Map<String, String> mySourcesMap = new HashMap<>();
 
     public BndProjectImporter(@NotNull com.intellij.openapi.project.Project project,
                               @NotNull Collection<Project> toImport) {

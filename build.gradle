@@ -7,11 +7,11 @@ buildscript {
     }
 }
 plugins {
-    id "org.jetbrains.intellij" version "1.5.3"
+    id "org.jetbrains.intellij" version "1.10.1"
 }
 
 group 'org.amdatu.idea'
-version '4.0.0'
+version '4.1.0-SNAPSHOT'
 
 
 allprojects {
@@ -24,8 +24,8 @@ allprojects {
     apply plugin: "org.jetbrains.intellij"
 
     intellij {
-        plugins = ['java', 'coverage']
-        version = '2022.2'
+        plugins = ['java']
+        version = '2022.3'
     }
 
     runIde {
@@ -38,7 +38,7 @@ apply plugin: 'kotlin'
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 }
 repositories {
