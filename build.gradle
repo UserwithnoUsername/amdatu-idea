@@ -11,7 +11,7 @@ plugins {
 }
 
 group 'org.amdatu.idea'
-version '4.1.0-SNAPSHOT'
+version '4.2.0-SNAPSHOT'
 
 
 allprojects {
@@ -25,7 +25,7 @@ allprojects {
 
     intellij {
         plugins = ['java']
-        version = '2022.3'
+        version = '2023.1'
     }
 
     runIde {
