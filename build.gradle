@@ -49,11 +49,12 @@ repositories {
 // When updating the bnd version used make sure to alsp update the org.bndtools.templating jar in the libs folder as this
 // embeds some bnd classes. Using different versions can cause issues caused by having multiple versions of the same class
 // on the classpath.
-ext.bndVersion = '6.3.1'
+ext.bndVersion = '6.4.1'
+ext.bndTemplatingVersion = '6.4.0'
 
 dependencies {
     implementation "biz.aQute.bnd:biz.aQute.bnd:${bndVersion}",
-            "org.bndtools:org.bndtools.templating:${bndVersion}",
+            "org.bndtools:org.bndtools.templating:${bndTemplatingVersion}",
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
             "eu.maxschuster:dataurl:2.0.0",
             'org.osgi:osgi.core:8.0.0',
