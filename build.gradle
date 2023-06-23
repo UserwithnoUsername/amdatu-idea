@@ -13,7 +13,6 @@ plugins {
 group 'org.amdatu.idea'
 version '4.2.0-SNAPSHOT'
 
-
 allprojects {
 
     java {

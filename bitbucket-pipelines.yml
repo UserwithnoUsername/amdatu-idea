@@ -1,4 +1,4 @@
-image: amdatu/build-jdk-slim:11.05
+image: eclipse-temurin:17-jdk
 pipelines:
   default:
     - step:
